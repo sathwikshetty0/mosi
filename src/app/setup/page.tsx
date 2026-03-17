@@ -3,17 +3,24 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useMosiStore } from '@/lib/store'
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
+import { 
+  User, Building2, Globe, Mic, Video, Type,
+  Calendar, MapPin, ChevronRight, CheckCircle,
+  Sparkles, Activity
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function SetupPage() {
   const router = useRouter()
-  const { setCurrentSession } = useMosiStore()
+  const { setCurrentSession, scheduleSession } = useMosiStore()
 
   const [step, setStep] = React.useState(1)
   const [form, setForm] = React.useState({
-    name: '', role: '', company: '', sector: '', 
-    audio: true, video: false, transcript: true
+    name: '', role: '', phone: '', email: '', linkedin: '',
+    company: '', sector: '', products: '', employees: '', revenue: '',
+    yearsInBusiness: '', geography: '',
+    audio: true, video: true, transcript: true, translate: false,
+    scheduleDate: '', scheduleTime: '', location: ''
   })
 
   const update = (key: string, value: string | boolean) =>
@@ -22,76 +29,183 @@ export default function SetupPage() {
   const handleStart = () => {
     setCurrentSession({
       stakeholder: {
-        name: form.name || 'Anonymous', 
-        role: form.role, 
-        phone: '', email: '', linkedin: '',
-        company: form.company, 
-        sector: form.sector, 
-        products: '', employees: '', revenue: '',
-        yearsInBusiness: '', geography: ''
+        name: form.name, role: form.role, phone: form.phone,
+        email: form.email, linkedin: form.linkedin,
+        company: form.company, sector: form.sector, products: form.products,
+        employees: form.employees, revenue: form.revenue,
+        yearsInBusiness: form.yearsInBusiness, geography: form.geography
       },
-      settings: {
-        audio: form.audio, video: true
-      },
+      settings: { audio: form.audio, video: form.video },
       opportunities: [],
-      location: '',
+      location: form.location,
       status: 'Recording'
     })
     router.push('/interview/live')
   }
 
-  const inputClass = "w-full h-14 bg-transparent border-b border-white/10 focus:border-[#20D08A] outline-none transition-all text-xl font-medium placeholder:text-[#E0E2E0]/20 text-[#E0E2E0]"
+  const inputClass = "w-full h-12 px-4 rounded-xl bg-white border border-slate-200 focus:border-slate-900 outline-none transition-all text-sm font-medium placeholder:text-slate-300"
+  const labelClass = "block text-xs font-medium text-slate-500 mb-2"
 
   return (
-    <div className="flex flex-col h-full p-6 lg:p-12 space-y-12 animate-in fade-in duration-700">
+    <div className="max-w-3xl mx-auto space-y-8 pb-16 animate-in fade-in duration-700">
       
-      <header className="pt-8">
-        <button onClick={() => step > 1 ? setStep(step - 1) : router.push('/')} className="text-[#E0E2E0]/50 hover:text-[#E0E2E0] transition-colors">
-            <ArrowLeft className="w-6 h-6" />
-        </button>
-      </header>
-
-      <div className="flex-1 flex flex-col justify-center space-y-8 max-w-lg mx-auto w-full pb-20">
-        
-        {step === 1 && (
-          <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
-             <h2 className="text-3xl font-medium text-[#E0E2E0]">Who are you talking to?</h2>
-             <div className="space-y-6">
-                <input className={inputClass} placeholder="Stakeholder Name" value={form.name} onChange={e => update('name', e.target.value)} autoFocus />
-                <input className={inputClass} placeholder="Role / Title" value={form.role} onChange={e => update('role', e.target.value)} />
-             </div>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
-             <h2 className="text-3xl font-medium text-[#E0E2E0]">What is their enterprise?</h2>
-             <div className="space-y-6">
-                <input className={inputClass} placeholder="Company Name" value={form.company} onChange={e => update('company', e.target.value)} autoFocus />
-                <input className={inputClass} placeholder="Sector / Industry" value={form.sector} onChange={e => update('sector', e.target.value)} />
-             </div>
-          </div>
-        )}
-
+      {/* HEADER */}
+      <div className="space-y-2">
+        <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-slate-900">
+          New Discovery Session
+        </h1>
+        <p className="text-sm text-slate-500">Set up your stakeholder profile before starting the interview.</p>
       </div>
 
-      <div className="pb-12 max-w-lg mx-auto w-full">
-         <div className="flex justify-between items-center gap-4">
-             <div className="flex gap-2">
-                 {[1, 2].map(s => (
-                     <div key={s} className={cn("w-2 h-2 rounded-full", step === s ? "bg-[#20D08A]" : "bg-white/10")} />
-                 ))}
-             </div>
-             {step < 2 ? (
-                 <button onClick={() => setStep(step + 1)} className="w-14 h-14 bg-[#E0E2E0]/10 text-white rounded-full flex items-center justify-center hover:bg-[#E0E2E0]/20 transition-all">
-                    <ArrowRight className="w-5 h-5" />
-                 </button>
-             ) : (
-                 <button onClick={handleStart} className="px-6 h-14 bg-[#20D08A] text-[#161816] font-medium rounded-full flex items-center gap-3 hover:scale-105 transition-all">
-                    Start Session <ArrowRight className="w-5 h-5" />
-                 </button>
-             )}
-         </div>
+      {/* STEP TABS */}
+      <div className="flex items-center bg-white p-1 rounded-xl border border-slate-100">
+        {[
+          { n: 1, label: 'Stakeholder' },
+          { n: 2, label: 'Company' },
+          { n: 3, label: 'Settings' }
+        ].map(s => (
+          <button
+            key={s.n}
+            onClick={() => setStep(s.n)}
+            className={cn(
+              "flex-1 py-3 rounded-lg text-sm font-medium transition-all",
+              step === s.n ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'
+            )}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {/* STEP 1 */}
+      {step === 1 && (
+        <div className="bg-white border border-slate-100 rounded-2xl p-6 lg:p-8 space-y-6 animate-in fade-in duration-300">
+          <div className="flex items-center gap-3 pb-4 border-b border-slate-50">
+            <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400">
+              <User className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-slate-900">Stakeholder Info</h3>
+              <p className="text-xs text-slate-400">Who are you interviewing?</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div><label className={labelClass}>Full Name</label><input className={inputClass} placeholder="e.g. Jane Doe" value={form.name} onChange={e => update('name', e.target.value)} /></div>
+            <div><label className={labelClass}>Role</label><input className={inputClass} placeholder="e.g. Product Manager" value={form.role} onChange={e => update('role', e.target.value)} /></div>
+            <div><label className={labelClass}>Phone</label><input className={inputClass} placeholder="+1 (555) 000-0000" value={form.phone} onChange={e => update('phone', e.target.value)} /></div>
+            <div><label className={labelClass}>Email</label><input className={inputClass} type="email" placeholder="jane@company.com" value={form.email} onChange={e => update('email', e.target.value)} /></div>
+            <div className="md:col-span-2"><label className={labelClass}>LinkedIn</label><input className={inputClass} placeholder="linkedin.com/in/janedoe" value={form.linkedin} onChange={e => update('linkedin', e.target.value)} /></div>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 2 */}
+      {step === 2 && (
+        <div className="bg-white border border-slate-100 rounded-2xl p-6 lg:p-8 space-y-6 animate-in fade-in duration-300">
+          <div className="flex items-center gap-3 pb-4 border-b border-slate-50">
+            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-slate-900">Company Details</h3>
+              <p className="text-xs text-slate-400">Context about their organization.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div><label className={labelClass}>Company Name</label><input className={inputClass} placeholder="Acme Corp" value={form.company} onChange={e => update('company', e.target.value)} /></div>
+            <div><label className={labelClass}>Sector</label><input className={inputClass} placeholder="Tech & SaaS" value={form.sector} onChange={e => update('sector', e.target.value)} /></div>
+            <div><label className={labelClass}>Team Size</label><input className={inputClass} placeholder="50-200" value={form.employees} onChange={e => update('employees', e.target.value)} /></div>
+            <div><label className={labelClass}>Revenue</label><input className={inputClass} placeholder="$5M ARR" value={form.revenue} onChange={e => update('revenue', e.target.value)} /></div>
+            <div><label className={labelClass}>Years in Business</label><input className={inputClass} placeholder="5" value={form.yearsInBusiness} onChange={e => update('yearsInBusiness', e.target.value)} /></div>
+            <div><label className={labelClass}>Geography</label><input className={inputClass} placeholder="North America" value={form.geography} onChange={e => update('geography', e.target.value)} /></div>
+            <div className="md:col-span-2">
+              <label className={labelClass}>Products / Services</label>
+              <textarea rows={3} className={cn(inputClass, "h-auto py-3 resize-none")} placeholder="Brief description of what they offer..." value={form.products} onChange={e => update('products', e.target.value)} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 3 */}
+      {step === 3 && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="bg-white border border-slate-100 rounded-2xl p-6 lg:p-8 space-y-6">
+            <div className="flex items-center gap-3 pb-4 border-b border-slate-50">
+              <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400">
+                <Mic className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900">Recording Settings</h3>
+                <p className="text-xs text-slate-400">Configure capture preferences.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { key: 'audio', label: 'Audio', icon: Mic },
+                { key: 'video', label: 'Video', icon: Video },
+                { key: 'transcript', label: 'Transcript', icon: Sparkles },
+              ].map(opt => (
+                <button
+                  key={opt.key}
+                  onClick={() => update(opt.key, !(form as any)[opt.key])}
+                  className={cn(
+                    "p-5 rounded-xl border-2 transition-all flex flex-col items-center gap-3",
+                    (form as any)[opt.key] ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-400 border-slate-100 hover:border-slate-200"
+                  )}
+                >
+                  <opt.icon className="w-6 h-6" />
+                  <span className="text-xs font-semibold">{opt.label}</span>
+                  {(form as any)[opt.key] && <CheckCircle className="w-4 h-4" />}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="bg-white border border-slate-100 rounded-2xl p-6 lg:p-8 space-y-6">
+            <div className="flex items-center gap-3 pb-4 border-b border-slate-50">
+              <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900">Meeting Details</h3>
+                <p className="text-xs text-slate-400">Optional scheduling info.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div><label className={labelClass}>Date</label><input type="date" className={inputClass} value={form.scheduleDate} onChange={e => update('scheduleDate', e.target.value)} /></div>
+              <div><label className={labelClass}>Time</label><input type="time" className={inputClass} value={form.scheduleTime} onChange={e => update('scheduleTime', e.target.value)} /></div>
+              <div className="md:col-span-2"><label className={labelClass}>Location / Link</label><input className={inputClass} placeholder="Zoom link or office address" value={form.location} onChange={e => update('location', e.target.value)} /></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* NAVIGATION */}
+      <div className="flex items-center gap-4 pt-4">
+        {step > 1 && (
+          <button onClick={() => setStep(step - 1)} className="h-12 px-6 rounded-xl border border-slate-200 text-sm font-medium text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-all">
+            Back
+          </button>
+        )}
+        {step < 3 ? (
+          <button onClick={() => setStep(step + 1)} className="flex-1 h-12 bg-slate-900 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+            Next <ChevronRight className="w-4 h-4" />
+          </button>
+        ) : (
+          <div className="flex-1 flex gap-3">
+            <button
+              onClick={() => { scheduleSession(); router.push('/') }}
+              className="flex-1 h-12 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:border-slate-300 transition-all"
+            >
+              Schedule for Later
+            </button>
+            <button
+              onClick={handleStart}
+              className="flex-1 h-12 bg-slate-900 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            >
+              <Mic className="w-4 h-4" /> Start Interview
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
