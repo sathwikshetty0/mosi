@@ -337,12 +337,12 @@ export default function LiveInterviewPage() {
                    const asked = answeredQuestions.has(`${activeQuadrant}-${i}`)
                    const active = i === questionIndex
                    return (
-                     <button
+                     <div
                       key={i}
                       id={`question-${i}`}
                       onClick={() => setQuestionIndex(i)}
                       className={cn(
-                        "w-full text-left p-4 lg:p-6 rounded-[1.2rem] lg:rounded-[2rem] border-2 transition-all relative group h-fit",
+                        "w-full text-left p-4 lg:p-6 rounded-[1.2rem] lg:rounded-[2rem] border-2 transition-all relative group h-fit cursor-pointer",
                         active 
                           ? "bg-slate-900 border-slate-900 text-white shadow-xl lg:translate-x-1" 
                           : asked 
@@ -365,7 +365,7 @@ export default function LiveInterviewPage() {
                               <div className="flex-1 h-px bg-white/10" />
                            </div>
                         )}
-                     </button>
+                     </div>
                    )
                  })}
               </div>
