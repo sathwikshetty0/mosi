@@ -156,25 +156,31 @@ export default function LiveInterviewPage() {
     <div className="max-w-2xl mx-auto flex flex-col min-h-[calc(100vh-8rem)] relative animate-in fade-in duration-700">
       <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
 
-      {/* CEED TAG SELECTOR */}
-      <header className="py-6 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-100 shadow-sm">
+      {/* 2X2 CEED QUADRANT SELECTOR */}
+      <header className="py-6 space-y-4 shrink-0">
+        <div className="flex items-center justify-between px-2">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Discovery Protocol</p>
+          <div className="flex items-center gap-2">
+            <div className={cn("w-2 h-2 rounded-full", isRecording && !isPaused ? "bg-red-500 animate-pulse" : "bg-slate-300")} />
+            <span className="text-xs font-mono font-bold text-slate-600 tracking-wider bg-slate-100 px-3 py-1 rounded-lg">{formatDuration(recordingSeconds)}</span>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2">
           {quadrants.map(q => (
             <button 
               key={q.id}
               onClick={() => { setActiveQuadrant(q.id); setQuestionIndex(0) }}
               className={cn(
-                "px-4 py-2 rounded-lg text-xs font-semibold transition-all",
-                activeQuadrant === q.id ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                "h-14 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border-2 text-center flex items-center justify-center gap-2",
+                activeQuadrant === q.id 
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-xl shadow-slate-200' 
+                  : 'bg-white text-slate-400 border-slate-100 hover:border-slate-300 hover:text-slate-600'
               )}
             >
               {q.id}
             </button>
           ))}
-        </div>
-        <div className="flex items-center gap-2">
-          <div className={cn("w-2 h-2 rounded-full", isRecording && !isPaused ? "bg-red-500 animate-pulse" : "bg-slate-300")} />
-          <span className="text-xs font-mono text-slate-500">{formatDuration(recordingSeconds)}</span>
         </div>
       </header>
 
