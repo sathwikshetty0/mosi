@@ -4,7 +4,8 @@ import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Square, Play, Pause, Plus, Image as ImageIcon, Video, Link as LinkIcon,
-  File as FileIcon, Sparkles, Activity, Layers, Globe, ArrowUp, X, Mic
+  File as FileIcon, Sparkles, Activity, Layers, Globe, ArrowUp, X,
+  CheckCircle2, ArrowRight
 } from 'lucide-react'
 import { useMosiStore, CEEDTag, formatDuration } from '@/lib/store'
 import { cn } from '@/lib/utils'
@@ -59,6 +60,7 @@ export default function LiveInterviewPage() {
   } = useMosiStore()
 
   const [questionIndex, setQuestionIndex] = React.useState(0)
+  const [answeredQuestions, setAnsweredQuestions] = React.useState<Set<string>>(new Set())
   const [blobUrl, setBlobUrl] = React.useState<string | null>(null)
   const [isFinishing, setIsFinishing] = React.useState(false)
   const [isPaused, setIsPaused] = React.useState(false)
@@ -70,56 +72,17 @@ export default function LiveInterviewPage() {
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const [activeEvidenceType, setActiveEvidenceType] = React.useState<'image' | 'video' | 'link' | 'file' | null>(null)
 
-  // Real-time audio levels for visual feedback
-  const [audioLevel, setAudioLevel] = React.useState(0)
-  const audioContextRef = React.useRef<AudioContext | null>(null)
-  const analyserRef = React.useRef<AnalyserNode | null>(null)
-  const animationFrameRef = React.useRef<number | null>(null)
-
   React.useEffect(() => {
     async function setupMedia() {
       try {
         const s = await navigator.mediaDevices.getUserMedia({ video: false, audio: true })
         setStream(s)
-        startRecording()
-
-        // Setup Audio Analyser
-        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
-        const source = audioCtx.createMediaStreamSource(s)
-        const analyser = audioCtx.createAnalyser()
-        analyser.fftSize = 256
-        source.connect(analyser)
-        
-        audioContextRef.current = audioCtx
-        analyserRef.current = analyser
-
-        const bufferLength = analyser.frequencyBinCount
-        const dataArray = new Uint8Array(bufferLength)
-
-        const updateLevel = () => {
-          if (analyserRef.current) {
-            analyserRef.current.getByteFrequencyData(dataArray)
-            let sum = 0
-            for (let i = 0; i < bufferLength; i++) {
-              sum += dataArray[i]
-            }
-            const average = sum / bufferLength
-            setAudioLevel(average)
-            animationFrameRef.current = requestAnimationFrame(updateLevel)
-          }
-        }
-        updateLevel()
-
       } catch (err) {
         console.error("Mic access error:", err)
       }
     }
     setupMedia()
-    return () => { 
-      stream?.getTracks().forEach(t => t.stop())
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
-      if (audioContextRef.current) audioContextRef.current.close()
-    }
+    return () => { stream?.getTracks().forEach(t => t.stop()) }
   }, [])
 
   React.useEffect(() => {
@@ -140,13 +103,29 @@ export default function LiveInterviewPage() {
   }, [isRecording, stream])
 
   React.useEffect(() => {
-    if (isFinishing && blobUrl) { finalizeSession(blobUrl); router.push('/review') }
+    if (isFinishing && blobUrl) { 
+      // Speed up: Immediate state cleanup before navigation
+      finalizeSession(blobUrl)
+      router.push('/review') 
+    }
   }, [isFinishing, blobUrl, finalizeSession, router])
 
   React.useEffect(() => {
-    const timer = setInterval(() => { if (isRecording && !isPaused) tick() }, 1000)
+    let timer: any
+    if (isRecording && !isPaused) {
+      timer = setInterval(() => tick(), 1000)
+    }
     return () => clearInterval(timer)
   }, [isRecording, isPaused, tick])
+
+  const toggleQuestionDone = (q: string) => {
+    setAnsweredQuestions(prev => {
+      const next = new Set(prev)
+      if (next.has(q)) next.delete(q)
+      else next.add(q)
+      return next
+    })
+  }
 
   const currentQ = quadrants.find(q => q.id === activeQuadrant)!
   const questions = currentQ.questions
@@ -167,16 +146,8 @@ export default function LiveInterviewPage() {
 
   const handlePauseInterview = () => {
     if (mediaRecorderRef.current) {
-      if (isPaused) { 
-        mediaRecorderRef.current.resume()
-        setIsPaused(false) 
-        if (audioContextRef.current) audioContextRef.current.resume()
-      }
-      else { 
-        mediaRecorderRef.current.pause()
-        setIsPaused(true) 
-        if (audioContextRef.current) audioContextRef.current.suspend()
-      }
+      if (isPaused) { mediaRecorderRef.current.resume(); setIsPaused(false) }
+      else { mediaRecorderRef.current.pause(); setIsPaused(true) }
     }
   }
 
@@ -209,7 +180,7 @@ export default function LiveInterviewPage() {
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Discovery Protocol</p>
           <div className="flex items-center gap-2">
             <div className={cn("w-2 h-2 rounded-full", isRecording && !isPaused ? "bg-red-500 animate-pulse" : "bg-slate-300")} />
-            <span className="text-xs font-mono font-bold text-slate-600 tracking-wider bg-slate-100 px-3 py-1 rounded-lg">ACTIVE SESSION</span>
+            <span className="text-xs font-mono font-bold text-slate-600 tracking-wider bg-slate-100 px-3 py-1 rounded-lg">{formatDuration(recordingSeconds)}</span>
           </div>
         </div>
         
@@ -231,144 +202,169 @@ export default function LiveInterviewPage() {
         </div>
       </header>
 
-      {/* GIANT TIMESTAMP & VISUAL WAVEFORM */}
-      <div className="flex flex-col items-center py-4 bg-white/50 backdrop-blur-sm rounded-3xl border border-slate-100/50 shadow-sm mb-6">
-        <div className="relative h-24 flex items-center justify-center w-full">
-            <div className="absolute inset-0 flex items-center justify-center gap-1 opacity-20">
-                {[...Array(20)].map((_, i) => (
-                    <div 
-                        key={i} 
-                        className="w-1 bg-blue-500 rounded-full transition-all duration-75" 
-                        style={{ height: `${Math.max(10, (audioLevel * (0.5 + Math.random() * 0.5)))}%` }}
-                    />
-                ))}
-            </div>
-            <h2 className="text-6xl font-black font-mono tracking-tighter text-slate-900 z-10 animate-in zoom-in duration-500">
-                {formatDuration(recordingSeconds)}
-            </h2>
-        </div>
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mt-2">
-            {isPaused ? 'Recording Paused' : 'Listening Context...'}
-        </p>
-      </div>
-
       {/* MAIN QUESTION */}
       <div className="flex-1 flex flex-col justify-center pb-48 space-y-10">
         <div className="space-y-4">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">{activeQuadrant} EXPLORATION</p>
-          <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 leading-[1.15]">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-blue-500 uppercase tracking-widest">{activeQuadrant} Protocol</p>
+            {answeredQuestions.has(questions[questionIndex]) && (
+              <span className="bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border border-emerald-100 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" /> Answered
+              </span>
+            )}
+          </div>
+          <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
             {questions[questionIndex]}
           </h1>
+          <button 
+            onClick={() => toggleQuestionDone(questions[questionIndex])}
+            className={cn(
+              "text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-xl transition-all border",
+              answeredQuestions.has(questions[questionIndex])
+                ? "bg-slate-50 text-slate-400 border-slate-100"
+                : "bg-white text-emerald-600 border-emerald-100 hover:bg-emerald-50"
+            )}
+          >
+            {answeredQuestions.has(questions[questionIndex]) ? "Done" : "Mark Answered"}
+          </button>
         </div>
 
         {/* FOLLOW-UP OPTIONS */}
         <div className="space-y-2">
+          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest px-1">Remaining Opportunities</p>
           {questions.map((q, i) => i !== questionIndex && (
             <button 
               key={i}
               onClick={() => setQuestionIndex(i)}
-              className="w-full text-left px-5 py-5 rounded-2xl bg-white border border-slate-100 hover:border-blue-200 hover:shadow-md transition-all text-sm font-medium text-slate-500 hover:text-slate-900 group flex items-start gap-4"
+              className={cn(
+                "w-full text-left px-5 py-4 rounded-2xl border transition-all flex items-center justify-between group",
+                answeredQuestions.has(q) 
+                  ? "bg-slate-50/50 border-slate-100 opacity-60" 
+                  : "bg-white border-slate-100 hover:border-blue-200 hover:shadow-md hover:shadow-blue-50/50"
+              )}
             >
-              <div className="w-5 h-5 rounded-lg border border-slate-100 bg-slate-50 flex items-center justify-center shrink-0 group-hover:bg-blue-50 group-hover:border-blue-100 transition-colors">
-                 <div className="w-1 h-1 rounded-full bg-slate-300 group-hover:bg-blue-400" />
-              </div>
-              {q}
+              <span className={cn("text-sm font-medium", answeredQuestions.has(q) ? "text-slate-400 line-through decoration-slate-300" : "text-slate-600")}>
+                {q}
+              </span>
+              {answeredQuestions.has(q) ? (
+                <div className="bg-emerald-50 text-emerald-600 p-1 rounded-lg">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                </div>
+              ) : (
+                <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-blue-400 transition-all opacity-0 group-hover:opacity-100" />
+              )}
             </button>
           ))}
         </div>
       </div>
 
       {/* BOTTOM CONTROLS */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 lg:p-10 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent pointer-events-none z-20">
-        <div className="max-w-2xl mx-auto flex flex-col gap-4 items-center pointer-events-auto">
+      <div className="fixed bottom-0 left-0 right-0 p-4 lg:p-8 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent pointer-events-none z-20">
+        <div className="max-w-2xl mx-auto flex flex-col gap-3 items-center pointer-events-auto">
           
           {/* UTILITY ROW */}
           <div className="flex items-center gap-3">
-            <button onClick={handlePauseInterview} className="h-10 px-6 rounded-2xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-all shadow-sm flex items-center gap-2">
-              {isPaused ? <Play className="w-3 h-3 fill-current" /> : <Pause className="w-3 h-3 fill-current" />}
-              {isPaused ? 'Resume' : 'Pause'}
-            </button>
-            <button onClick={handleQuickCapture} className="h-10 px-6 rounded-2xl border border-blue-200 bg-blue-50 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-100 transition-all shadow-sm flex items-center gap-2">
+            {isRecording && (
+              <button 
+                onClick={handlePauseInterview} 
+                className="h-9 px-4 rounded-full border border-slate-200 bg-white text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-all shadow-sm"
+              >
+                {isPaused ? 'Resume' : 'Pause'}
+              </button>
+            )}
+            <button 
+              onClick={handleQuickCapture} 
+              disabled={!isRecording}
+              className={cn(
+                "h-9 px-4 rounded-full border text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-sm flex items-center gap-2",
+                isRecording ? "border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100" : "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed"
+              )}
+            >
               <Activity className="w-4 h-4" /> Log Insight
             </button>
           </div>
 
           {/* MAIN RECORDER BAR */}
-          <div className="w-full h-16 bg-white rounded-3xl border border-slate-200 shadow-2xl flex items-center px-4 gap-4">
+          <div className="w-full h-16 bg-white rounded-full border border-slate-200 shadow-2xl flex items-center px-4 gap-4">
             
-            {/* PLUS BUTTON */}
+            {/* START / STOP ACTION */}
+            {!isRecording ? (
+              <button 
+                onClick={startRecording}
+                className="w-10 h-10 bg-slate-900 text-white rounded-full flex items-center justify-center hover:bg-slate-800 active:scale-90 transition-all shadow-lg"
+              >
+                <Play className="w-5 h-5 fill-current" />
+              </button>
+            ) : (
+              <button 
+                onClick={handleStopInterview}
+                className="w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 active:scale-90 transition-all shadow-lg animate-pulse"
+              >
+                <Square className="w-5 h-5 fill-current" />
+              </button>
+            )}
+
+            {/* STATUS & TIME */}
+            <div className="flex-1 flex flex-col justify-center">
+              <div className="flex items-center gap-2">
+                <div className={cn("w-2 h-2 rounded-full", isRecording && !isPaused ? "bg-red-500 animate-pulse" : "bg-slate-200")} />
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  {!isRecording ? 'Session Ready' : isPaused ? 'Paused' : 'Recording Live'}
+                </span>
+              </div>
+              {isRecording && (
+                <span className="text-xs font-mono font-bold text-slate-400 mt-0.5 tracking-tight">
+                  T-PLUS {formatDuration(recordingSeconds)}
+                </span>
+              )}
+            </div>
+
+            {/* ASSET BUTTON */}
             <div className="relative">
               <button 
                 onClick={() => setShowAssetMenu(!showAssetMenu)}
+                disabled={!isRecording}
                 className={cn(
-                  "w-10 h-10 rounded-2xl flex items-center justify-center transition-all",
-                  showAssetMenu ? "bg-slate-900 text-white rotate-45" : "bg-slate-100 text-slate-500 hover:bg-white hover:border-slate-200 border border-transparent"
+                  "w-10 h-10 rounded-full flex items-center justify-center transition-all",
+                  showAssetMenu ? "bg-slate-900 text-white rotate-45" : 
+                  isRecording ? "bg-slate-100 text-slate-500 hover:bg-slate-200" : "bg-slate-50 text-slate-200 cursor-not-allowed"
                 )}
               >
                 <Plus className="w-5 h-5" />
               </button>
               {showAssetMenu && (
-                <div className="absolute bottom-16 left-0 bg-white border border-slate-200 p-2 rounded-2xl shadow-2xl w-48 animate-in slide-in-from-bottom-2">
+                <div className="absolute bottom-16 right-0 bg-white border border-slate-200 p-2 rounded-2xl shadow-2xl w-48 animate-in slide-in-from-bottom-4">
                   {[
                     { id: 'image', icon: ImageIcon, label: 'Capture Image' },
-                    { id: 'video', icon: Video, label: 'Video Clip' },
-                    { id: 'link', icon: LinkIcon, label: 'External Link' },
-                    { id: 'file', icon: FileIcon, label: 'Upload Document' },
+                    { id: 'video', icon: Video, label: 'Capture Video' },
+                    { id: 'link', icon: LinkIcon, label: 'Attach Link' },
+                    { id: 'file', icon: FileIcon, label: 'Attach File' },
                   ].map(item => (
                     <button 
                       key={item.id}
                       onClick={() => handleCaptureEvidence(item.id as any)}
-                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 text-left transition-all text-xs font-bold text-slate-600 hover:text-slate-900 group"
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 text-left transition-all text-xs font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900"
                     >
-                      <item.icon className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                      <item.icon className="w-4 h-4 text-slate-400" />
                       {item.label}
                     </button>
                   ))}
                 </div>
               )}
             </div>
-
-            {/* STATUS TEXT & LEVEL */}
-            <div className="flex-1 flex items-center gap-3">
-              <div className="flex gap-0.5 items-center">
-                {[...Array(5)].map((_, i) => (
-                    <div 
-                        key={i} 
-                        className={cn("w-1 rounded-full transition-all duration-100", 
-                            isPaused ? "bg-slate-200 h-1" : "bg-emerald-500"
-                        )}
-                        style={{ height: isPaused ? '4px' : `${4 + Math.random() * (audioLevel / 5)}px` }}
-                    />
-                ))}
-              </div>
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">
-                {isPaused ? 'Recording Paused' : 'Live Archive Active'}
-              </span>
-            </div>
-
-            {/* STOP / FINISH */}
-            <button 
-              onClick={handleStopInterview}
-              className="h-10 px-5 bg-emerald-500 text-white rounded-2xl flex items-center justify-center gap-2 hover:bg-emerald-600 active:scale-95 transition-all shadow-lg shadow-emerald-100 group"
-            >
-              <span className="text-[10px] font-black uppercase tracking-widest">Finish</span>
-              <ArrowUp className="w-4 h-4 stroke-[3px] group-hover:-translate-y-0.5 transition-transform" />
-            </button>
           </div>
         </div>
       </div>
 
       {/* FINISH OVERLAY */}
       {isFinishing && (
-        <div className="fixed inset-0 bg-white/95 backdrop-blur-md z-[100] flex flex-col items-center justify-center gap-8 animate-in fade-in duration-500 text-center p-6">
-          <div className="w-24 h-24 relative flex items-center justify-center">
-            <div className="absolute inset-0 border-4 border-slate-100 rounded-full" />
-            <div className="absolute inset-0 border-4 border-slate-900 rounded-full animate-spin border-t-transparent" />
-            <Mic className="w-8 h-8 text-slate-900" />
+        <div className="fixed inset-0 bg-white/95 backdrop-blur-md z-[100] flex flex-col items-center justify-center gap-6 animate-in fade-in duration-200 text-center">
+          <div className="w-16 h-16 border-2 border-slate-200 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 border-2 border-slate-900 rounded-full animate-spin border-t-transparent" />
           </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-black uppercase tracking-tight text-slate-900">Finalizing Archive</h2>
-            <p className="text-sm text-slate-400 font-medium">Synthesizing insights and preparing review dashboard...</p>
+          <div>
+            <p className="text-lg font-semibold text-slate-900">Processing Session...</p>
+            <p className="text-sm text-slate-400 mt-1">Preparing your review dashboard.</p>
           </div>
         </div>
       )}
