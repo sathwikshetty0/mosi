@@ -3,11 +3,9 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Mic, MicOff, Square, Play, Pause,
-  Plus, MessageSquare, Image as ImageIcon, Video, Link as LinkIcon,
-  CheckCircle, Archive, Zap, TrendingUp, Bomb, X, Clock,
-  ChevronLeft, ChevronRight, Tag, File as FileIcon, Sparkles, Activity, ShieldCheck,
-  BarChart2
+  Square, Play, Pause, Plus, Image as ImageIcon, Video, Link as LinkIcon,
+  File as FileIcon, Sparkles, Activity, ShieldCheck, ChevronRight,
+  Mic, X, Loader2, BarChart2, MessageSquare, Layers, Globe
 } from 'lucide-react'
 import { useMosiStore, CEEDTag, formatDuration } from '@/lib/store'
 import { cn } from '@/lib/utils'
@@ -16,7 +14,7 @@ type QuadrantKey = CEEDTag
 
 const quadrants: { id: QuadrantKey; icon: any; color: string; bg: string; border: string; questions: string[] }[] = [
   {
-    id: 'Core', icon: Archive, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200',
+    id: 'Core', icon: Layers, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20',
     questions: [
       'Walk me through your core product or service.',
       'What are the top 2–3 challenges your team faces right now?',
@@ -26,7 +24,7 @@ const quadrants: { id: QuadrantKey; icon: any; color: string; bg: string; border
     ]
   },
   {
-    id: 'Efficiency', icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200',
+    id: 'Efficiency', icon: Activity, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20',
     questions: [
       'Which department or process consumes the most time each week?',
       'How does your team currently generate and qualify leads?',
@@ -36,7 +34,7 @@ const quadrants: { id: QuadrantKey; icon: any; color: string; bg: string; border
     ]
   },
   {
-    id: 'Expansion', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200',
+    id: 'Expansion', icon: Globe, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20',
     questions: [
       'Do customers frequently ask for services or features you don\'t offer?',
       'Are there adjacent markets you want to enter in the next 12–24 months?',
@@ -45,7 +43,7 @@ const quadrants: { id: QuadrantKey; icon: any; color: string; bg: string; border
     ]
   },
   {
-    id: 'Disrupt', icon: Bomb, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200',
+    id: 'Disrupt', icon: Sparkles, color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20',
     questions: [
       'If you were to restart this company today, what would you do completely differently?',
       'What technology do you think will disrupt your industry in 3–5 years?',
@@ -65,10 +63,10 @@ export default function LiveInterviewPage() {
 
   const [questionIndex, setQuestionIndex] = React.useState(0)
   const [answeredQuestions, setAnsweredQuestions] = React.useState<Set<string>>(new Set())
-  const [evidenceFeedback, setEvidenceFeedback] = React.useState<string | null>(null)
   const [blobUrl, setBlobUrl] = React.useState<string | null>(null)
   const [isFinishing, setIsFinishing] = React.useState(false)
   const [isPaused, setIsPaused] = React.useState(false)
+  const [showAssetMenu, setShowAssetMenu] = React.useState(false)
 
   const mediaRecorderRef = React.useRef<MediaRecorder | null>(null)
   const chunksRef = React.useRef<Blob[]>([])
@@ -136,16 +134,20 @@ export default function LiveInterviewPage() {
   const currentQ = quadrants.find(q => q.id === activeQuadrant)!
   const questions = currentQ.questions
 
-  const handleMarkAsked = () => {
-    const key = `${activeQuadrant}-${questionIndex}`
-    setAnsweredQuestions(prev => new Set([...prev, key]))
-    if (questionIndex < questions.length - 1) setQuestionIndex(questionIndex + 1)
+  const handleMarkAsked = (idx: number) => {
+    const key = `${activeQuadrant}-${idx}`
+    setAnsweredQuestions(prev => {
+        const next = new Set(prev)
+        if (next.has(key)) next.delete(key)
+        else next.add(key)
+        return next
+    })
   }
 
   const handleQuickCapture = () => {
     addOpportunity({
       timestamp: recordingSeconds,
-      title: 'Captured Insight',
+      title: 'Strategic Opportunity',
       description: '',
       tag: activeQuadrant,
       paid: false,
@@ -156,12 +158,10 @@ export default function LiveInterviewPage() {
       evidence: [],
       status: 'Pending'
     })
-    setEvidenceFeedback('capture')
-    setTimeout(() => setEvidenceFeedback(null), 1000)
   }
 
   const handleStopInterview = () => {
-    if (confirm('Complete and finalize this interview session?')) {
+    if (confirm('Finalize this session?')) {
         stopRecording()
         setIsFinishing(true)
     }
@@ -183,315 +183,215 @@ export default function LiveInterviewPage() {
     if (type === 'link') {
       const url = prompt('Enter evidence URL:', 'https://')
       if (url) {
-        addEvidence({
-          type,
-          url,
-          timestamp: recordingSeconds,
-          title: 'External Link'
-        })
-        setEvidenceFeedback(type)
-        setTimeout(() => setEvidenceFeedback(null), 1000)
+        addEvidence({ type, url, timestamp: recordingSeconds, title: 'External Link' })
       }
     } else {
       setActiveEvidenceType(type)
       fileInputRef.current?.click()
     }
+    setShowAssetMenu(false)
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file && activeEvidenceType) {
       const url = URL.createObjectURL(file)
-      addEvidence({
-        type: activeEvidenceType,
-        url,
-        timestamp: recordingSeconds,
-        title: file.name
-      })
-      setEvidenceFeedback(activeEvidenceType)
-      setTimeout(() => setEvidenceFeedback(null), 1000)
+      addEvidence({ type: activeEvidenceType, url, timestamp: recordingSeconds, title: file.name })
     }
     setActiveEvidenceType(null)
   }
 
-  const captured = currentSession?.opportunities || []
+  const evidence = currentSession?.evidence || []
 
   return (
-    <div className="flex flex-col min-h-screen lg:h-[calc(100vh-100px)] bg-white lg:rounded-[2.5rem] lg:border-2 border-slate-100 lg:shadow-2xl shadow-slate-200/50 overflow-hidden">
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        className="hidden" 
-        accept={activeEvidenceType === 'image' ? 'image/*' : activeEvidenceType === 'video' ? 'video/*' : '*/*'}
-        onChange={handleFileChange}
-      />
+    <div className="flex h-[calc(100vh-2rem)] lg:h-[calc(100vh-40px)] bg-[#0A0A0B] text-white rounded-[2.5rem] overflow-hidden relative border border-white/5 font-sans">
+      <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
 
-      {/* 🚀 TOP COMMAND BAR */}
-      <div className="p-4 lg:p-6 border-b border-slate-50 flex items-center justify-between shrink-0 bg-white z-20">
-        <div className="flex items-center gap-4">
-          <div className={cn(
-            "flex items-center gap-3 px-5 py-2.5 rounded-2xl transition-all",
-            isRecording && !isPaused ? "bg-rose-500 text-white shadow-xl shadow-rose-200" : "bg-slate-100 text-slate-400"
-          )}>
-            <div className={cn("w-2.5 h-2.5 rounded-full", isRecording && !isPaused ? "bg-white animate-pulse" : "bg-slate-300")} />
-            <span className="text-[10px] font-black tracking-[0.2em] uppercase">
-              {isPaused ? 'Paused' : isRecording ? 'Recording' : 'Standby'}
-            </span>
-            <div className="w-px h-4 bg-white/20 mx-1" />
-            <span className="text-sm font-black font-mono">
-              {formatDuration(recordingSeconds)}
-            </span>
-          </div>
-          {!isRecording && (
-             <button 
-               onClick={startRecording}
-               className="h-10 px-6 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-slate-200"
-             >
-               Start
-             </button>
-          )}
+      {/* 🖼 LEFT ASSET GALLERY (WhatsApp style) */}
+      <aside className="hidden lg:flex w-24 flex-col border-r border-white/5 bg-black/40 backdrop-blur-xl shrink-0 overflow-hidden">
+        <div className="p-6 border-b border-white/5 flex flex-col items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+                <ImageIcon className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">Vault</span>
         </div>
-
-        <div className="flex items-center gap-3">
-           <div className="hidden lg:flex flex-col items-end mr-4">
-              <p className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{currentSession?.stakeholder?.name}</p>
-              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{currentSession?.stakeholder?.company}</p>
-           </div>
-           {isRecording && (
-              <>
-                <button 
-                  onClick={handlePauseInterview}
-                  className={cn("w-10 h-10 lg:w-12 lg:h-12 rounded-2xl border-2 transition-all flex items-center justify-center active:scale-90", isPaused ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200" : "bg-white border-slate-100 text-slate-400 hover:border-slate-900 hover:text-slate-900")}
-                >
-                  {isPaused ? <Play className="w-5 h-5 fill-current" /> : <Pause className="w-5 h-5 fill-current" />}
-                </button>
-                <button 
-                  onClick={handleStopInterview}
-                  className="px-4 h-10 lg:h-12 bg-rose-50 text-rose-600 border-2 border-rose-100 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all flex items-center justify-center gap-2"
-                >
-                  <Square className="w-3.5 h-3.5 fill-current" /> End
-                </button>
-              </>
-           )}
+        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 no-scrollbar">
+            {evidence.length === 0 ? (
+                <div className="opacity-10 text-center py-20 flex flex-col items-center gap-2">
+                    <div className="w-8 h-8 border border-dashed border-white rounded-lg" />
+                </div>
+            ) : [...evidence].reverse().map((ev, i) => (
+                <div key={i} className="group relative aspect-square w-full rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:border-blue-500/50 transition-all cursor-pointer">
+                    {ev.type === 'image' ? (
+                        <img src={ev.url} alt="asset" className="w-full h-full object-cover" />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                            {ev.type === 'video' ? <Video className="w-4 h-4" /> : ev.type === 'link' ? <LinkIcon className="w-4 h-4" /> : <FileIcon className="w-4 h-4" />}
+                        </div>
+                    )}
+                </div>
+            ))}
         </div>
-      </div>
+      </aside>
 
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
+      {/* 📱 MAIN DISCOVERY WORKSPACE */}
+      <main className="flex-1 flex flex-col min-w-0 relative">
         
-        {/* 🧭 CEED NAVIGATION DOCK */}
-        <aside className="w-full lg:w-24 bg-slate-50 border-b lg:border-r border-slate-100 p-2 flex lg:flex-col gap-3 shrink-0 overflow-x-auto lg:overflow-y-auto no-scrollbar">
-          {quadrants.map(q => (
-            <button
-              key={q.id}
-              onClick={() => { setActiveQuadrant(q.id); setQuestionIndex(0) }}
-              className={cn(
-                'flex-1 lg:flex-none aspect-square lg:w-full lg:h-20 rounded-2xl lg:rounded-3xl transition-all flex flex-col items-center justify-center gap-2 border-2 relative group px-4 py-2 lg:p-0 min-w-fit lg:min-w-0',
-                activeQuadrant === q.id
-                  ? `bg-white ${q.border} ${q.color} shadow-lg lg:scale-105 z-10 font-black`
-                  : 'bg-white/0 border-transparent text-slate-400 hover:bg-white hover:border-slate-100'
-              )}
-            >
-              <q.icon className={cn("w-5 h-5 lg:w-6 lg:h-6 transition-transform group-hover:scale-110", activeQuadrant === q.id ? q.color : "text-slate-300")} />
-              <span className="text-[8px] font-black uppercase tracking-widest">{q.id}</span>
-              {activeQuadrant === q.id && (
-                 <div className="hidden lg:block absolute -left-1 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-blue-600 rounded-r-full shadow-lg shadow-blue-500/50" />
-              )}
-            </button>
-          ))}
-        </aside>
+        {/* TOP STATUS BAR */}
+        <header className="p-6 lg:p-8 flex items-center justify-between z-10">
+            <div className="flex items-center gap-4">
+               {quadrants.map(q => (
+                 <button 
+                  key={q.id}
+                  onClick={() => { setActiveQuadrant(q.id); setQuestionIndex(0) }}
+                  className={cn(
+                    "px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border",
+                    activeQuadrant === q.id ? `bg-white text-black border-white shadow-xl scale-105` : "bg-white/5 text-slate-500 border-white/5 hover:bg-white/10"
+                  )}
+                 >
+                   {q.id}
+                 </button>
+               ))}
+            </div>
+            <div className="flex items-center gap-3">
+                <div className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.5)]" />
+                <span className="text-[10px] font-mono font-black tracking-widest text-rose-500 uppercase">Live Rec: {formatDuration(recordingSeconds)}</span>
+            </div>
+        </header>
 
-        {/* 📋 DISCOVERY WORKSPACE */}
-        <div className="flex-1 flex flex-col min-w-0 p-3 lg:p-6 gap-4 lg:gap-6 overflow-hidden bg-slate-50/30">
-          
-           <div className="flex-1 flex flex-col bg-white rounded-[1.5rem] lg:rounded-[2rem] border-2 border-slate-100 shadow-xl overflow-hidden animate-in zoom-in-95 duration-300 min-h-0">
-              <div className="p-4 lg:p-6 border-b border-slate-50 flex items-center justify-between bg-white shrink-0">
-                 <div className="space-y-0.5">
-                    <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2">
-                       <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-                       Framework: {activeQuadrant}
-                    </h4>
-                    <p className="text-xs font-black text-slate-900 uppercase tracking-tight">Active Questions</p>
-                 </div>
-                 <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-xl border border-slate-100">
-                    <button 
-                      onClick={() => setQuestionIndex(Math.max(0, questionIndex - 1))}
-                      disabled={questionIndex === 0}
-                      className="w-8 h-8 flex items-center justify-center bg-white hover:bg-slate-900 hover:text-white rounded-lg disabled:opacity-20 transition-all shadow-sm"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <span className="text-[10px] font-black text-slate-900 px-2">{questionIndex + 1} / {questions.length}</span>
-                    <button 
-                      onClick={() => setQuestionIndex(Math.min(questions.length - 1, questionIndex + 1))}
-                      disabled={questionIndex === questions.length - 1}
-                      className="w-8 h-8 flex items-center justify-center bg-white hover:bg-slate-900 hover:text-white rounded-lg disabled:opacity-20 transition-all shadow-sm"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                 </div>
-              </div>
+        {/* CONTENT CENTER */}
+        <div className="flex-1 flex flex-col items-center justify-center max-w-4xl mx-auto w-full px-6 lg:px-12 pb-32">
+            
+            {/* HERO QUESTION */}
+            <div className="w-full space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="space-y-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500/80 mb-6">Discovery Protocol / {activeQuadrant}</p>
+                    <h1 className="text-4xl lg:text-7xl font-black tracking-tighter leading-[0.9] text-white/90">
+                        {questions[questionIndex]}
+                    </h1>
+                </div>
 
-              {/* QUESTIONS LIST - Ensure this is scrollable and visible */}
-              <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-3 no-scrollbar min-h-0">
-                 {questions.map((q, i) => {
-                   const asked = answeredQuestions.has(`${activeQuadrant}-${i}`)
-                   const active = i === questionIndex
-                   return (
-                     <div
-                      key={i}
-                      id={`question-${i}`}
-                      onClick={() => setQuestionIndex(i)}
-                      className={cn(
-                        "w-full text-left p-4 lg:p-6 rounded-[1.2rem] lg:rounded-[2rem] border-2 transition-all relative group h-fit cursor-pointer",
-                        active 
-                          ? "bg-slate-900 border-slate-900 text-white shadow-xl lg:translate-x-1" 
-                          : asked 
-                            ? "bg-emerald-50 border-emerald-100 text-emerald-700 opacity-60" 
-                            : "bg-white border-slate-50 text-slate-500 hover:border-slate-200"
-                      )}
-                     >
-                        <div className="flex gap-4 lg:gap-6 items-start">
-                           <span className={cn("text-[10px] font-black mt-0.5", active ? "text-white/40" : "text-slate-300")}>{String(i + 1).padStart(2, '0')}</span>
-                           <h3 className={cn("text-sm lg:text-lg font-black leading-tight flex-1 uppercase tracking-tight", active ? "text-white" : asked ? "line-through" : "text-slate-800")}>{q}</h3>
-                        </div>
-                        {active && (
-                           <div className="mt-4 lg:mt-6 flex items-center gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); handleMarkAsked() }}
-                                className="h-10 px-4 bg-emerald-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
-                              >
-                                Mark Asked
-                              </button>
-                              <div className="flex-1 h-px bg-white/10" />
-                           </div>
-                        )}
-                     </div>
-                   )
-                 })}
-              </div>
-
-              {/* ⚡ SYNTHESIS ACTION PAD - Keep it visible and compact */}
-              <div className="p-4 lg:p-6 bg-slate-50 border-t border-slate-100 space-y-4 shrink-0">
-                 <div className="grid grid-cols-1 lg:grid-cols-[1fr,200px] gap-3 lg:gap-4">
-                    <button 
-                      onClick={handleQuickCapture}
-                      className={cn(
-                        "group h-16 lg:h-20 rounded-[1.2rem] lg:rounded-[2rem] transition-all shadow-xl font-black text-[10px] lg:text-xs uppercase tracking-[0.2em] flex flex-col items-center justify-center gap-1 relative overflow-hidden",
-                        evidenceFeedback === 'capture' 
-                        ? "bg-emerald-500 text-white shadow-emerald-200" 
-                        : "bg-slate-900 text-white hover:bg-blue-600"
-                      )}
-                    >
-                        <div className="flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white">
-                              <Activity className="w-4 h-4" />
-                           </div>
-                           {evidenceFeedback === 'capture' ? 'INSIGHT LOGGED ✓' : 'LOG STRATEGIC INSIGHT'}
-                        </div>
-                    </button>
-
-                    <div className="grid grid-cols-4 lg:grid-cols-2 gap-2 lg:gap-3">
-                        {[
-                          { icon: ImageIcon, label: 'IMG', type: 'image' as const },
-                          { icon: LinkIcon, label: 'LINK', type: 'link' as const },
-                          { icon: Video, label: 'VID', type: 'video' as const },
-                          { icon: FileIcon, label: 'DOC', type: 'file' as const },
-                        ].map(btn => (
-                          <button 
-                            key={btn.type} 
-                            onClick={() => handleCaptureEvidence(btn.type)}
+                {/* FOLLOW UP SUGGESTIONS */}
+                <div className="grid grid-cols-1 gap-3">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-2">Synthesized Follow-ups</p>
+                    {questions.map((q, i) => i !== questionIndex && (
+                        <button 
+                            key={i}
+                            onClick={() => setQuestionIndex(i)}
                             className={cn(
-                              "flex flex-col items-center justify-center gap-1.5 rounded-xl lg:rounded-2xl border-2 transition-all active:scale-90 h-10 lg:h-auto",
-                              evidenceFeedback === btn.type ? "bg-slate-900 border-slate-900 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-300 hover:text-slate-900"
+                                "text-left p-6 rounded-3xl transition-all border group relative",
+                                answeredQuestions.has(`${activeQuadrant}-${i}`) 
+                                ? "bg-white/5 border-white/5 text-slate-600" 
+                                : "bg-white/[0.03] border-white/10 text-slate-400 hover:bg-white/[0.07] hover:border-white/20 hover:text-white"
                             )}
-                          >
-                            <btn.icon className="w-3.5 h-3.5" />
-                            <span className="text-[7px] lg:text-[8px] font-black uppercase tracking-widest">{btn.label}</span>
-                          </button>
+                        >
+                            <span className="text-[10px] font-black opacity-30 mr-4">{String(i + 1).padStart(2, '0')}</span>
+                            <span className="text-sm lg:text-base font-bold uppercase tracking-tight">{q}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+        </div>
+
+        {/* 📟 THE CONTROL HUB (WhatsApp inspired) */}
+        <div className="absolute inset-x-0 bottom-0 p-6 lg:p-12 pointer-events-none">
+            <div className="max-w-3xl mx-auto flex flex-col gap-6 items-center pointer-events-auto">
+                
+                {/* Opportunity Tapper */}
+                <button 
+                    onClick={handleQuickCapture}
+                    className="h-16 px-12 bg-blue-600 text-white rounded-full font-black uppercase tracking-[0.2em] text-[10px] shadow-3xl shadow-blue-500/20 hover:bg-blue-500 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 border border-white/20"
+                >
+                    <Activity className="w-4 h-4" />
+                    Tap Strategic Opportunity
+                </button>
+
+                {/* Recording Bar */}
+                <div className="w-full h-20 bg-[#1C1C1E] rounded-full border border-white/10 shadow-2xl flex items-center px-4 gap-4">
+                    
+                    {/* Add Asset */}
+                    <div className="relative">
+                        <button 
+                            onClick={() => setShowAssetMenu(!showAssetMenu)}
+                            className={cn(
+                                "w-12 h-12 rounded-full flex items-center justify-center transition-all",
+                                showAssetMenu ? "bg-white text-black rotate-45" : "bg-white/5 text-white hover:bg-white/10"
+                            )}
+                        >
+                            <Plus className="w-6 h-6" />
+                        </button>
+                        
+                        {showAssetMenu && (
+                            <div className="absolute bottom-16 left-0 bg-[#2C2C2E] border border-white/10 p-2 rounded-2xl shadow-3xl flex flex-col gap-1 w-48 animate-in slide-in-from-bottom-2">
+                                {[
+                                    { id: 'image', icon: ImageIcon, label: 'Capture Image' },
+                                    { id: 'video', icon: Video, label: 'Record Clip' },
+                                    { id: 'link', icon: LinkIcon, label: 'External Link' },
+                                    { id: 'file', icon: FileIcon, label: 'Enterprise Doc' },
+                                ].map(item => (
+                                    <button 
+                                        key={item.id}
+                                        onClick={() => handleCaptureEvidence(item.id as any)}
+                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 text-left transition-all"
+                                    >
+                                        <item.icon className="w-4 h-4 text-blue-400" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">{item.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Waveform Visualization (Dynamic UI) */}
+                    <div className="flex-1 flex items-center gap-1.5 px-4 overflow-hidden">
+                        {[...Array(40)].map((_, i) => (
+                            <div 
+                                key={i} 
+                                className={cn(
+                                    "w-1 bg-blue-500/40 rounded-full transition-all duration-300",
+                                    isRecording && !isPaused ? "animate-pulse" : "opacity-30"
+                                )}
+                                style={{ 
+                                    height: `${Math.max(4, Math.random() * (isRecording && !isPaused ? 32 : 8))}px`,
+                                    animationDelay: `${i * 0.05}s`
+                                }}
+                            />
                         ))}
                     </div>
-                 </div>
-              </div>
-           </div>
+
+                    {/* Recording Controls */}
+                    <div className="flex items-center gap-2 pr-2">
+                        <button 
+                            onClick={handlePauseInterview}
+                            className={cn(
+                                "w-12 h-12 rounded-full flex items-center justify-center transition-all border-2",
+                                isPaused ? "bg-white text-black border-white" : "bg-white/5 border-white/10 text-rose-500 hover:bg-rose-500/10"
+                            )}
+                        >
+                            {isPaused ? <Play className="w-5 h-5 fill-current" /> : <Pause className="w-5 h-5 fill-current" />}
+                        </button>
+                        <button 
+                            onClick={handleStopInterview}
+                            className="w-12 h-12 bg-rose-600 text-white rounded-full flex items-center justify-center hover:bg-rose-500 active:scale-90 transition-all shadow-xl shadow-rose-900/20"
+                        >
+                            <Square className="w-5 h-5 fill-current" />
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        {/* 🪵 INTELLIGENCE FEED */}
-        <aside className="w-full lg:w-80 bg-white lg:border-l border-slate-100 flex flex-col min-h-0 shrink-0 overflow-hidden">
-           <div className="p-4 lg:p-6 border-b border-slate-50 flex items-center justify-between shrink-0">
-              <div className="space-y-0.5">
-                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Metadata Feed</h4>
-                 <p className="text-[9px] text-slate-300 font-bold uppercase tracking-widest">Active Discovery</p>
-              </div>
-              <div className="px-3 py-1 bg-slate-50 rounded-lg flex items-center justify-center text-slate-900 font-black text-[10px] border border-slate-100">
-                 {captured.length} INSIGHTS
-              </div>
-           </div>
-           
-           <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-3 no-scrollbar bg-slate-50/20 min-h-0">
-              {captured.length === 0 ? (
-                 <div className="h-full flex flex-col items-center justify-center text-center opacity-20 p-8 space-y-4">
-                    <BarChart2 className="w-10 h-10 text-slate-900" />
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] leading-loose">Waiting for<br/>Insight...</p>
-                 </div>
-              ) : [...captured].reverse().map(opp => (
-                <div key={opp.id} className="p-4 bg-white rounded-[1.2rem] border-2 border-slate-100 shadow-sm flex items-start gap-3 hover:border-slate-900 transition-all cursor-default group animate-in slide-in-from-right-4 duration-500">
-                  <div className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0 shadow-lg", {
-                    'bg-blue-500': opp.tag === 'Core',
-                    'bg-amber-500': opp.tag === 'Efficiency',
-                    'bg-emerald-500': opp.tag === 'Expansion',
-                    'bg-rose-500': opp.tag === 'Disrupt'
-                  })} />
-                  <div className="min-w-0 flex-1 space-y-0.5">
-                    <p className="text-xs font-black text-slate-900 truncate uppercase tracking-tight group-hover:text-blue-600 transition-colors">{opp.title}</p>
-                    <div className="flex items-center justify-between">
-                       <span className="text-[8px] text-slate-400 font-black uppercase tracking-widest">{opp.tag} MATRIX</span>
-                       <span className="text-[8px] text-slate-900 font-black font-mono">{formatDuration(opp.timestamp)}</span>
-                    </div>
-                  </div>
+        {/* FINISH OVERLAY */}
+        {isFinishing && (
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-2xl z-50 flex flex-col items-center justify-center space-y-6 text-center">
+                <div className="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <div className="space-y-2">
+                    <h2 className="text-3xl font-black uppercase tracking-tighter">Finalizing Archive</h2>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Synthesizing discovery manifest...</p>
                 </div>
-              ))}
-           </div>
-           
-           <div className="p-4 lg:p-6 bg-slate-50 border-t border-slate-100 shrink-0">
-              <div className="flex items-center gap-3 bg-white p-3 lg:p-4 rounded-2xl border border-slate-100">
-                 <ShieldCheck className="w-4 h-4 text-blue-600" />
-                 <div className="space-y-0.5">
-                    <p className="text-[8px] font-black text-slate-900 uppercase">Secure Buffer</p>
-                    <p className="text-[7px] text-slate-400 font-bold uppercase tracking-widest">Encryption Active</p>
-                 </div>
-              </div>
-           </div>
-        </aside>
-      </div>
-
-      {/* 🧭 PREMIUM TIMELINE FOOTER */}
-      <footer className="px-4 lg:px-8 py-4 lg:py-6 bg-slate-900 shrink-0 relative overflow-hidden hidden lg:block">
-         <div className="relative z-10 flex items-center gap-10">
-            <div className="shrink-0 space-y-0.5">
-               <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">Locus</span>
-               <div className="text-lg font-black font-mono text-white tracking-widest">{formatDuration(recordingSeconds)}</div>
             </div>
-            
-            <div className="flex-1 h-2 bg-white/5 rounded-full relative overflow-hidden backdrop-blur-sm border border-white/5">
-               <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(37,99,235,0.4)]" style={{ width: `${Math.min((recordingSeconds / 1800) * 100, 100)}%` }} />
-               {captured.map(opp => {
-                 const pct = (opp.timestamp / Math.max(recordingSeconds, 1800)) * 100
-                 return (
-                   <div 
-                    key={opp.id} 
-                    className={cn("absolute inset-y-0 w-1 z-20 transition-all", {
-                      'bg-blue-400': opp.tag === 'Core',
-                      'bg-amber-400': opp.tag === 'Efficiency',
-                      'bg-emerald-400': opp.tag === 'Expansion',
-                      'bg-rose-400': opp.tag === 'Disrupt'
-                    })}
-                    style={{ left: `${Math.min(pct, 99)}%` }}
-                   />
-                 )
-               })}
-            </div>
-         </div>
-      </footer>
+        )}
+      </main>
     </div>
   )
 }
