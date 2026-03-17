@@ -4,7 +4,8 @@ import * as React from 'react'
 import {
   FileCheck, FileText, Download, Sparkles, Check, X,
   ArrowRight, TrendingUp, Brain, ShieldCheck, Globe,
-  Clock, Building2, BarChart2, MessageSquare, Eye, EyeOff, MessageCircle
+  Clock, Building2, BarChart2, MessageSquare, Eye, EyeOff, MessageCircle,
+  Users
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
