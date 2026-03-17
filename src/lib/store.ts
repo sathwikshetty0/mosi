@@ -97,7 +97,7 @@ interface MosiStore {
   setSelectedOpportunity: (id: string | null) => void
   addEvidence: (evidence: Omit<EvidenceItem, 'id'>) => void
   addEvidenceToOpportunity: (oppId: string, evidence: Omit<EvidenceItem, 'id'>) => void
-  finalizeSession: (recordingUrl?: string) => void
+  finalizeSession: (recordingUrl?: string) => string
   scheduleSession: () => void
   publishSession: (id: string) => void
   deleteSession: (id: string) => void
@@ -108,6 +108,7 @@ interface MosiStore {
   toggleSidebar: () => void
   setSidebarCollapsed: (collapsed: boolean) => void
   updateSessionSummary: (id: string, summary: string) => void
+  setRecordingUrl: (id: string, url: string) => void
 }
 
 
@@ -208,32 +209,37 @@ export const useMosiStore = create<MosiStore>((set, get) => ({
     return { currentSession: newCurrent, sessions: newSessions }
   }),
 
-  finalizeSession: (recordingUrl) => set((s) => {
-    if (!s.currentSession) return {}
-    const session: InterviewSession = {
-      id: `sess_${Date.now()}`,
-      stakeholder: s.currentSession.stakeholder!,
-      status: 'Review',
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      duration: s.recordingSeconds,
-      opportunities: (s.currentSession.opportunities || []).map(o => ({ ...o, status: 'Pending' })),
-      settings: s.currentSession.settings || { audio: true, video: true },
-      evidence: s.currentSession.evidence || [],
-      recordingUrl,
-      transcript: [
-        { id: 'p1', speaker: 'Interviewer', text: 'Thank you for taking the time to speak with us today about your business challenges.', timestamp: 0, status: 'Approved' },
-        { id: 'p2', speaker: s.currentSession.stakeholder?.name || 'Stakeholder', text: 'Glad to be here. We have been struggling quite a bit with our logistics efficiency lately.', timestamp: 5, status: 'Pending' },
-        { id: 'p3', speaker: 'Interviewer', text: 'Can you tell me more about where the bottleneck is occurring in that process?', timestamp: 15, status: 'Pending' },
-        { id: 'p4', speaker: s.currentSession.stakeholder?.name || 'Stakeholder', text: 'Its mostly in the last-mile delivery. We spend too much time on manual route planning.', timestamp: 22, status: 'Pending' },
-      ]
-    }
-    return {
-      sessions: [session, ...s.sessions],
-      currentSession: null,
-      isRecording: false,
-      recordingSeconds: 0
-    }
-  }),
+  finalizeSession: (recordingUrl) => {
+    let newId = ''
+    set((s) => {
+      if (!s.currentSession) return {}
+      newId = `sess_${Date.now()}`
+      const session: InterviewSession = {
+        id: newId,
+        stakeholder: s.currentSession.stakeholder!,
+        status: 'Review',
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        duration: s.recordingSeconds,
+        opportunities: (s.currentSession.opportunities || []).map(o => ({ ...o, status: 'Pending' })),
+        settings: s.currentSession.settings || { audio: true, video: true },
+        evidence: s.currentSession.evidence || [],
+        recordingUrl,
+        transcript: [
+          { id: 'p1', speaker: 'Interviewer', text: 'Thank you for taking the time to speak with us today about your business challenges.', timestamp: 0, status: 'Approved' },
+          { id: 'p2', speaker: s.currentSession.stakeholder?.name || 'Stakeholder', text: 'Glad to be here. We have been struggling quite a bit with our logistics efficiency lately.', timestamp: 5, status: 'Pending' },
+          { id: 'p3', speaker: 'Interviewer', text: 'Can you tell me more about where the bottleneck is occurring in that process?', timestamp: 15, status: 'Pending' },
+          { id: 'p4', speaker: s.currentSession.stakeholder?.name || 'Stakeholder', text: 'Its mostly in the last-mile delivery. We spend too much time on manual route planning.', timestamp: 22, status: 'Pending' },
+        ]
+      }
+      return {
+        sessions: [session, ...s.sessions],
+        currentSession: null,
+        isRecording: false,
+        recordingSeconds: 0
+      }
+    })
+    return newId
+  },
 
   scheduleSession: () => set((s) => {
     if (!s.currentSession) return {}
@@ -282,6 +288,10 @@ export const useMosiStore = create<MosiStore>((set, get) => ({
 
   updateSessionSummary: (id, summary) => set((s) => ({
     sessions: s.sessions.map(sess => sess.id === id ? { ...sess, summary } : sess)
+  })),
+
+  setRecordingUrl: (id: string, url: string) => set((s) => ({
+    sessions: s.sessions.map(sess => sess.id === id ? { ...sess, recordingUrl: url } : sess)
   })),
 
   tick: () => set((s) => ({

@@ -62,9 +62,11 @@ export default function LiveInterviewPage() {
   const [questionIndex, setQuestionIndex] = React.useState(0)
   const [answeredQuestions, setAnsweredQuestions] = React.useState<Set<string>>(new Set())
   const [blobUrl, setBlobUrl] = React.useState<string | null>(null)
-  const [isFinishing, setIsFinishing] = React.useState(false)
   const [isPaused, setIsPaused] = React.useState(false)
   const [showAssetMenu, setShowAssetMenu] = React.useState(false)
+  const finishingSessionIdRef = React.useRef<string | null>(null)
+
+  const { setRecordingUrl } = useMosiStore()
 
   const mediaRecorderRef = React.useRef<MediaRecorder | null>(null)
   const chunksRef = React.useRef<Blob[]>([])
@@ -103,12 +105,11 @@ export default function LiveInterviewPage() {
   }, [isRecording, stream])
 
   React.useEffect(() => {
-    if (isFinishing && blobUrl) { 
-      // Speed up: Immediate state cleanup before navigation
-      finalizeSession(blobUrl)
-      router.push('/review') 
+    if (blobUrl && finishingSessionIdRef.current) { 
+      // Update the recording URL in the background whenever it's ready
+      setRecordingUrl(finishingSessionIdRef.current, blobUrl)
     }
-  }, [isFinishing, blobUrl, finalizeSession, router])
+  }, [blobUrl, setRecordingUrl])
 
   React.useEffect(() => {
     let timer: any
@@ -141,7 +142,9 @@ export default function LiveInterviewPage() {
 
   const handleStopInterview = () => {
     stopRecording()
-    setIsFinishing(true)
+    const newId = finalizeSession() // Initial finalize without blob
+    finishingSessionIdRef.current = newId
+    router.push('/review') // Immediate navigation
   }
 
   const handlePauseInterview = () => {
@@ -356,18 +359,7 @@ export default function LiveInterviewPage() {
         </div>
       </div>
 
-      {/* FINISH OVERLAY */}
-      {isFinishing && (
-        <div className="fixed inset-0 bg-white/95 backdrop-blur-md z-[100] flex flex-col items-center justify-center gap-6 animate-in fade-in duration-200 text-center">
-          <div className="w-16 h-16 border-2 border-slate-200 rounded-full flex items-center justify-center">
-            <div className="w-10 h-10 border-2 border-slate-900 rounded-full animate-spin border-t-transparent" />
-          </div>
-          <div>
-            <p className="text-lg font-semibold text-slate-900">Processing Session...</p>
-            <p className="text-sm text-slate-400 mt-1">Preparing your review dashboard.</p>
-          </div>
-        </div>
-      )}
+      {/* NO OVERLAY - Instant Transition */}
     </div>
   )
 }
