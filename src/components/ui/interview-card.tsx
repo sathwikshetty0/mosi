@@ -1,6 +1,7 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+// Card component components are not used here, removing broken import
+
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { 
