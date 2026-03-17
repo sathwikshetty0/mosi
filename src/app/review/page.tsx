@@ -6,7 +6,7 @@ import {
   Play, MessageSquare, Clock, ChevronRight,
   CheckCircle2, Download, Trash2,
   BarChart2, CheckCircle, Brain, Sparkles,
-  FileText, Headphones, Save, Zap
+  FileText, Headphones, Save, Zap, Users, Building2, ShieldCheck, Globe
 } from 'lucide-react'
 import { useMosiStore, CEEDTag, Opportunity, formatDuration } from '@/lib/store'
 import { cn } from '@/lib/utils'
@@ -35,11 +35,11 @@ export default function ReviewPage() {
   
   const session = sessions.find(s => s.status === 'Review') || sessions[0]
 
-  const [selectedId, setSelectedId] = React.useState<string>(session?.opportunities[0]?.id || '')
+  const [selectedId, setSelectedId] = React.useState<string>(session?.opportunities?.[0]?.id || '')
   const [checklist, setChecklist] = React.useState<boolean[]>(CHECKLIST.map(() => false))
   const [localSummary, setLocalSummary] = React.useState(session?.summary || '')
 
-  const selectedOpp = session?.opportunities.find(o => o.id === selectedId)
+  const selectedOpp = session?.opportunities?.find(o => o.id === selectedId)
 
   const toggleChecklist = (i: number) => {
     setChecklist(prev => prev.map((v, idx) => idx === i ? !v : v))
@@ -95,9 +95,9 @@ export default function ReviewPage() {
               <span className="bg-amber-50 text-amber-600 text-[10px] font-semibold px-2 py-0.5 rounded-md">In Review</span>
               <span className="text-xs text-slate-400">{session.date}</span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900">{session.stakeholder.name}</h2>
+            <h2 className="text-xl font-bold text-slate-900">{session.stakeholder?.name || 'Anonymous Session'}</h2>
             <p className="text-xs text-slate-400 flex items-center gap-1">
-              <Clock className="w-3 h-3" /> {formatDuration(session.duration)} · {session.stakeholder.company}
+              <Clock className="w-3 h-3" /> {formatDuration(session.duration)} · {session.stakeholder?.company || 'No Company'}
             </p>
           </div>
         </div>
@@ -240,7 +240,7 @@ export default function ReviewPage() {
             />
           </section>
 
-          {/* TRANSCRIPT TOGGLE/SECTION */}
+          {/* TRANSCRIPT SECTION */}
           <section className="bg-white border border-slate-100 rounded-3xl p-6 space-y-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2">
@@ -292,7 +292,27 @@ export default function ReviewPage() {
             </div>
           </div>
 
-          {/* AI PRD */}
+          <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-4 shadow-sm">
+            <h3 className="text-sm font-semibold text-slate-900">Stakeholder Info</h3>
+            <div className="space-y-3">
+              {[
+                { label: 'Contact', val: session.stakeholder?.name, icon: Users },
+                { label: 'Role', val: session.stakeholder?.role, icon: ShieldCheck },
+                { label: 'Company', val: session.stakeholder?.company, icon: Building2 },
+                { label: 'Sector', val: session.stakeholder?.sector, icon: Globe },
+                { label: 'Team Size', val: session.stakeholder?.employees, icon: BarChart2 },
+              ].filter(r => r.val).map(row => (
+                <div key={row.label} className="flex items-center gap-3">
+                  <row.icon className="w-4 h-4 text-slate-300 shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-slate-400">{row.label}</p>
+                    <p className="text-sm font-medium text-slate-900">{row.val}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="bg-white border border-slate-100 rounded-2xl p-6 text-center space-y-4 shadow-sm">
             <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center mx-auto">
               <Sparkles className="w-6 h-6" />
