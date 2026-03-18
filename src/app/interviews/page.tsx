@@ -13,8 +13,10 @@ export default function InterviewsPage() {
   const [statusFilter, setStatusFilter] = React.useState<string>('All')
 
   const filteredSessions = sessions.filter(s => {
-    const matchesSearch = s.stakeholder.name.toLowerCase().includes(search.toLowerCase()) || 
-                         s.stakeholder.company.toLowerCase().includes(search.toLowerCase())
+    const stakeholderName = s.stakeholder?.name || 'Untitled Participant'
+    const stakeholderCompany = s.stakeholder?.company || 'N/A'
+    const matchesSearch = stakeholderName.toLowerCase().includes(search.toLowerCase()) || 
+                         stakeholderCompany.toLowerCase().includes(search.toLowerCase())
     const matchesStatus = statusFilter === 'All' || s.status === statusFilter
     return matchesSearch && matchesStatus
   })
@@ -84,9 +86,9 @@ export default function InterviewsPage() {
             <InterviewCard
               key={session.id}
               id={session.id}
-              stakeholder={session.stakeholder.name}
-              company={session.stakeholder.company}
-              sector={session.stakeholder.sector}
+              stakeholder={session.stakeholder?.name || 'Untitled Participant'}
+              company={session.stakeholder?.company || 'N/A'}
+              sector={session.stakeholder?.sector || 'N/A'}
               date={session.date}
               status={session.status}
               opportunityCount={session.opportunities.length}

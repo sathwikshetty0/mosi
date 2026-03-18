@@ -13,7 +13,7 @@ export default function Home() {
 
   const totalInterviews = sessions.length
   const totalOpportunities = sessions.reduce((acc, s) => acc + s.opportunities.length, 0)
-  const uniqueStakeholders = new Set(sessions.map(s => s.stakeholder.name)).size
+  const uniqueStakeholders = new Set(sessions.map(s => s.stakeholder?.name || 'Unknown')).size
   const pendingApprovals = sessions.filter(s => s.status === 'Review').length
 
   const stats = [
@@ -84,8 +84,8 @@ export default function Home() {
                             )}>{session.status}</span>
                             <span className="text-xs text-slate-400">{session.date}</span>
                         </div>
-                        <h4 className="text-base font-semibold text-slate-900 truncate">{session.stakeholder.name}</h4>
-                        <p className="text-xs text-slate-400">{session.stakeholder.company} · {session.opportunities.length} insights</p>
+                        <h4 className="text-base font-semibold text-slate-900 truncate">{session.stakeholder?.name || 'Untitled Participant'}</h4>
+                        <p className="text-xs text-slate-400">{session.stakeholder?.company || 'N/A'} · {session.opportunities.length} insights</p>
                     </div>
                     <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-slate-900 transition-all shrink-0" />
                 </div>

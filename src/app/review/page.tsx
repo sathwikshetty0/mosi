@@ -45,12 +45,11 @@ export default function ReviewPage() {
     setChecklist(prev => prev.map((v, idx) => idx === i ? !v : v))
   }
 
-  const handlePublish = () => {
+  const handleGoToPreview = () => {
     if (session) {
       if (localSummary !== session.summary) {
         updateSessionSummary(session.id, localSummary)
       }
-      publishSession(session.id)
       router.push('/preview')
     }
   }
@@ -105,8 +104,8 @@ export default function ReviewPage() {
           <button onClick={handleDelete} className="p-3 rounded-xl border border-slate-100 text-slate-400 hover:text-red-500 hover:border-red-200 transition-all">
             <Trash2 className="w-4 h-4" />
           </button>
-          <button onClick={handlePublish} className="h-10 px-5 bg-slate-900 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-all flex items-center gap-2">
-            Publish <ChevronRight className="w-4 h-4" />
+          <button onClick={handleGoToPreview} className="h-10 px-5 bg-slate-900 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-all flex items-center gap-2">
+            Stakeholder Preview <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -240,29 +239,6 @@ export default function ReviewPage() {
             />
           </section>
 
-          {/* TRANSCRIPT TOGGLE/SECTION */}
-          <section className="bg-white border border-slate-100 rounded-3xl p-6 space-y-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-emerald-500" /> Ground Truth Transcript
-              </h3>
-              <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-xl border border-emerald-100">
-                <CheckCircle className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Verified Log</span>
-              </div>
-            </div>
-            <div className="space-y-6 max-h-[600px] overflow-y-auto no-scrollbar pr-2">
-              {session.transcript?.map((p) => (
-                <div key={p.id} className="flex gap-6 p-6 rounded-2xl hover:bg-slate-50 transition-all group border border-transparent hover:border-slate-100">
-                  <div className="w-24 shrink-0 text-right">
-                    <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{p.speaker}</p>
-                    <p className="text-[9px] text-slate-300 font-mono mt-1">{formatDuration(p.timestamp)}</p>
-                  </div>
-                  <p className="text-sm text-slate-600 leading-relaxed font-medium flex-1">{p.text}</p>
-                </div>
-              ))}
-            </div>
-          </section>
         </div>
 
         {/* SIDEBAR */}
