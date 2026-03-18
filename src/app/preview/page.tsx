@@ -5,7 +5,8 @@ import {
   FileCheck, FileText, Download, Sparkles, Check, X,
   ArrowRight, TrendingUp, Brain, ShieldCheck, Globe,
   Clock, Building2, BarChart2, MessageSquare, Eye, EyeOff, MessageCircle,
-  Users, Image as ImageIcon, Link as LinkIcon, File as FileIcon
+  Users, Image as ImageIcon, Link as LinkIcon, File as FileIcon,
+  Headphones, Play, Pause
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useMosiStore, CEEDTag, formatDuration } from '@/lib/store'
@@ -122,6 +123,21 @@ export default function PreviewPage() {
             <button onClick={handleExportCSV} className="h-9 border border-slate-200 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-all">
               Export CSV
             </button>
+          </div>
+        </div>
+
+        {/* AUDIO PLAYER - STAKEHOLDER VERSION */}
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 flex items-center gap-4 shadow-sm">
+          <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 shrink-0">
+            <Headphones className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Session Recording</p>
+            {session.recordingUrl ? (
+              <audio src={session.recordingUrl} controls className="w-full h-8" />
+            ) : (
+              <p className="text-xs text-slate-400 italic font-medium">Recording is being processed for cloud playback.</p>
+            )}
           </div>
         </div>
       </div>
