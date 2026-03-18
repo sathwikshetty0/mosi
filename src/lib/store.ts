@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import { supabase } from './supabase'
 
 export type CEEDTag = 'Core' | 'Efficiency' | 'Expansion' | 'Disrupt'
 
@@ -109,11 +111,14 @@ interface MosiStore {
   setSidebarCollapsed: (collapsed: boolean) => void
   updateSessionSummary: (id: string, summary: string) => void
   setRecordingUrl: (id: string, url: string) => void
+  fetchSessions: () => Promise<void>
 }
 
 
 
-export const useMosiStore = create<MosiStore>((set, get) => ({
+export const useMosiStore = create<MosiStore>()(
+  persist(
+    (set, get) => ({
   isSidebarCollapsed: false,
   toggleSidebar: () => set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
   setSidebarCollapsed: (collapsed) => set({ isSidebarCollapsed: collapsed }),
@@ -209,35 +214,123 @@ export const useMosiStore = create<MosiStore>((set, get) => ({
     return { currentSession: newCurrent, sessions: newSessions }
   }),
 
+  fetchSessions: async () => {
+    const { data: sessionsData, error } = await supabase
+      .from('sessions')
+      .select('*, stakeholders(*), opportunities(*, evidence(*)), evidence(*)')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Fetch sessions failed:', error)
+      return
+    }
+
+    if (sessionsData) {
+      const formattedSessions: InterviewSession[] = sessionsData.map(s => ({
+        id: s.id,
+        stakeholder: s.stakeholders,
+        status: s.status,
+        date: s.date,
+        duration: s.duration,
+        opportunities: (s.opportunities || []).map((o: any) => ({
+          ...o,
+          evidence: o.evidence || []
+        })),
+        settings: s.audio_settings,
+        evidence: s.evidence || [],
+        recordingUrl: s.recording_url,
+        summary: s.summary
+      }))
+      set({ sessions: formattedSessions })
+    }
+  },
+
   finalizeSession: (recordingUrl) => {
-    let newId = ''
-    set((s) => {
-      if (!s.currentSession) return {}
-      newId = `sess_${Date.now()}`
-      const session: InterviewSession = {
+    const newId = crypto.randomUUID()
+    const state = get()
+    if (!state.currentSession) return ''
+
+    const stakeholder = state.currentSession.stakeholder!
+    const session: InterviewSession = {
+      id: newId,
+      stakeholder,
+      status: 'Review',
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      duration: state.recordingSeconds,
+      opportunities: (state.currentSession.opportunities || []).map(o => ({ ...o, status: 'Pending' })),
+      settings: state.currentSession.settings || { audio: true, video: true },
+      evidence: state.currentSession.evidence || [],
+      recordingUrl: undefined, // Will update after upload
+      transcript: [], // To be generated or cleared
+      summary: ''
+    }
+
+    set((s) => ({
+      sessions: [session, ...s.sessions],
+      currentSession: null,
+      isRecording: false,
+      recordingSeconds: 0
+    }))
+
+    // 🚀 BACKGROUND SYNC TO SUPABASE
+    ;(async () => {
+      // 1. STAKEHOLDER
+      const { data: sData } = await supabase.from('stakeholders').insert(stakeholder).select().single()
+      if (!sData) return
+      
+      // 2. SESSION
+      const { data: sessData } = await supabase.from('sessions').insert({
         id: newId,
-        stakeholder: s.currentSession.stakeholder!,
+        stakeholder_id: sData.id,
         status: 'Review',
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        duration: s.recordingSeconds,
-        opportunities: (s.currentSession.opportunities || []).map(o => ({ ...o, status: 'Pending' })),
-        settings: s.currentSession.settings || { audio: true, video: true },
-        evidence: s.currentSession.evidence || [],
-        recordingUrl,
-        transcript: [
-          { id: 'p1', speaker: 'Interviewer', text: 'Thank you for taking the time to speak with us today about your business challenges.', timestamp: 0, status: 'Approved' },
-          { id: 'p2', speaker: s.currentSession.stakeholder?.name || 'Stakeholder', text: 'Glad to be here. We have been struggling quite a bit with our logistics efficiency lately.', timestamp: 5, status: 'Pending' },
-          { id: 'p3', speaker: 'Interviewer', text: 'Can you tell me more about where the bottleneck is occurring in that process?', timestamp: 15, status: 'Pending' },
-          { id: 'p4', speaker: s.currentSession.stakeholder?.name || 'Stakeholder', text: 'Its mostly in the last-mile delivery. We spend too much time on manual route planning.', timestamp: 22, status: 'Pending' },
-        ]
+        date: session.date,
+        duration: session.duration,
+        audio_settings: session.settings
+      }).select().single()
+
+      if (!sessData) return
+
+      // 3. OPPORTUNITIES
+      if (session.opportunities.length > 0) {
+        await supabase.from('opportunities').insert(
+          session.opportunities.map(o => ({
+            session_id: newId,
+            title: o.title,
+            description: o.description,
+            tag: o.tag,
+            timestamp: o.timestamp,
+            status: 'Pending'
+          }))
+        )
       }
-      return {
-        sessions: [session, ...s.sessions],
-        currentSession: null,
-        isRecording: false,
-        recordingSeconds: 0
+
+      // 4. EVIDENCE
+      if (session.evidence.length > 0) {
+        await supabase.from('evidence').insert(
+          session.evidence.map(e => ({
+            session_id: newId,
+            type: e.type,
+            url: e.url,
+            title: e.title
+          }))
+        )
       }
-    })
+
+      // 5. AUDIO UPLOAD
+      if (recordingUrl && recordingUrl.startsWith('blob:')) {
+        const response = await fetch(recordingUrl)
+        const blob = await response.blob()
+        const fileName = `${newId}.webm`
+        const { data: uploadData } = await supabase.storage.from('recordings').upload(fileName, blob)
+        
+        if (uploadData) {
+          const { data: { publicUrl } } = supabase.storage.from('recordings').getPublicUrl(fileName)
+          await supabase.from('sessions').update({ recording_url: publicUrl }).eq('id', newId)
+          get().setRecordingUrl(newId, publicUrl)
+        }
+      }
+    })()
+
     return newId
   },
 
@@ -262,11 +355,14 @@ export const useMosiStore = create<MosiStore>((set, get) => ({
     }
   }),
 
-  publishSession: (id) => set((s) => ({
-    sessions: s.sessions.map(sess =>
-      sess.id === id ? { ...sess, status: 'Published' } : sess
-    )
-  })),
+  publishSession: (id) => {
+    set((s) => ({
+      sessions: s.sessions.map(sess =>
+        sess.id === id ? { ...sess, status: 'Published' } : sess
+      )
+    }))
+    supabase.from('sessions').update({ status: 'Published' }).eq('id', id).then()
+  },
 
   updateOpportunityStatus: (sessionId, oppId, status, comment) => set((s) => ({
     sessions: s.sessions.map(sess => sess.id === sessionId ? {
@@ -282,13 +378,19 @@ export const useMosiStore = create<MosiStore>((set, get) => ({
     } : sess)
   })),
 
-  deleteSession: (id) => set((s) => ({
-    sessions: s.sessions.filter(sess => sess.id !== id)
-  })),
+  deleteSession: (id) => {
+    set((s) => ({
+      sessions: s.sessions.filter(sess => sess.id !== id)
+    }))
+    supabase.from('sessions').delete().eq('id', id).then()
+  },
 
-  updateSessionSummary: (id, summary) => set((s) => ({
-    sessions: s.sessions.map(sess => sess.id === id ? { ...sess, summary } : sess)
-  })),
+  updateSessionSummary: (id, summary) => {
+    set((s) => ({
+      sessions: s.sessions.map(sess => sess.id === id ? { ...sess, summary } : sess)
+    }))
+    supabase.from('sessions').update({ summary }).eq('id', id).then()
+  },
 
   setRecordingUrl: (id: string, url: string) => set((s) => ({
     sessions: s.sessions.map(sess => sess.id === id ? { ...sess, recordingUrl: url } : sess)
@@ -297,7 +399,15 @@ export const useMosiStore = create<MosiStore>((set, get) => ({
   tick: () => set((s) => ({
     recordingSeconds: s.isRecording ? s.recordingSeconds + 1 : s.recordingSeconds
   }))
-}))
+}), {
+  name: 'mosi-storage',
+  partialize: (state) => ({ 
+    sessions: state.sessions, 
+    currentSession: state.currentSession,
+    isSidebarCollapsed: state.isSidebarCollapsed 
+  }),
+})
+)
 
 export function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600)

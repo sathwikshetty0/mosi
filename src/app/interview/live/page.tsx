@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useMosiStore, CEEDTag, formatDuration } from '@/lib/store'
 import { cn } from '@/lib/utils'
+import { supabase } from '@/lib/supabase'
 
 const quadrants: { id: CEEDTag; questions: string[] }[] = [
   {
@@ -62,6 +63,7 @@ export default function LiveInterviewPage() {
   const [questionIndex, setQuestionIndex] = React.useState(0)
   const [answeredQuestions, setAnsweredQuestions] = React.useState<Set<string>>(new Set())
   const [blobUrl, setBlobUrl] = React.useState<string | null>(null)
+  const [isFinishing, setIsFinishing] = React.useState(false)
   const [isPaused, setIsPaused] = React.useState(false)
   const [showAssetMenu, setShowAssetMenu] = React.useState(false)
   const finishingSessionIdRef = React.useRef<string | null>(null)
@@ -73,6 +75,7 @@ export default function LiveInterviewPage() {
   const [stream, setStream] = React.useState<MediaStream | null>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const [activeEvidenceType, setActiveEvidenceType] = React.useState<'image' | 'video' | 'link' | 'file' | null>(null)
+  const [isUploading, setIsUploading] = React.useState(false)
 
   React.useEffect(() => {
     async function setupMedia() {
@@ -105,11 +108,11 @@ export default function LiveInterviewPage() {
   }, [isRecording, stream])
 
   React.useEffect(() => {
-    if (blobUrl && finishingSessionIdRef.current) { 
-      // Update the recording URL in the background whenever it's ready
-      setRecordingUrl(finishingSessionIdRef.current, blobUrl)
+    if (blobUrl && isFinishing) { 
+      finalizeSession(blobUrl)
+      router.push('/review') 
     }
-  }, [blobUrl, setRecordingUrl])
+  }, [blobUrl, isFinishing, finalizeSession, router])
 
   React.useEffect(() => {
     let timer: any
@@ -142,9 +145,7 @@ export default function LiveInterviewPage() {
 
   const handleStopInterview = () => {
     stopRecording()
-    const newId = finalizeSession() // Initial finalize without blob
-    finishingSessionIdRef.current = newId
-    router.push('/review') // Immediate navigation
+    setIsFinishing(true)
   }
 
   const handlePauseInterview = () => {
@@ -165,10 +166,44 @@ export default function LiveInterviewPage() {
     setShowAssetMenu(false)
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file && activeEvidenceType) {
-      addEvidence({ type: activeEvidenceType, url: URL.createObjectURL(file), timestamp: recordingSeconds, title: file.name })
+      setIsUploading(true)
+      try {
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
+        
+        const { data, error } = await supabase.storage
+          .from('evidence')
+          .upload(fileName, file)
+
+        if (error) throw error
+
+        if (data) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('evidence')
+            .getPublicUrl(fileName)
+            
+          addEvidence({ 
+            type: activeEvidenceType, 
+            url: publicUrl, 
+            timestamp: recordingSeconds, 
+            title: file.name 
+          })
+        }
+      } catch (err) {
+        console.error('Evidence upload failed:', err)
+        // Fallback to local blob if supabase fails or is not configured
+        addEvidence({ 
+          type: activeEvidenceType, 
+          url: URL.createObjectURL(file), 
+          timestamp: recordingSeconds, 
+          title: file.name 
+        })
+      } finally {
+        setIsUploading(false)
+      }
     }
     setActiveEvidenceType(null)
   }
@@ -277,14 +312,17 @@ export default function LiveInterviewPage() {
             )}
             <button 
               onClick={handleQuickCapture} 
-              disabled={!isRecording}
+              disabled={!isRecording || isUploading}
               className={cn(
                 "h-9 px-4 rounded-full border text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-sm flex items-center gap-2",
-                isRecording ? "border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100" : "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed"
+                (isRecording && !isUploading) ? "border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100" : "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed"
               )}
             >
               <Activity className="w-4 h-4" /> Log Insight
             </button>
+            {isUploading && (
+              <span className="text-[9px] font-black text-blue-500 animate-pulse uppercase tracking-widest">Uploading Media...</span>
+            )}
           </div>
 
           {/* MAIN RECORDER BAR */}
@@ -359,7 +397,18 @@ export default function LiveInterviewPage() {
         </div>
       </div>
 
-      {/* NO OVERLAY - Instant Transition */}
+      {/* FINISH OVERLAY */}
+      {isFinishing && (
+        <div className="fixed inset-0 bg-white/95 backdrop-blur-md z-[100] flex flex-col items-center justify-center gap-6 animate-in fade-in duration-200 text-center">
+          <div className="w-16 h-16 border-2 border-slate-200 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 border-2 border-slate-900 rounded-full animate-spin border-t-transparent" />
+          </div>
+          <div>
+            <p className="text-lg font-semibold text-slate-900">Processing Session...</p>
+            <p className="text-sm text-slate-400 mt-1">Preparing your review dashboard.</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

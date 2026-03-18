@@ -1,5 +1,6 @@
 'use client'
 
+import * as React from 'react'
 import { useMosiStore } from '@/lib/store'
 import { 
   Users, Video, Lightbulb, Activity, Plus, 
@@ -9,7 +10,11 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
 export default function Home() {
-  const { sessions } = useMosiStore()
+  const { sessions, fetchSessions } = useMosiStore()
+
+  React.useEffect(() => {
+    fetchSessions()
+  }, [fetchSessions])
 
   const totalInterviews = sessions.length
   const totalOpportunities = sessions.reduce((acc, s) => acc + s.opportunities.length, 0)

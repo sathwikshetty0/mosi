@@ -5,7 +5,7 @@ import {
   FileCheck, FileText, Download, Sparkles, Check, X,
   ArrowRight, TrendingUp, Brain, ShieldCheck, Globe,
   Clock, Building2, BarChart2, MessageSquare, Eye, EyeOff, MessageCircle,
-  Users
+  Users, Image as ImageIcon, Link as LinkIcon, File as FileIcon
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useMosiStore, CEEDTag, formatDuration } from '@/lib/store'
@@ -23,7 +23,7 @@ export default function PreviewPage() {
   const session = sessions.find(s => s.status === 'Review' || s.status === 'Published') || sessions[0]
   const router = useRouter()
   const [approved, setApproved] = React.useState(session?.status === 'Published')
-  const [activeTab, setActiveTab] = React.useState<'summary' | 'opportunities'>('summary')
+  const [activeTab, setActiveTab] = React.useState<'summary' | 'opportunities' | 'evidence'>('summary')
 
   if (!session) return (
     <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
@@ -131,6 +131,7 @@ export default function PreviewPage() {
         {[
           { id: 'summary', label: 'Analysis', icon: Brain },
           { id: 'opportunities', label: 'Insights', icon: TrendingUp },
+          { id: 'evidence', label: 'Evidence', icon: ImageIcon },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
             className={cn("flex-1 py-2.5 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5",
@@ -215,6 +216,41 @@ export default function PreviewPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+          {activeTab === 'evidence' && (
+            <div className="bg-white border border-slate-100 rounded-3xl p-6 lg:p-8 space-y-6 shadow-sm animate-in fade-in duration-300">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-slate-900">Evidence Library</h3>
+                <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg">
+                  {session.evidence.length} Assets
+                </span>
+              </div>
+              {session.evidence.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {session.evidence.map((ev, i) => (
+                    <div key={i} className="group relative aspect-video bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 hover:border-slate-300 transition-all">
+                      {ev.type === 'image' ? (
+                        <img src={ev.url} alt={ev.title} className="w-full h-full object-cover" />
+                      ) : ev.type === 'video' ? (
+                        <video src={ev.url} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                          {ev.type === 'link' ? <LinkIcon className="w-6 h-6 text-slate-300" /> : <FileIcon className="w-6 h-6 text-slate-300" />}
+                          <p className="text-[10px] font-bold text-slate-400 truncate px-4">{ev.title || 'Attached Link'}</p>
+                        </div>
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 bg-slate-900/80 backdrop-blur-sm p-2 transform translate-y-full group-hover:translate-y-0 transition-transform text-center">
+                        <p className="text-[8px] text-white font-black uppercase tracking-widest truncate">{ev.title || ev.type}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-20 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                  <p className="text-sm text-slate-400 italic">No media assets available for this session.</p>
+                </div>
+              )}
             </div>
           )}
         </div>

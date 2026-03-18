@@ -6,7 +6,8 @@ import {
   Play, MessageSquare, Clock, ChevronRight,
   CheckCircle2, Download, Trash2,
   BarChart2, CheckCircle, Brain, Sparkles,
-  FileText, Headphones, Save, Zap
+  FileText, Headphones, Save, Zap,
+  Image as ImageIcon, Link as LinkIcon, File as FileIcon
 } from 'lucide-react'
 import { useMosiStore, CEEDTag, Opportunity, formatDuration } from '@/lib/store'
 import { cn } from '@/lib/utils'
@@ -239,6 +240,42 @@ export default function ReviewPage() {
             />
           </section>
 
+          {/* EVIDENCE GALLERY */}
+          <section className="bg-white border border-slate-100 rounded-3xl p-6 lg:p-8 space-y-6 shadow-sm animate-in fade-in duration-700">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-emerald-500" /> Evidence Library
+              </h3>
+              <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg">
+                {session.evidence.length} Assets Captured
+              </span>
+            </div>
+            {session.evidence.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {session.evidence.map((ev, i) => (
+                  <div key={i} className="group relative aspect-video bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 hover:border-slate-300 transition-all">
+                    {ev.type === 'image' ? (
+                      <img src={ev.url} alt={ev.title} className="w-full h-full object-cover" />
+                    ) : ev.type === 'video' ? (
+                      <video src={ev.url} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                        {ev.type === 'link' ? <LinkIcon className="w-6 h-6 text-slate-300" /> : <FileIcon className="w-6 h-6 text-slate-300" />}
+                        <p className="text-[10px] font-bold text-slate-400 truncate px-4">{ev.title || 'Attached Link'}</p>
+                      </div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 bg-slate-900/80 backdrop-blur-sm p-2 transform translate-y-full group-hover:translate-y-0 transition-transform">
+                      <p className="text-[8px] text-white font-black uppercase tracking-widest truncate">{ev.title || ev.type}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                <p className="text-xs text-slate-400 italic">No media assets captured during this session.</p>
+              </div>
+            )}
+          </section>
         </div>
 
         {/* SIDEBAR */}
