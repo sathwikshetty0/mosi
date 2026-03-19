@@ -30,6 +30,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50 text-slate-900`}
+        suppressHydrationWarning
       >
         <div className="flex flex-col lg:flex-row min-h-screen">
           <Sidebar />

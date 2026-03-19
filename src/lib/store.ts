@@ -261,7 +261,7 @@ export const useMosiStore = create<MosiStore>()(
       opportunities: (state.currentSession.opportunities || []).map(o => ({ ...o, status: 'Pending' })),
       settings: state.currentSession.settings || { audio: true, video: true },
       evidence: state.currentSession.evidence || [],
-      recordingUrl, // Use local blobUrl by default
+      recordingUrl,
       transcript: [],
       summary: ''
     }
@@ -273,63 +273,75 @@ export const useMosiStore = create<MosiStore>()(
       recordingSeconds: 0
     }))
 
-    // 🚀 BACKGROUND SYNC TO SUPABASE (Only if configured)
+    // 🚀 BACKGROUND SYNC TO SUPABASE
     if (supabase) {
       ;(async () => {
-        // 1. STAKEHOLDER
-        const { data: sData } = await supabase.from('stakeholders').insert(stakeholder).select().single()
-        if (!sData) return
-        
-        // 2. SESSION
-        const { data: sessData } = await supabase.from('sessions').insert({
-          id: newId,
-          stakeholder_id: sData.id,
-          status: 'Review',
-          date: session.date,
-          duration: session.duration,
-          audio_settings: session.settings
-        }).select().single()
-
-        if (!sessData) return
-
-        // 3. OPPORTUNITIES
-        if (session.opportunities.length > 0) {
-          await supabase.from('opportunities').insert(
-            session.opportunities.map(o => ({
-              session_id: newId,
-              title: o.title,
-              description: o.description,
-              tag: o.tag,
-              timestamp: o.timestamp,
-              status: 'Pending'
-            }))
-          )
-        }
-
-        // 4. EVIDENCE
-        if (session.evidence.length > 0) {
-          await supabase.from('evidence').insert(
-            session.evidence.map(e => ({
-              session_id: newId,
-              type: e.type,
-              url: e.url,
-              title: e.title
-            }))
-          )
-        }
-
-        // 5. AUDIO UPLOAD
-        if (recordingUrl && recordingUrl.startsWith('blob:')) {
-          const response = await fetch(recordingUrl)
-          const blob = await response.blob()
-          const fileName = `${newId}.webm`
-          const { data: uploadData } = await supabase.storage.from('recordings').upload(fileName, blob)
-          
-          if (uploadData) {
-            const { data: { publicUrl } } = supabase.storage.from('recordings').getPublicUrl(fileName)
-            await supabase.from('sessions').update({ recording_url: publicUrl }).eq('id', newId)
-            get().setRecordingUrl(newId, publicUrl)
+        try {
+          // 1. STAKEHOLDER
+          const dbStakeholder = {
+            name: stakeholder.name,
+            role: stakeholder.role,
+            company: stakeholder.company,
+            sector: stakeholder.sector,
+            employees: stakeholder.employees,
+            revenue: stakeholder.revenue,
+            geography: stakeholder.geography
           }
+          const { data: sData, error: sErr } = await supabase.from('stakeholders').insert(dbStakeholder).select().single()
+          if (sErr || !sData) return
+
+          // 2. SESSION
+          const { error: sessErr } = await supabase.from('sessions').insert({
+            id: newId,
+            stakeholder_id: sData.id,
+            status: 'Review',
+            date: session.date,
+            duration: session.duration,
+            audio_settings: session.settings
+          })
+          if (sessErr) return
+
+          // 3. OPPORTUNITIES
+          if (session.opportunities.length > 0) {
+            await supabase.from('opportunities').insert(
+              session.opportunities.map(o => ({
+                session_id: newId,
+                title: o.title,
+                description: o.description,
+                tag: o.tag,
+                timestamp: o.timestamp,
+                status: 'Pending'
+              }))
+            )
+          }
+
+          // 4. EVIDENCE
+          if (session.evidence.length > 0) {
+            await supabase.from('evidence').insert(
+              session.evidence.map(e => ({
+                session_id: newId,
+                type: e.type,
+                url: e.url,
+                title: e.title
+              }))
+            )
+          }
+
+          // 5. AUDIO UPLOAD
+          if (recordingUrl && recordingUrl.startsWith('blob:')) {
+            const response = await fetch(recordingUrl)
+            const blob = await response.blob()
+            const fileName = `${newId}.webm`
+            const { data: uploadData } = await supabase.storage.from('recordings').upload(fileName, blob)
+            
+            if (uploadData) {
+              const { data: { publicUrl } } = supabase.storage.from('recordings').getPublicUrl(fileName)
+              await supabase.from('sessions').update({ recording_url: publicUrl }).eq('id', newId)
+              get().setRecordingUrl(newId, publicUrl)
+            }
+          }
+        } catch (err) {
+          console.error('Supabase sync error:', err)
         }
       })()
     }

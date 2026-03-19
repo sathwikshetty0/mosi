@@ -8,7 +8,11 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 
 export default function InterviewsPage() {
-  const { sessions } = useMosiStore()
+  const { sessions, fetchSessions } = useMosiStore()
+
+  React.useEffect(() => {
+    fetchSessions()
+  }, [fetchSessions])
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('All')
 
