@@ -140,7 +140,7 @@ export const useMosiStore = create<MosiStore>()(
 
   addOpportunity: (opp) => set((s) => {
     const newOpp: Opportunity = { 
-      id: opp.id || `opp_${Date.now()}`,
+      id: opp.id || crypto.randomUUID(),
       ...opp 
     } as Opportunity
     return {
@@ -216,32 +216,39 @@ export const useMosiStore = create<MosiStore>()(
 
   fetchSessions: async () => {
     if (!supabase) return
+    // Flattened query to avoid relationship errors
     const { data: sessionsData, error } = await supabase
       .from('sessions')
-      .select('*, stakeholders(*), opportunities(*, evidence(*)), evidence(*)')
+      .select('*, stakeholders(*), opportunities(*), evidence(*)')
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('Fetch sessions failed:', error)
+      console.error('Fetch sessions failed:', error.message || error)
       return
     }
 
     if (sessionsData) {
-      const formattedSessions: InterviewSession[] = sessionsData.map((s: any) => ({
-        id: s.id,
-        stakeholder: s.stakeholders,
-        status: s.status,
-        date: s.date,
-        duration: s.duration,
-        opportunities: (s.opportunities || []).map((o: any) => ({
+      const formattedSessions: InterviewSession[] = sessionsData.map((s: any) => {
+        const sessionEvidence = s.evidence || []
+        const sessionOpps = (s.opportunities || []).map((o: any) => ({
           ...o,
-          evidence: o.evidence || []
-        })),
-        settings: s.audio_settings,
-        evidence: s.evidence || [],
-        recordingUrl: s.recording_url,
-        summary: s.summary
-      }))
+          evidence: sessionEvidence.filter((e: any) => e.opportunity_id === o.id)
+        }))
+        const rootEvidence = sessionEvidence.filter((e: any) => !e.opportunity_id)
+
+        return {
+          id: s.id,
+          stakeholder: s.stakeholders,
+          status: s.status,
+          date: s.date,
+          duration: s.duration,
+          opportunities: sessionOpps,
+          settings: s.audio_settings,
+          evidence: rootEvidence,
+          recordingUrl: s.recording_url,
+          summary: s.summary
+        }
+      })
       set({ sessions: formattedSessions })
     }
   },
@@ -325,6 +332,20 @@ export const useMosiStore = create<MosiStore>()(
                 title: e.title
               }))
             )
+          }
+
+          // 4b. OPPORTUNITY EVIDENCE
+          const oppEvidence = session.opportunities.flatMap(o => 
+            (o.evidence || []).map(e => ({
+              session_id: newId,
+              opportunity_id: o.id,
+              type: e.type,
+              url: e.url,
+              title: e.title
+            }))
+          )
+          if (oppEvidence.length > 0) {
+            await supabase.from('evidence').insert(oppEvidence)
           }
 
           // 5. AUDIO UPLOAD
