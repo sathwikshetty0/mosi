@@ -30,6 +30,8 @@ export interface Opportunity {
   paid: boolean
   duration: string
   skills: string
+  toolset?: string
+  engagementType?: string // e.g., 'Gig', 'Internship', 'Full-time'
   score: {
     clarity: number      // 1-4
     awareness: number    // 1-4
@@ -55,6 +57,9 @@ export interface StakeholderProfile {
   revenue: string
   yearsInBusiness: string
   geography: string
+  domain?: string
+  address?: string
+  pincode?: string
 }
 
 export interface InterviewSession {
@@ -292,7 +297,10 @@ export const useMosiStore = create<MosiStore>()(
             sector: stakeholder.sector,
             employees: stakeholder.employees,
             revenue: stakeholder.revenue,
-            geography: stakeholder.geography
+            geography: stakeholder.geography,
+            domain: stakeholder.domain,
+            address: stakeholder.address,
+            pincode: stakeholder.pincode
           }
           const { data: sData, error: sErr } = await supabase.from('stakeholders').insert(dbStakeholder).select().single()
           if (sErr || !sData) return

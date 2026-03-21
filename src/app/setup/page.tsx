@@ -16,9 +16,9 @@ export default function SetupPage() {
 
   const [step, setStep] = React.useState(1)
   const [form, setForm] = React.useState({
-    name: '', role: '', phone: '', email: '', linkedin: '',
+    name: '', role: '', phone: '', email: '', linkedin: '', domain: '',
     company: '', sector: '', products: '', employees: '', revenue: '',
-    yearsInBusiness: '', geography: '',
+    yearsInBusiness: '', geography: '', address: '', pincode: '',
     audio: true, video: true, transcript: true, translate: false,
     scheduleDate: '', scheduleTime: '', location: ''
   })
@@ -30,10 +30,10 @@ export default function SetupPage() {
     setCurrentSession({
       stakeholder: {
         name: form.name, role: form.role, phone: form.phone,
-        email: form.email, linkedin: form.linkedin,
+        email: form.email, linkedin: form.linkedin, domain: form.domain,
         company: form.company, sector: form.sector, products: form.products,
-        employees: form.employees, revenue: form.revenue,
-        yearsInBusiness: form.yearsInBusiness, geography: form.geography
+        employees: form.employees, revenue: form.revenue, address: form.address,
+        yearsInBusiness: form.yearsInBusiness, geography: form.geography, pincode: form.pincode
       },
       settings: { audio: form.audio, video: form.video },
       opportunities: [],
@@ -94,6 +94,7 @@ export default function SetupPage() {
             <div><label className={labelClass}>Role</label><input className={inputClass} placeholder="e.g. Product Manager" value={form.role} onChange={e => update('role', e.target.value)} /></div>
             <div><label className={labelClass}>Phone</label><input className={inputClass} placeholder="+1 (555) 000-0000" value={form.phone} onChange={e => update('phone', e.target.value)} /></div>
             <div><label className={labelClass}>Email</label><input className={inputClass} type="email" placeholder="jane@company.com" value={form.email} onChange={e => update('email', e.target.value)} /></div>
+            <div><label className={labelClass}>Domain</label><input className={inputClass} placeholder="e.g. Sales, Tech" value={form.domain} onChange={e => update('domain', e.target.value)} /></div>
             <div className="md:col-span-2"><label className={labelClass}>LinkedIn</label><input className={inputClass} placeholder="linkedin.com/in/janedoe" value={form.linkedin} onChange={e => update('linkedin', e.target.value)} /></div>
           </div>
         </div>
@@ -118,6 +119,8 @@ export default function SetupPage() {
             <div><label className={labelClass}>Revenue</label><input className={inputClass} placeholder="$5M ARR" value={form.revenue} onChange={e => update('revenue', e.target.value)} /></div>
             <div><label className={labelClass}>Years in Business</label><input className={inputClass} placeholder="5" value={form.yearsInBusiness} onChange={e => update('yearsInBusiness', e.target.value)} /></div>
             <div><label className={labelClass}>Geography</label><input className={inputClass} placeholder="North America" value={form.geography} onChange={e => update('geography', e.target.value)} /></div>
+            <div className="md:col-span-2"><label className={labelClass}>Address</label><input className={inputClass} placeholder="123 Main St" value={form.address} onChange={e => update('address', e.target.value)} /></div>
+            <div><label className={labelClass}>Pincode</label><input className={inputClass} placeholder="10001" value={form.pincode} onChange={e => update('pincode', e.target.value)} /></div>
             <div className="md:col-span-2">
               <label className={labelClass}>Products / Services</label>
               <textarea rows={3} className={cn(inputClass, "h-auto py-3 resize-none")} placeholder="Brief description of what they offer..." value={form.products} onChange={e => update('products', e.target.value)} />

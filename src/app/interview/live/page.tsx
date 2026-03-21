@@ -135,8 +135,9 @@ export default function LiveInterviewPage() {
   const questions = currentQ.questions
 
   const handleQuickCapture = () => {
+    const logNumber = (currentSession?.opportunities?.length || 0) + 1
     addOpportunity({
-      timestamp: recordingSeconds, title: 'Strategic Insight', description: '',
+      timestamp: recordingSeconds, title: `Log ${logNumber}`, description: '',
       tag: activeQuadrant, paid: false, duration: '', skills: '',
       score: { clarity: 1, awareness: 1, attempts: 1, intensity: 1 },
       notes: '', evidence: [], status: 'Pending'
@@ -318,7 +319,7 @@ export default function LiveInterviewPage() {
                 (isRecording && !isUploading) ? "border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100" : "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed"
               )}
             >
-              <Activity className="w-4 h-4" /> Log Insight
+              <Activity className="w-4 h-4" /> Capture Log
             </button>
             {isUploading && (
               <span className="text-[9px] font-black text-blue-500 animate-pulse uppercase tracking-widest">Uploading Media...</span>
