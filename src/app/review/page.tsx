@@ -38,6 +38,7 @@ export default function ReviewPage() {
   const [showChecklistPopup, setShowChecklistPopup] = React.useState(false)
   const [checklist, setChecklist] = React.useState<boolean[]>(CHECKLIST.map(() => false))
   const [localSummary, setLocalSummary] = React.useState(session?.summary || '')
+  const [isSynthesizing, setIsSynthesizing] = React.useState(false)
   
   const audioRef = React.useRef<HTMLAudioElement>(null)
   const [isPlaying, setIsPlaying] = React.useState(false)
@@ -73,6 +74,60 @@ export default function ReviewPage() {
 
   const handleSaveSummary = () => {
     if (session) updateSessionSummary(session.id, localSummary)
+  }
+
+  const handleSynthesize = async () => {
+    if (!session) return
+    setIsSynthesizing(true)
+    try {
+      let response: Response;
+      
+      // If the URL is still a local browser blob (Supabase upload pending/failed)...
+      if (session.recordingUrl && session.recordingUrl.startsWith('blob:')) {
+        const formData = new FormData()
+        try {
+          const blobResponse = await fetch(session.recordingUrl)
+          const audioBlob = await blobResponse.blob()
+          formData.append('audioFile', audioBlob, 'recording.webm')
+        } catch (e) {
+          console.warn('Could not fetch local blob - might be expired.')
+        }
+        
+        formData.append('opportunities', JSON.stringify(session.opportunities))
+        formData.append('stakeholder', JSON.stringify(session.stakeholder))
+        
+        response = await fetch('/api/synthesize', {
+          method: 'POST',
+          body: formData,
+        })
+      } else {
+        // Normal JSON request using the public Cloud URL
+        response = await fetch('/api/synthesize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recordingUrl: session.recordingUrl,
+            opportunities: session.opportunities,
+            stakeholder: session.stakeholder,
+          }),
+        })
+      }
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'API Error')
+      }
+
+      setLocalSummary(data.summary)
+      updateSessionSummary(session.id, data.summary)
+      alert('Successfully transcribed and synthesized the interview!')
+    } catch (err: any) {
+      console.error(err)
+      alert(err.message || 'Failed to synthesize.')
+    } finally {
+      setIsSynthesizing(false)
+    }
   }
 
   const toggleAudio = (timestamp?: number) => {
@@ -301,9 +356,21 @@ export default function ReviewPage() {
               </h3>
               <p className="text-[10px] text-slate-400 font-medium uppercase tracking-[0.2em] mt-1">Refine and synthesize the total session</p>
             </div>
-            <button onClick={handleSaveSummary} className="h-11 px-6 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl shadow-slate-200">
-              <Save className="w-4 h-4" /> Save Record
-            </button>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={handleSynthesize} 
+                disabled={isSynthesizing}
+                className={cn("h-11 px-6 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 transition-all shadow-xl",
+                  isSynthesizing ? "bg-slate-300 text-slate-500 shadow-none cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 shadow-blue-600/20"
+                )}
+              >
+                <Sparkles className={cn("w-4 h-4", isSynthesizing && "animate-pulse")} /> 
+                {isSynthesizing ? "Synthesizing..." : "Auto-Synthesize (AI)"}
+              </button>
+              <button onClick={handleSaveSummary} className="h-11 px-6 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl shadow-slate-200">
+                <Save className="w-4 h-4" /> Save Record
+              </button>
+            </div>
           </div>
           <textarea 
             className="w-full min-h-[250px] p-6 bg-slate-50 border border-slate-100 rounded-2xl text-sm text-slate-700 leading-relaxed outline-none focus:border-slate-300 transition-all resize-none shadow-inner relative z-10"
