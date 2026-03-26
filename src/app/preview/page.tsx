@@ -17,7 +17,7 @@ const tagColors: Record<CEEDTag, { text: string; border: string; bg: string; ico
   Disrupt: { text: 'text-rose-600', border: 'border-rose-100', bg: 'bg-rose-50/50', icon: 'text-rose-400' }
 }
 
-export default function PreviewPage() {
+function PreviewContent() {
   const { sessions, publishSession, updateOpportunityStatus } = useMosiStore()
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('id')
@@ -305,5 +305,13 @@ export default function PreviewPage() {
       </div>
 
     </div>
+  )
+}
+
+export default function PreviewPage() {
+  return (
+    <React.Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-4 border-slate-800 border-t-transparent rounded-full animate-spin" /></div>}>
+      <PreviewContent />
+    </React.Suspense>
   )
 }

@@ -28,7 +28,7 @@ const CHECKLIST = [
   'Disrupt explored'
 ]
 
-export default function ReviewPage() {
+function ReviewContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('id')
@@ -295,7 +295,7 @@ export default function ReviewPage() {
                         onClick={() => setSelectedId(opp.id)}
                         className="text-[9px] font-black text-slate-300 hover:text-slate-600 transition-all uppercase tracking-widest"
                       >
-                        Refine
+                        Edit
                       </button>
                     </td>
                   </tr>
@@ -392,8 +392,8 @@ export default function ReviewPage() {
           <div className="bg-white w-full max-w-3xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div>
-                <h3 className="font-bold text-slate-700 uppercase tracking-tight text-lg">Edit {selectedOpp.title}</h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Reviewing Logic & Data</p>
+                <h3 className="font-bold text-slate-700 uppercase tracking-tight text-lg">Edit Log Point</h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Refining Logic & Data Entry</p>
               </div>
               <button onClick={() => setSelectedId(null)} className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-sm border border-slate-100 transition-all">
                 <X className="w-5 h-5" />
@@ -415,16 +415,16 @@ export default function ReviewPage() {
                     </p>
                     {session.recordingUrl && (
                       <div className="flex gap-2">
-                        <button onClick={() => skipAudio(-10)} className="w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 transition-all"><Rewind className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => toggleAudio()} className="w-8 h-8 bg-slate-700 text-white rounded-full flex items-center justify-center hover:bg-slate-800 transition-all shadow-md">{isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}</button>
-                        <button onClick={() => skipAudio(10)} className="w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 transition-all"><FastForward className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => skipAudio(-5)} className="w-9 h-9 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 transition-all shadow-sm"><Rewind className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => toggleAudio()} className="w-11 h-11 bg-slate-900 text-white rounded-full flex items-center justify-center hover:bg-black transition-all shadow-lg">{isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}</button>
+                        <button onClick={() => skipAudio(5)} className="w-9 h-9 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 transition-all shadow-sm"><FastForward className="w-3.5 h-3.5" /></button>
                       </div>
                     )}
                   </div>
-                  {!session.recordingUrl && <p className="text-[10px] text-slate-400 italic">No audio recorded for this session.</p>}
+                  {!session.recordingUrl && <p className="text-[10px] text-rose-400 italic">No audio recording available for this session.</p>}
                   {session.recordingUrl && (
-                    <div className="h-2 bg-slate-200 rounded-full overflow-hidden w-full cursor-pointer relative group" onClick={handleSeek}>
-                      <div className="h-full bg-blue-500 rounded-full transition-all duration-100 ease-linear" style={{ width: `${audioProgress}%` }} />
+                    <div className="h-3 bg-slate-100 rounded-full overflow-hidden w-full cursor-pointer relative group" onClick={handleSeek}>
+                      <div className="h-full bg-blue-500 rounded-full transition-all duration-100 ease-linear shadow-[0_0_10px_rgba(59,130,246,0.5)]" style={{ width: `${audioProgress}%` }} />
                       {/* Hover Seek UI */}
                       <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-all rounded-full" />
                     </div>
@@ -540,5 +540,13 @@ export default function ReviewPage() {
       )}
 
     </div>
+  )
+}
+
+export default function ReviewPage() {
+  return (
+    <React.Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-4 border-slate-800 border-t-transparent rounded-full animate-spin" /></div>}>
+      <ReviewContent />
+    </React.Suspense>
   )
 }

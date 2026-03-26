@@ -295,22 +295,24 @@ export const useMosiStore = create<MosiStore>()(
           let stakeholderId: any = null
           try {
             const dbStakeholder = {
-              name: stakeholder.name,
-              role: stakeholder.role,
-              company: stakeholder.company,
-              sector: stakeholder.sector,
-              employees: stakeholder.employees,
-              revenue: stakeholder.revenue,
-              geography: stakeholder.geography,
-              domain: stakeholder.domain,
-              address: stakeholder.address,
-              pincode: stakeholder.pincode
+              name: stakeholder.name || 'Anonymous',
+              role: stakeholder.role || 'Unspecified',
+              company: stakeholder.company || 'N/A',
+              sector: stakeholder.sector || '',
+              employees: stakeholder.employees || '',
+              revenue: stakeholder.revenue || '',
+              geography: stakeholder.geography || '',
+              domain: stakeholder.domain || '',
+              address: stakeholder.address || '',
+              pincode: stakeholder.pincode || ''
             }
+            console.log('Inserting stakeholder:', dbStakeholder)
             const { data: sData, error: sErr } = await supabase.from('stakeholders').insert(dbStakeholder).select().single()
             if (sErr || !sData) {
-              console.error('Stakeholder sync failed:', sErr)
+              console.error('Stakeholder sync failed. Error:', sErr?.message || sErr, 'Details:', sErr?.details || 'none')
             } else {
               stakeholderId = sData.id
+              console.log('Stakeholder synced successfully, ID:', stakeholderId)
             }
           } catch (e) {
             console.error('Stakeholder sync exception:', e)

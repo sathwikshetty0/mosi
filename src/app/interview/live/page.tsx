@@ -107,10 +107,12 @@ export default function LiveInterviewPage() {
     }
   }, [isRecording, stream])
 
+  const finalizedRef = React.useRef(false)
   React.useEffect(() => {
-    if (blobUrl && isFinishing) { 
-      finalizeSession(blobUrl)
-      router.push('/review') 
+    if (blobUrl && isFinishing && !finalizedRef.current) { 
+      finalizedRef.current = true
+      const newId = finalizeSession(blobUrl)
+      router.push(`/review?id=${newId}`) 
     }
   }, [blobUrl, isFinishing, finalizeSession, router])
 

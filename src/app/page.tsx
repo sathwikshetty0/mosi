@@ -29,87 +29,82 @@ export default function Home() {
   ]
 
   return (
-    <div className="space-y-10 pb-16 animate-in fade-in duration-700">
+    <div className="space-y-8 pb-16 animate-in fade-in duration-700 max-w-5xl mx-auto px-6">
       
       {/* HEADER */}
-      <section className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-        <div className="space-y-2">
-          <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-slate-700">
-            Good Morning 👋
+      <section className="flex flex-col md:flex-row md:items-center justify-between gap-6 pt-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-black tracking-tight text-slate-800 uppercase">
+            Discovery Protocol
           </h1>
-          <p className="text-sm text-slate-500">
-            Your discovery dashboard. Start a new session or review existing ones.
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+            Executive Control Tower / {sessions.length} Active Sessions
           </p>
         </div>
         <Link href="/setup">
-          <button className="h-12 px-6 bg-slate-700 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2 shadow-sm">
-            <Plus className="w-4 h-4" />
-            New Session
+          <button className="h-10 px-6 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-slate-100">
+            <Plus className="w-3.5 h-3.5" />
+            New Protocol
           </button>
         </Link>
       </section>
 
-      {/* STATS */}
+      {/* STATS - COMPACT */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, i) => (
-          <div key={i} className="p-6 bg-white border border-slate-100 rounded-2xl space-y-3 hover:shadow-md transition-all">
-             <stat.icon className="w-5 h-5 text-slate-400" />
+          <div key={i} className="p-5 bg-white border border-slate-100 rounded-2xl space-y-2 hover:shadow-sm transition-all group">
+             <stat.icon className="w-4 h-4 text-slate-300 group-hover:text-slate-800 transition-colors" />
              <div>
-                <p className="text-2xl font-bold text-slate-700">{stat.value}</p>
-                <p className="text-xs text-slate-400 font-medium">{stat.title}</p>
+                <p className="text-xl font-black text-slate-800 tracking-tight">{stat.value}</p>
+                <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">{stat.title}</p>
              </div>
           </div>
         ))}
       </section>
 
-      {/* SESSIONS */}
-      <section className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-slate-700">Recent Sessions</h3>
-          <Link href="/interviews" className="text-sm text-slate-400 hover:text-slate-700 transition-all flex items-center gap-1">
-            View all <ArrowRight className="w-4 h-4" />
+      {/* SESSIONS - DENSE LIST */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between px-1">
+          <h3 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Recent Executions</h3>
+          <Link href="/interviews" className="text-[10px] font-black text-slate-400 hover:text-slate-800 transition-all flex items-center gap-1 uppercase tracking-widest">
+            Log Archive <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="space-y-2">
           {sessions.length > 0 ? (
-            sessions.map((session) => (
+            sessions.slice(0, 5).map((session) => (
               <Link key={session.id} href={session.status === 'Review' ? `/review?id=${session.id}` : session.status === 'Published' ? `/preview?id=${session.id}` : `/interview/${session.id}`} className="block">
-                <div className="p-6 bg-white border border-slate-100 rounded-2xl hover:shadow-md hover:border-slate-200 transition-all flex items-center gap-5 group">
-                    <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-slate-700 group-hover:text-white transition-all shrink-0">
-                        <Layers className="w-5 h-5" />
+                <div className="px-5 py-4 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50/50 hover:border-slate-200 transition-all flex items-center gap-4 group">
+                    <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-slate-300 group-hover:bg-white group-hover:border-slate-200 group-hover:text-slate-800 transition-all shrink-0">
+                        <Layers className="w-4 h-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-0.5">
                             <span className={cn(
-                                "text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-md",
-                                session.status === 'Review' ? "bg-amber-50 text-amber-600" : 
-                                session.status === 'Published' ? "bg-emerald-50 text-emerald-600" :
-                                "bg-blue-50 text-blue-600"
+                                "text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border",
+                                session.status === 'Review' ? "bg-amber-50 text-amber-600 border-amber-100" : 
+                                session.status === 'Published' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                                "bg-blue-50 text-blue-600 border-blue-100"
                             )}>{session.status}</span>
-                            <span className="text-xs text-slate-400">{session.date}</span>
+                            <span className="text-[9px] text-slate-300 font-bold uppercase tracking-widest">{session.date}</span>
                         </div>
-                        <h4 className="text-base font-semibold text-slate-700 truncate">{session.stakeholder?.name || 'Untitled Participant'}</h4>
-                        <p className="text-xs text-slate-400">{session.stakeholder?.company || 'N/A'} · {session.opportunities.length} insights</p>
+                        <h4 className="text-sm font-bold text-slate-700 truncate tracking-tight">{session.stakeholder?.name || 'Untitled Participant'}</h4>
+                        <p className="text-[10px] text-slate-400 font-medium">{session.stakeholder?.company || 'N/A'} · {session.opportunities.length} insights</p>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-slate-700 transition-all shrink-0" />
+                    <ArrowRight className="w-4 h-4 text-slate-200 group-hover:text-slate-800 transition-all shrink-0" />
                 </div>
               </Link>
             ))
           ) : (
-            <div className="col-span-full py-20 text-center space-y-4 bg-white border border-dashed border-slate-200 rounded-2xl">
-              <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto">
-                 <Video className="w-8 h-8 text-slate-200" />
+            <div className="py-16 text-center space-y-4 bg-white border border-dashed border-slate-200 rounded-3xl">
+              <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto border border-slate-100">
+                 <Video className="w-6 h-6 text-slate-200" />
               </div>
-              <div>
-                 <p className="text-base font-semibold text-slate-700">No sessions yet</p>
-                 <p className="text-sm text-slate-400 mt-1">Start your first discovery session to begin.</p>
+              <div className="space-y-1">
+                 <p className="text-sm font-bold text-slate-700 uppercase tracking-widest">No Active Protocols</p>
+                 <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Initiate first session to populate dashboard.</p>
               </div>
-              <Link href="/setup">
-                <button className="mt-4 h-10 px-5 bg-slate-700 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-all">
-                  Start Session →
-                </button>
-              </Link>
             </div>
           )}
         </div>
