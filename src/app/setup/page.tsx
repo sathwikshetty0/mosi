@@ -52,7 +52,7 @@ export default function SetupPage() {
       {/* HEADER */}
       <div className="space-y-3 text-center">
         <h1 className="text-3xl font-bold tracking-tight text-slate-800">
-          New Interview Setup
+          New Stakeholder Setup
         </h1>
         <p className="text-sm text-slate-400 font-medium">Please provide the stakeholder and company context before starting.</p>
       </div>

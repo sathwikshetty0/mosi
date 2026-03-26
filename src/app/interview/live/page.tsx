@@ -219,7 +219,7 @@ export default function LiveInterviewPage() {
       <header className="py-10 space-y-6 shrink-0 border-b-2 border-slate-50">
         <div className="flex items-center justify-between px-2">
           <div className="space-y-1">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Section 00 / Discovery Protocol</h2>
+            <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Section 00 / Live Session</h2>
             <div className="h-1 w-8 bg-slate-800 rounded-full" />
           </div>
           <div className="flex items-center gap-4">
@@ -252,7 +252,7 @@ export default function LiveInterviewPage() {
       <div className="flex-1 flex flex-col justify-center pb-48 space-y-10">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-blue-500 uppercase tracking-widest">{activeQuadrant} Protocol</p>
+            <p className="text-xs font-bold text-blue-500 uppercase tracking-widest">{activeQuadrant} Focus</p>
             {answeredQuestions.has(questions[questionIndex]) && (
               <span className="bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border border-emerald-100 flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3" /> Answered

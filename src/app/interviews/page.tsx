@@ -44,7 +44,7 @@ export default function InterviewsPage() {
         <Link href="/setup">
           <button id="new-interview-btn" className="h-12 px-8 bg-slate-100 text-slate-800 rounded-2xl font-bold text-sm border border-slate-200 hover:bg-slate-200 transition-all active:scale-95 flex items-center gap-2 shadow-sm">
             <Plus className="w-5 h-5" />
-            Start New Session
+            New Stakeholder
           </button>
         </Link>
       </div>

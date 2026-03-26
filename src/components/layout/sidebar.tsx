@@ -18,7 +18,7 @@ const navigation = [
 ]
 
 const interviewFlow = [
-  { name: 'Protocol', href: '/setup', icon: CheckSquare },
+  { name: 'New Stakeholder', href: '/setup', icon: CheckSquare },
   { name: 'Live Discovery', href: '/interview/live', icon: Mic },
   { name: 'Synthesis', href: '/review', icon: BarChart2 },
   { name: 'Executive', href: '/preview', icon: Eye },
@@ -168,7 +168,7 @@ export function Sidebar() {
               >
                 <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                 <PlusCircle className="w-4 h-4 relative z-10" />
-                <span className="relative z-10">New Session</span>
+                <span className="relative z-10">New Stakeholder</span>
               </Link>
            )}
            {isSidebarCollapsed && (

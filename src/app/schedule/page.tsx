@@ -24,12 +24,12 @@ export default function SchedulePage() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-2">
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1.5 rounded-full w-fit">
-            <Clock className="w-3.5 h-3.5" /> Temporal Management
+            <Clock className="w-3.5 h-3.5" /> Meeting Schedule
           </div>
           <h2 className="text-4xl lg:text-5xl font-black tracking-tighter text-slate-700 uppercase leading-[0.9]">
-            Session <br/><span className="text-indigo-600">Chronology</span>
+            Interview <br/><span className="text-indigo-600">Chronology</span>
           </h2>
-          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Global scheduling and meeting orchestration hub.</p>
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Plan and manage upcoming stakeholder sessions.</p>
         </div>
         <a href="/setup">
           <button id="book-meeting-btn" className="px-8 py-5 bg-slate-700 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-slate-200 hover:bg-indigo-600 transition-all active:scale-95 flex items-center gap-2">
@@ -94,11 +94,11 @@ export default function SchedulePage() {
                </div>
                <p className="text-sm font-bold leading-relaxed uppercase tracking-tight text-slate-300">
                 {scheduled.length > 0 
-                  ? `Active load: ${scheduled.length} session${scheduled.length > 1 ? 's' : ''} detected. Execute discovery logic following protocol.`
-                  : "Zero sessions detected for current cycle. Use downtime for methodology refinement."}
+                  ? `Active load: ${scheduled.length} interview${scheduled.length > 1 ? 's' : ''} detected.`
+                  : "No sessions currently scheduled."}
                </p>
                <button className="flex items-center gap-3 text-[10px] font-black text-white hover:text-indigo-400 transition-all group uppercase tracking-widest border-b-2 border-white/10 pb-2">
-                 Synchronize Feed
+                 Refresh Schedule
                  <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-2" />
                </button>
             </div>
@@ -115,7 +115,7 @@ export default function SchedulePage() {
                  view === 'upcoming' ? "bg-white text-slate-700 shadow-xl" : "text-slate-500 hover:text-slate-700"
               )}
             >
-               Upcoming Logic
+               Upcoming
             </button>
             <button 
               onClick={() => setView('completed')} 
@@ -124,7 +124,7 @@ export default function SchedulePage() {
                  view === 'completed' ? "bg-white text-slate-700 shadow-xl" : "text-slate-500 hover:text-slate-700"
               )}
             >
-               Execution History
+               History
             </button>
           </div>
 
@@ -169,7 +169,7 @@ export default function SchedulePage() {
 
             <button className="w-full py-6 bg-white border-2 border-dashed border-slate-200 rounded-[2rem] flex items-center justify-center gap-4 text-slate-300 font-black uppercase tracking-[0.2em] text-[10px] hover:border-indigo-400 hover:text-indigo-600 transition-all active:scale-98">
               <Plus className="w-5 h-5" />
-              Manifest Deployment Proxy
+              Schedule Meeting
             </button>
           </div>
         </div>

@@ -190,7 +190,7 @@ function ReviewContent() {
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">Reviewing Session</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">Reviewing Stakeholder</span>
               <span className="text-xs text-slate-300 font-bold uppercase tracking-widest">{session.date}</span>
             </div>
             <h2 className="text-2xl font-bold text-slate-800 tracking-tight">{session.stakeholder?.name || 'Anonymous'}</h2>

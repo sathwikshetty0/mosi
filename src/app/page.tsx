@@ -44,7 +44,7 @@ export default function Home() {
         <Link href="/setup">
           <button className="h-11 px-6 bg-slate-100 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all active:scale-95 flex items-center gap-2 border border-slate-200">
             <Plus className="w-4 h-4" />
-            New Session
+            New Stakeholder
           </button>
         </Link>
       </section>
