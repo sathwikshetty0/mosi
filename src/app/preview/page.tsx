@@ -4,17 +4,17 @@ import * as React from 'react'
 import {
   FileCheck, Globe, Clock, BarChart2,
   ChevronDown, ChevronUp, Image as ImageIcon, Link as LinkIcon, File as FileIcon, Check, X,
-  MapPin, Briefcase, Headphones, FileText, Share
+  MapPin, Briefcase, Headphones, FileText, Share, Zap, Sparkles
 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useMosiStore, CEEDTag } from '@/lib/store'
 import { cn } from '@/lib/utils'
 
-const tagColors: Record<CEEDTag, string> = {
-  Core: 'text-slate-600 border-slate-200 bg-slate-50',
-  Efficiency: 'text-slate-600 border-slate-200 bg-slate-50',
-  Expansion: 'text-slate-600 border-slate-200 bg-slate-50',
-  Disrupt: 'text-slate-600 border-slate-200 bg-slate-50'
+const tagColors: Record<CEEDTag, { text: string; border: string; bg: string; icon: string }> = {
+  Core: { text: 'text-blue-600', border: 'border-blue-100', bg: 'bg-blue-50/50', icon: 'text-blue-400' },
+  Efficiency: { text: 'text-amber-600', border: 'border-amber-100', bg: 'bg-amber-50/50', icon: 'text-amber-400' },
+  Expansion: { text: 'text-emerald-600', border: 'border-emerald-100', bg: 'bg-emerald-50/50', icon: 'text-emerald-400' },
+  Disrupt: { text: 'text-rose-600', border: 'border-rose-100', bg: 'bg-rose-50/50', icon: 'text-rose-400' }
 }
 
 export default function PreviewPage() {
@@ -36,16 +36,16 @@ export default function PreviewPage() {
   }, [session])
 
   if (!session) return (
-    <div className="flex flex-col items-center justify-center py-40 text-center animate-in fade-in">
-      <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100 mb-6">
-        <FileCheck className="w-10 h-10 text-slate-200" />
+    <div className="flex flex-col items-center justify-center py-32 text-center animate-in fade-in">
+      <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100 mb-4">
+        <FileCheck className="w-8 h-8 text-slate-200" />
       </div>
-      <div className="space-y-2 mb-8">
-        <h3 className="text-xl font-bold text-slate-800 tracking-tight">Report Unavailable</h3>
-        <p className="text-sm text-slate-500 max-w-xs mx-auto">This session hasn't been finalized or synchronized yet.</p>
+      <div className="space-y-1 mb-6">
+        <h3 className="text-lg font-bold text-slate-800 tracking-tight">Report Unavailable</h3>
+        <p className="text-xs text-slate-500 max-w-xs mx-auto">This session data is not yet available for preview.</p>
       </div>
-      <button onClick={() => router.push('/')} className="h-11 px-8 bg-slate-800 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-slate-900 transition-all">
-        Return to Dashboard
+      <button onClick={() => router.push('/')} className="h-10 px-6 bg-slate-800 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all">
+        Dashboard
       </button>
     </div>
   )
@@ -62,86 +62,76 @@ export default function PreviewPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto pb-40 px-6 animate-in fade-in duration-1000">
+    <div className="max-w-4xl mx-auto pb-32 px-6 animate-in fade-in duration-700">
       
       {/* HEADER SECTION */}
-      <header className="space-y-10 pt-12 pb-16 border-b border-slate-100">
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-10">
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-3 py-1 bg-slate-50 border border-slate-100 rounded-md">
-                Confidential Report
+      <header className="space-y-8 pt-10 pb-10 border-b border-slate-100">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-md">
+                Protocol Preview
               </span>
               {approved && (
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 bg-emerald-50 px-3 py-1 rounded-md border border-emerald-100">
-                  ✓ Verified & Published
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                  Approved
                 </span>
               )}
             </div>
             
-            <div className="space-y-3">
-              <h1 className="text-5xl font-bold text-slate-800 tracking-tight leading-tight">
-                {stakeholder?.name || 'Anonymous Participant'}
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
+                {stakeholder?.name || 'Anonymous'}
               </h1>
-              <p className="text-lg font-medium text-slate-500 max-w-2xl">
-                {stakeholder?.role} at <span className="text-slate-700">{stakeholder?.company || 'Leading Enterprise'}</span> 
-                {stakeholder?.sector && ` in the ${stakeholder.sector} sector.`}
+              <p className="text-base font-medium text-slate-500">
+                {stakeholder?.role} / <span className="text-slate-800">{stakeholder?.company || 'N/A'}</span> 
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-8 items-center pt-2">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest border-r border-slate-200 pr-8">
-                <Clock className="w-4 h-4 text-slate-300" /> {session.date}
+            <div className="flex flex-wrap gap-6 items-center">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <Clock className="w-3.5 h-3.5" /> {session.date}
               </div>
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest border-r border-slate-200 pr-8">
-                <BarChart2 className="w-4 h-4 text-slate-300" /> {opportunities.length} Insights Identified
-              </div>
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
-                <Globe className="w-4 h-4 text-slate-300" /> {stakeholder?.geography || 'Global'}
+              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <BarChart2 className="w-3.5 h-3.5" /> {opportunities.length} Insights
               </div>
             </div>
           </div>
 
-          <div className="flex md:flex-col gap-3 shrink-0">
+          <div className="flex gap-2 shrink-0">
             {!approved ? (
               <button 
                 onClick={handleApproveAll} 
-                className="h-14 px-10 bg-slate-800 text-white rounded-2xl text-xs font-bold uppercase tracking-[0.2em] hover:bg-slate-900 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2 active:scale-95"
+                className="h-11 px-6 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
               >
-                Approve Report <Check className="w-4 h-4" />
+                Approve <Check className="w-3.5 h-3.5" />
               </button>
             ) : (
-              <div className="h-14 px-10 bg-white border-2 border-slate-100 text-slate-800 rounded-2xl flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.2em]">
-                <Check className="w-4 h-4 text-emerald-500" /> Export Published
+              <div className="h-11 px-6 bg-white border border-slate-100 text-slate-800 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.2em]">
+                <Check className="w-3.5 h-3.5 text-emerald-500" /> Published
               </div>
             )}
-            <div className="flex gap-3">
-              <button className="flex-1 h-12 border border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-all" title="Share">
-                <Share className="w-4 h-4" />
-              </button>
-              <button className="flex-1 h-12 border border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-all" title="Download PDF">
-                <FileText className="w-4 h-4" />
-              </button>
-            </div>
+            <button className="w-11 h-11 border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-all">
+              <Share className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </header>
 
       {/* BODY CONTENT */}
-      <div className="py-20 space-y-24">
+      <div className="py-12 space-y-16">
         
         {/* EXECUTIVE SYNTHESIS SECTION */}
         {session.summary && (
-          <section className="space-y-10 animate-in slide-in-from-bottom-4 duration-700">
-            <div className="space-y-2">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.4em]">Section 01 / Executive Synthesis</h3>
-              <div className="h-1 w-12 bg-slate-800 rounded-full" />
-            </div>
-            <div className="bg-slate-50/50 rounded-[2.5rem] p-12 border border-slate-100 relative overflow-hidden">
-               <div className="absolute top-0 right-0 w-64 h-64 bg-white/40 rounded-full blur-3xl -z-10 -mr-32 -mt-32" />
-               <div className="prose prose-slate prose-lg max-w-none">
+          <section className="space-y-6">
+            <h3 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-blue-300" /> Analysis Synthesis
+            </h3>
+            <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm relative overflow-hidden group">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-bl-full -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+               <div className="prose prose-slate max-w-none">
                 {session.summary.split('\n\n').map((para, i) => (
-                  <p key={i} className="text-lg text-slate-600 leading-relaxed font-normal last:mb-0 mb-6 drop-shadow-sm">
+                  <p key={i} className="text-base text-slate-600 leading-relaxed font-normal mb-4 last:mb-0">
                     {para}
                   </p>
                 ))}
@@ -150,50 +140,48 @@ export default function PreviewPage() {
           </section>
         )}
 
-        {/* DATA MATRIX & AUDIO */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+        {/* METADATA & AUDIO */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
           
-          <div className="lg:col-span-8 space-y-10">
-             <div className="space-y-2">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.4em]">Section 02 / Metadata & Context</h3>
-                <div className="h-1 w-12 bg-slate-800 rounded-full" />
-             </div>
-             <div className="grid grid-cols-2 gap-y-10 gap-x-12 p-10 bg-white border border-slate-100 rounded-[2.5rem]">
+          <div className="md:col-span-8 space-y-6">
+             <h3 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] flex items-center gap-2 px-2">
+                <Globe className="w-3.5 h-3.5" /> Market Context
+             </h3>
+             <div className="grid grid-cols-2 gap-6 p-8 bg-slate-50/50 border border-slate-100 rounded-3xl">
                 {[
-                  { label: 'Primary Domain', val: stakeholder?.domain, icon: Globe },
-                  { label: 'Industry Sector', val: stakeholder?.sector, icon: Briefcase },
-                  { label: 'Organizational Scale', val: stakeholder?.employees, icon: BarChart2 },
-                  { label: 'Market Geography', val: stakeholder?.geography, icon: MapPin },
+                  { label: 'Domain', val: stakeholder?.domain, icon: Globe, color: 'text-blue-500' },
+                  { label: 'Industry', val: stakeholder?.sector, icon: Briefcase, color: 'text-emerald-500' },
+                  { label: 'Scale', val: stakeholder?.employees, icon: BarChart2, color: 'text-rose-500' },
+                  { label: 'Location', val: stakeholder?.geography, icon: MapPin, color: 'text-amber-500' },
                 ].map(item => item.val ? (
-                  <div key={item.label} className="space-y-3">
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] flex items-center gap-2">
-                      <item.icon className="w-3.5 h-3.5" /> {item.label}
+                  <div key={item.label} className="space-y-1.5">
+                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-1.5">
+                      <item.icon className={cn("w-3 h-3", item.color)} /> {item.label}
                     </p>
-                    <p className="text-lg font-bold text-slate-700">{item.val}</p>
+                    <p className="text-sm font-bold text-slate-700">{item.val}</p>
                   </div>
                 ) : null)}
              </div>
           </div>
 
-          <div className="lg:col-span-4 space-y-10">
-            <div className="space-y-2">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.4em]">Source Audio</h3>
-                <div className="h-1 w-8 bg-slate-800 rounded-full" />
-             </div>
-             <div className="bg-slate-900 rounded-[2.5rem] p-8 space-y-6 text-white shadow-2xl shadow-slate-200">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
-                    <Headphones className="w-6 h-6 text-slate-300" />
+          <div className="md:col-span-4 space-y-6">
+             <h3 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] flex items-center gap-2 px-2">
+                <Headphones className="w-3.5 h-3.5" /> Audio
+             </h3>
+             <div className="bg-white border border-slate-100 rounded-3xl p-6 space-y-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center">
+                    <Zap className="w-5 h-5 text-slate-300" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Verbatim Master</p>
-                    <p className="text-xs text-white/60 font-medium">Session MP3</p>
+                    <p className="text-[8px] font-black uppercase tracking-widest text-slate-300">Recording</p>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase">Master MP3</p>
                   </div>
                 </div>
                 {session.recordingUrl ? (
-                  <audio src={session.recordingUrl} controls className="w-full h-10 opacity-80" />
+                  <audio src={session.recordingUrl} controls className="w-full h-8" />
                 ) : (
-                  <p className="text-xs text-slate-500 italic">No audio recorded.</p>
+                  <p className="text-[10px] text-slate-400 italic">No audio.</p>
                 )}
              </div>
           </div>
@@ -201,69 +189,66 @@ export default function PreviewPage() {
         </div>
 
         {/* INSIGHTS GRID */}
-        <section className="space-y-12">
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.4em]">Section 03 / Core Insight Mapping</h3>
-              <div className="h-1 w-12 bg-slate-800 rounded-full" />
-            </div>
-            <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-4 py-2 rounded-full border border-slate-100 uppercase tracking-widest">
-              {opportunities.length} Total Logs
+        <section className="space-y-8">
+          <div className="flex items-center justify-between px-2">
+            <h3 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] flex items-center gap-2">
+              <FileIcon className="w-3.5 h-3.5" /> Log Insights
+            </h3>
+            <span className="text-[9px] font-black text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-100 uppercase tracking-widest">
+              {opportunities.length} Total
             </span>
           </div>
           
-          <div className="space-y-8">
+          <div className="space-y-4">
             {opportunities.map((opp, index) => {
               const isExpanded = expandedId === opp.id;
               const oppEvidence = session.evidence.filter(e => (e as any).opportunity_id === opp.id)
+              const theme = tagColors[opp.tag]
 
               return (
                 <div key={opp.id} className={cn(
-                  "group bg-white border border-slate-100 rounded-[2.5rem] transition-all duration-500 overflow-hidden",
-                  opp.status === 'Hidden' && "opacity-40",
-                  isExpanded ? "ring-2 ring-slate-800/10 shadow-2xl shadow-slate-100" : "hover:border-slate-300 hover:shadow-xl hover:shadow-slate-100/50"
+                  "bg-white border transition-all duration-300 overflow-hidden rounded-2xl",
+                  isExpanded ? "ring-4 ring-slate-50 border-slate-200" : "border-slate-100 hover:border-slate-200",
+                  opp.status === 'Hidden' && "opacity-40"
                 )}>
-                  <div className="p-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                  <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     
-                    <div className="flex-1 space-y-4">
-                      <div className="flex items-center gap-4">
-                        <span className="text-xs font-black text-slate-300 bg-slate-50 px-3 py-1 rounded-lg">#{(index + 1).toString().padStart(2, '0')}</span>
-                        <span className={cn('text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border', tagColors[opp.tag])}>
-                          {opp.tag} Index
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-[9px] font-black text-slate-300">#{(index + 1).toString().padStart(2, '0')}</span>
+                        <span className={cn('text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border', theme.text, theme.border, theme.bg)}>
+                          {opp.tag}
                         </span>
-                        {opp.paid && <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 bg-emerald-50 px-2 rounded-md">Validated Asset</span>}
+                        {opp.paid && <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-1.5 rounded">Paid</span>}
                       </div>
-                      <h4 className="text-2xl font-bold text-slate-800 tracking-tight group-hover:translate-x-1 transition-transform uppercase">
+                      <h4 className="text-xl font-bold text-slate-800 tracking-tight uppercase">
                         {opp.title}
                       </h4>
-                      <p className="text-base text-slate-500 font-medium leading-relaxed max-w-2xl px-1 border-l-2 border-slate-100 ml-1">
-                        {opp.description?.substring(0, 140)}{opp.description?.length > 140 ? '...' : ''}
-                      </p>
                     </div>
 
-                    <div className="flex items-center gap-6 shrink-0">
-                      <div className="flex gap-2">
+                    <div className="flex items-center gap-4 shrink-0">
+                      <div className="flex gap-1.5">
                          <button 
                            onClick={() => handleStatusUpdate(opp.id, 'Approved')} 
-                           className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-all border outline-none", 
-                            opp.status === 'Approved' ? "bg-slate-800 text-white border-slate-800 shadow-lg" : "bg-white text-slate-300 border-slate-100 hover:text-emerald-500 hover:border-emerald-100")}
+                           className={cn("w-9 h-9 rounded-xl flex items-center justify-center transition-all border", 
+                            opp.status === 'Approved' ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-slate-300 border-slate-100 hover:text-emerald-500")}
                          >
-                           <Check className="w-5 h-5" />
+                           <Check className="w-4 h-4" />
                          </button>
                          <button 
                            onClick={() => handleStatusUpdate(opp.id, 'Hidden')} 
-                           className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-all border outline-none", 
-                            opp.status === 'Hidden' ? "bg-slate-800 text-white border-slate-800 shadow-lg" : "bg-white text-slate-300 border-slate-100 hover:text-red-500 hover:border-red-100")}
+                           className={cn("w-9 h-9 rounded-xl flex items-center justify-center transition-all border", 
+                            opp.status === 'Hidden' ? "bg-rose-600 text-white border-rose-600" : "bg-white text-slate-300 border-slate-100 hover:text-rose-500")}
                          >
-                           <X className="w-5 h-5" />
+                           <X className="w-4 h-4" />
                          </button>
                       </div>
                       
                       <button 
                         onClick={() => setExpandedId(isExpanded ? null : opp.id)}
-                        className="h-12 px-6 bg-slate-50 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-slate-800 hover:bg-slate-100 flex items-center gap-2 transition-all"
+                        className="h-9 px-4 bg-slate-50 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-800 flex items-center gap-2 transition-all"
                       >
-                        {isExpanded ? 'Collapse' : 'Detailed View'} {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        {isExpanded ? 'Close' : 'View'} {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                       </button>
                     </div>
 
@@ -271,27 +256,24 @@ export default function PreviewPage() {
 
                   {/* EXPANDED DETAILS */}
                   {isExpanded && (
-                    <div className="px-10 pb-12 space-y-12 animate-in slide-in-from-top-4 duration-500">
+                    <div className="px-6 pb-8 space-y-8 animate-in slide-in-from-top-2 duration-300">
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-16 pt-10 border-t border-slate-50">
-                        <div className="space-y-6">
-                          <h5 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Full Log Narrative</h5>
-                          <p className="text-lg text-slate-600 leading-relaxed font-normal">{opp.description || 'No descriptive details provided.'}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-50">
+                        <div className="space-y-4">
+                          <h5 className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Detail Narrative</h5>
+                          <p className="text-sm text-slate-600 leading-relaxed">{opp.description || 'No description.'}</p>
                         </div>
-                        <div className="space-y-8">
-                          <h5 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Commercial Specifications</h5>
-                          <div className="grid grid-cols-2 gap-y-8 gap-x-12">
+                        <div className="space-y-4">
+                          <h5 className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Metrics</h5>
+                          <div className="grid grid-cols-2 gap-4">
                             {[
-                              { label: 'Timeline', val: opp.duration, icon: Clock },
-                              { label: 'Resource Model', val: opp.engagementType, icon: Briefcase },
-                              { label: 'Skill Vector', val: opp.skills, icon: BarChart2 },
-                              { label: 'Tool Stack', val: opp.toolset, icon: Globe },
+                              { label: 'Time', val: opp.duration, icon: Clock },
+                              { label: 'Role', val: opp.engagementType, icon: Briefcase },
+                              { label: 'Stack', val: opp.toolset, icon: Globe },
                             ].map(m => (
-                              <div key={m.label} className="space-y-2">
-                                <span className="text-[9px] font-black text-slate-200 uppercase tracking-[0.2em] flex items-center gap-2">
-                                  <m.icon className="w-3 h-3" /> {m.label}
-                                </span>
-                                <span className="block text-sm font-bold text-slate-700">{m.val || 'Unspecified'}</span>
+                              <div key={m.label} className="space-y-1">
+                                <span className="text-[8px] font-extrabold text-slate-300 uppercase tracking-widest flex items-center gap-1.5"><m.icon className="w-3 h-3" /> {m.label}</span>
+                                <span className="block text-xs font-bold text-slate-600">{m.val || '—'}</span>
                               </div>
                             ))}
                           </div>
@@ -300,13 +282,13 @@ export default function PreviewPage() {
 
                       {/* ASSETS */}
                       {oppEvidence.length > 0 && (
-                        <div className="pt-10 border-t border-slate-50 space-y-6">
-                          <h5 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Linked Verification Assets</h5>
-                          <div className="flex flex-wrap gap-4">
+                        <div className="pt-6 border-t border-slate-50 space-y-4">
+                          <h5 className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Linked Assets</h5>
+                          <div className="flex flex-wrap gap-3">
                             {oppEvidence.map((ev, i) => (
-                               <a key={i} href={ev.url} target="_blank" rel="noopener noreferrer" className="h-12 px-6 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-3 hover:bg-slate-100 hover:border-slate-200 transition-all group/asset shadow-sm">
-                                  {ev.type === 'link' ? <LinkIcon className="w-4 h-4 text-slate-400 group-hover/asset:text-slate-800" /> : <FileIcon className="w-4 h-4 text-slate-400 group-hover/asset:text-slate-800" />}
-                                  <span className="text-[10px] font-bold text-slate-500 group-hover/asset:text-slate-800 uppercase tracking-widest truncate max-w-[180px]">{ev.title || ev.type}</span>
+                               <a key={i} href={ev.url} target="_blank" rel="noopener noreferrer" className="h-9 px-4 bg-slate-50 border border-slate-100 rounded-xl flex items-center gap-2 hover:bg-slate-100 transition-all group/asset">
+                                  {ev.type === 'link' ? <LinkIcon className="w-3.5 h-3.5 text-slate-400 group-hover/asset:text-slate-600" /> : <FileIcon className="w-3.5 h-3.5 text-slate-400 group-hover/asset:text-slate-600" />}
+                                  <span className="text-[10px] font-bold text-slate-500 group-hover/asset:text-slate-800 uppercase tracking-widest truncate max-w-[150px]">{ev.title || ev.type}</span>
                                </a>
                             ))}
                           </div>
