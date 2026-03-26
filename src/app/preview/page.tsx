@@ -2,40 +2,50 @@
 
 import * as React from 'react'
 import {
-  FileCheck, FileText, Check, X,
-  Building2, Clock, BarChart2,
-  ChevronDown, ChevronUp, Image as ImageIcon, Link as LinkIcon, File as FileIcon, Play, Pause, ShieldCheck, Mail, Globe, MapPin, Briefcase, Headphones
+  FileCheck, Globe, Clock, BarChart2,
+  ChevronDown, ChevronUp, Image as ImageIcon, Link as LinkIcon, File as FileIcon, Check, X,
+  MapPin, Briefcase, Headphones, FileText, Share
 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useMosiStore, CEEDTag, formatDuration } from '@/lib/store'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useMosiStore, CEEDTag } from '@/lib/store'
 import { cn } from '@/lib/utils'
 
 const tagColors: Record<CEEDTag, string> = {
-  Core: 'bg-blue-50 text-blue-600',
-  Efficiency: 'bg-amber-50 text-amber-600',
-  Expansion: 'bg-emerald-50 text-emerald-600',
-  Disrupt: 'bg-rose-50 text-rose-600'
+  Core: 'text-slate-600 border-slate-200 bg-slate-50',
+  Efficiency: 'text-slate-600 border-slate-200 bg-slate-50',
+  Expansion: 'text-slate-600 border-slate-200 bg-slate-50',
+  Disrupt: 'text-slate-600 border-slate-200 bg-slate-50'
 }
 
 export default function PreviewPage() {
   const { sessions, publishSession, updateOpportunityStatus } = useMosiStore()
-  const session = sessions.find(s => s.status === 'Review' || s.status === 'Published') || sessions[0]
+  const searchParams = useSearchParams()
+  const sessionId = searchParams.get('id')
+  
+  const session = React.useMemo(() => {
+    if (sessionId) return sessions.find(s => s.id === sessionId)
+    return sessions.find(s => s.status === 'Review' || s.status === 'Published') || sessions[0]
+  }, [sessions, sessionId])
+
   const router = useRouter()
   const [approved, setApproved] = React.useState(session?.status === 'Published')
-  
   const [expandedId, setExpandedId] = React.useState<string | null>(null)
 
+  React.useEffect(() => {
+    if (session) setApproved(session.status === 'Published')
+  }, [session])
+
   if (!session) return (
-    <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-      <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center">
-        <FileCheck className="w-7 h-7 text-slate-300" />
+    <div className="flex flex-col items-center justify-center py-40 text-center animate-in fade-in">
+      <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100 mb-6">
+        <FileCheck className="w-10 h-10 text-slate-200" />
       </div>
-      <div>
-        <h3 className="text-lg font-semibold text-slate-900">No preview available</h3>
-        <p className="text-sm text-slate-400 mt-1">Complete an interview first.</p>
+      <div className="space-y-2 mb-8">
+        <h3 className="text-xl font-bold text-slate-800 tracking-tight">Report Unavailable</h3>
+        <p className="text-sm text-slate-500 max-w-xs mx-auto">This session hasn't been finalized or synchronized yet.</p>
       </div>
-      <button onClick={() => router.push('/')} className="h-10 px-5 bg-slate-900 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-all">
-        Go to Dashboard
+      <button onClick={() => router.push('/')} className="h-11 px-8 bg-slate-800 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-slate-900 transition-all">
+        Return to Dashboard
       </button>
     </div>
   )
@@ -46,229 +56,270 @@ export default function PreviewPage() {
 
   const stakeholder = session?.stakeholder
   const opportunities = session?.opportunities || []
-  const date = session?.date
-  const duration = session?.duration || 0
-
+  
   const handleStatusUpdate = (id: string, status: 'Approved' | 'Hidden' | 'Pending') => {
     updateOpportunityStatus(session.id, id, status)
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-24 animate-in fade-in duration-700">
+    <div className="max-w-4xl mx-auto pb-40 px-6 animate-in fade-in duration-1000">
       
-      {/* HEADER */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md">Stakeholder Approval</span>
-              <span className={cn("text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border", approved ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100')}>
-                {approved ? '✓ Published internally' : 'Review Required'}
+      {/* HEADER SECTION */}
+      <header className="space-y-10 pt-12 pb-16 border-b border-slate-100">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-10">
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-3 py-1 bg-slate-50 border border-slate-100 rounded-md">
+                Confidential Report
               </span>
+              {approved && (
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 bg-emerald-50 px-3 py-1 rounded-md border border-emerald-100">
+                  ✓ Verified & Published
+                </span>
+              )}
             </div>
             
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-                {stakeholder?.name || 'Untitled Participant'}
+            <div className="space-y-3">
+              <h1 className="text-5xl font-bold text-slate-800 tracking-tight leading-tight">
+                {stakeholder?.name || 'Anonymous Participant'}
               </h1>
-              <p className="text-sm font-medium text-slate-500 mt-1">
-                {stakeholder?.role} {stakeholder?.company && `at ${stakeholder.company}`}
+              <p className="text-lg font-medium text-slate-500 max-w-2xl">
+                {stakeholder?.role} at <span className="text-slate-700">{stakeholder?.company || 'Leading Enterprise'}</span> 
+                {stakeholder?.sector && ` in the ${stakeholder.sector} sector.`}
               </p>
             </div>
 
-            <div className="flex gap-6 pt-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-400">
-                <Clock className="w-4 h-4 text-slate-300" /> {date}
+            <div className="flex flex-wrap gap-8 items-center pt-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest border-r border-slate-200 pr-8">
+                <Clock className="w-4 h-4 text-slate-300" /> {session.date}
               </div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-400">
-                <BarChart2 className="w-4 h-4 text-slate-300" /> {opportunities.length} Logs
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest border-r border-slate-200 pr-8">
+                <BarChart2 className="w-4 h-4 text-slate-300" /> {opportunities.length} Insights Identified
+              </div>
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                <Globe className="w-4 h-4 text-slate-300" /> {stakeholder?.geography || 'Global'}
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 shrink-0 lg:w-48">
+          <div className="flex md:flex-col gap-3 shrink-0">
             {!approved ? (
               <button 
                 onClick={handleApproveAll} 
-                className="h-12 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-lg"
+                className="h-14 px-10 bg-slate-800 text-white rounded-2xl text-xs font-bold uppercase tracking-[0.2em] hover:bg-slate-900 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2 active:scale-95"
               >
-                Approve All
+                Approve Report <Check className="w-4 h-4" />
               </button>
             ) : (
-              <div className="h-12 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-widest">
-                <Check className="w-4 h-4" /> Approved
+              <div className="h-14 px-10 bg-white border-2 border-slate-100 text-slate-800 rounded-2xl flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.2em]">
+                <Check className="w-4 h-4 text-emerald-500" /> Export Published
               </div>
             )}
-            <button className="h-10 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-all uppercase tracking-widest">
-              Export PDF
-            </button>
-          </div>
-        </div>
-
-        {/* DETAILS GRID */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-slate-100">
-          {[
-            { label: 'Domain', val: stakeholder?.domain, icon: Globe },
-            { label: 'Sector', val: stakeholder?.sector, icon: Briefcase },
-            { label: 'Employees', val: stakeholder?.employees, icon: BarChart2 },
-            { label: 'Geography', val: stakeholder?.geography, icon: MapPin },
-          ].map(item => item.val ? (
-            <div key={item.label} className="bg-slate-50 rounded-xl p-4 space-y-1 text-center">
-              <item.icon className="w-4 h-4 text-blue-500 mx-auto mb-2" />
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</p>
-              <p className="text-xs font-bold text-slate-900 truncate">{item.val}</p>
+            <div className="flex gap-3">
+              <button className="flex-1 h-12 border border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-all" title="Share">
+                <Share className="w-4 h-4" />
+              </button>
+              <button className="flex-1 h-12 border border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-all" title="Download PDF">
+                <FileText className="w-4 h-4" />
+              </button>
             </div>
-          ) : null)}
-        </div>
-
-        {/* AUDIO PLAYER - STAKEHOLDER VERSION */}
-        <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center gap-4 mt-4">
-          <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-blue-500 shrink-0">
-            <Headphones className="w-5 h-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Full Session Recording</p>
-            {session.recordingUrl ? (
-              <audio src={session.recordingUrl} controls className="w-full h-8" />
-            ) : (
-              <p className="text-xs text-slate-400 italic font-medium mt-1">Recording is not available.</p>
-            )}
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* CHALLENGES LIST */}
-      <div className="space-y-4">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] px-2 mb-2">Identified Challenges / Logs</h3>
+      {/* BODY CONTENT */}
+      <div className="py-20 space-y-24">
         
-        {opportunities.map((opp, index) => {
-          const isExpanded = expandedId === opp.id;
-          const oppEvidence = session.evidence.filter(e => (e as any).opportunity_id === opp.id)
-
-          return (
-            <div key={opp.id} className={cn("bg-white border rounded-3xl overflow-hidden transition-all shadow-sm",
-              opp.status === 'Approved' ? "border-emerald-200 bg-emerald-50/10" : 
-              opp.status === 'Hidden' ? "border-red-200 bg-red-50/10 opacity-75" : "border-slate-100 hover:border-blue-200"
-            )}>
-              <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">#{index + 1}</span>
-                    <span className={cn('text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg', tagColors[opp.tag])}>{opp.tag}</span>
-                    {opp.paid ? (
-                      <span className="bg-emerald-50 text-emerald-600 text-[9px] border border-emerald-100 font-black uppercase tracking-widest px-2 py-1 rounded-md">Commercial (Paid)</span>
-                    ) : (
-                      <span className="bg-slate-50 text-slate-500 text-[9px] border border-slate-200 font-black uppercase tracking-widest px-2 py-1 rounded-md">Draft / Unpaid</span>
-                    )}
-                  </div>
-                  <h4 className="text-lg font-bold text-slate-900 tracking-tight">{opp.title}</h4>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
-                     <button 
-                       onClick={() => handleStatusUpdate(opp.id, 'Approved')} 
-                       className={cn("w-10 h-10 rounded-lg flex items-center justify-center transition-all", opp.status === 'Approved' ? "bg-emerald-500 text-white shadow-md" : "bg-white text-emerald-600 hover:bg-emerald-50 border border-transparent")}
-                       title="Approve"
-                     >
-                       <Check className="w-5 h-5" />
-                     </button>
-                     <button 
-                       onClick={() => handleStatusUpdate(opp.id, 'Hidden')} 
-                       className={cn("w-10 h-10 rounded-lg flex items-center justify-center transition-all", opp.status === 'Hidden' ? "bg-red-500 text-white shadow-md" : "bg-white text-red-500 hover:bg-red-50 border border-transparent")}
-                       title="Reject / Hide"
-                     >
-                       <X className="w-5 h-5" />
-                     </button>
-                  </div>
-                  
-                  <button 
-                    onClick={() => setExpandedId(isExpanded ? null : opp.id)}
-                    className="h-14 px-5 bg-white border border-slate-200 rounded-xl text-xs font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900 hover:border-slate-300 transition-all flex items-center gap-2 shadow-sm"
-                  >
-                    More {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  </button>
-                </div>
-
-              </div>
-
-              {/* EXPANDED DETAILS */}
-              {isExpanded && (
-                <div className="p-6 border-t border-slate-100 bg-slate-50/50 space-y-6 animate-in slide-in-from-top-4 duration-300">
-                  
-                  {/* Notes & Data */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Details</h5>
-                      <p className="text-sm text-slate-700 leading-relaxed font-medium bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">{opp.description || 'No descriptive details provided.'}</p>
-                    </div>
-                    <div className="space-y-3">
-                      <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Requirements</h5>
-                      <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3">
-                        <div className="flex justify-between items-center pb-2 border-b border-slate-50">
-                          <span className="text-xs font-semibold text-slate-500">Timeline</span>
-                          <span className="text-xs font-bold text-slate-900">{opp.duration || 'TBD'}</span>
-                        </div>
-                        <div className="flex justify-between items-center pb-2 border-b border-slate-50">
-                          <span className="text-xs font-semibold text-slate-500">Engagement</span>
-                          <span className="text-xs font-bold text-slate-900">{opp.engagementType || 'N/A'}</span>
-                        </div>
-                        <div className="flex justify-between items-center pb-2 border-b border-slate-50">
-                          <span className="text-xs font-semibold text-slate-500">Skillset</span>
-                          <span className="text-xs font-bold text-slate-900">{opp.skills || 'Any'}</span>
-                        </div>
-                        <div className="flex justify-between items-center pb-2">
-                          <span className="text-xs font-semibold text-slate-500">Toolset</span>
-                          <span className="text-xs font-bold text-slate-900">{opp.toolset || 'Any'}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Specific Evidence */}
-                  <div className="space-y-4 pt-4 border-t border-slate-100">
-                    <div className="flex items-center gap-2">
-                      <ImageIcon className="w-4 h-4 text-emerald-500" />
-                      <h5 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Digital Assets for this Log</h5>
-                    </div>
-                    {oppEvidence.length > 0 ? (
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {oppEvidence.map((ev, i) => (
-                           <div key={i} className="group relative aspect-square bg-slate-100 rounded-2xl overflow-hidden border border-slate-200">
-                             {ev.type === 'image' ? (
-                               <img src={ev.url} alt={ev.title} className="w-full h-full object-cover" />
-                             ) : ev.type === 'video' ? (
-                               <video src={ev.url} className="w-full h-full object-cover" />
-                             ) : (
-                               <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-4">
-                                 {ev.type === 'link' ? <LinkIcon className="w-6 h-6 text-slate-400" /> : <FileIcon className="w-6 h-6 text-slate-400" />}
-                                 <p className="text-[10px] font-bold text-slate-500 w-full text-center truncate">{ev.title || 'Attachment'}</p>
-                               </div>
-                             )}
-                             <a href={ev.url} target="_blank" rel="noopener noreferrer" className="absolute inset-0 z-10 opacity-0 group-hover:opacity-100 bg-slate-900/40 transition-opacity flex items-center justify-center">
-                               <span className="bg-white text-slate-900 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg">View Asset</span>
-                             </a>
-                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-6 text-center">
-                        <p className="text-xs font-medium text-slate-400 italic">No specific assets linked to this log.</p>
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-              )}
+        {/* EXECUTIVE SYNTHESIS SECTION */}
+        {session.summary && (
+          <section className="space-y-10 animate-in slide-in-from-bottom-4 duration-700">
+            <div className="space-y-2">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.4em]">Section 01 / Executive Synthesis</h3>
+              <div className="h-1 w-12 bg-slate-800 rounded-full" />
             </div>
-          )
-        })}
-        {opportunities.length === 0 && (
-          <div className="bg-white border border-slate-100 rounded-3xl p-12 text-center shadow-sm">
-            <p className="text-sm font-semibold text-slate-400">No logs identified to preview.</p>
-          </div>
+            <div className="bg-slate-50/50 rounded-[2.5rem] p-12 border border-slate-100 relative overflow-hidden">
+               <div className="absolute top-0 right-0 w-64 h-64 bg-white/40 rounded-full blur-3xl -z-10 -mr-32 -mt-32" />
+               <div className="prose prose-slate prose-lg max-w-none">
+                {session.summary.split('\n\n').map((para, i) => (
+                  <p key={i} className="text-lg text-slate-600 leading-relaxed font-normal last:mb-0 mb-6 drop-shadow-sm">
+                    {para}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </section>
         )}
+
+        {/* DATA MATRIX & AUDIO */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+          
+          <div className="lg:col-span-8 space-y-10">
+             <div className="space-y-2">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.4em]">Section 02 / Metadata & Context</h3>
+                <div className="h-1 w-12 bg-slate-800 rounded-full" />
+             </div>
+             <div className="grid grid-cols-2 gap-y-10 gap-x-12 p-10 bg-white border border-slate-100 rounded-[2.5rem]">
+                {[
+                  { label: 'Primary Domain', val: stakeholder?.domain, icon: Globe },
+                  { label: 'Industry Sector', val: stakeholder?.sector, icon: Briefcase },
+                  { label: 'Organizational Scale', val: stakeholder?.employees, icon: BarChart2 },
+                  { label: 'Market Geography', val: stakeholder?.geography, icon: MapPin },
+                ].map(item => item.val ? (
+                  <div key={item.label} className="space-y-3">
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] flex items-center gap-2">
+                      <item.icon className="w-3.5 h-3.5" /> {item.label}
+                    </p>
+                    <p className="text-lg font-bold text-slate-700">{item.val}</p>
+                  </div>
+                ) : null)}
+             </div>
+          </div>
+
+          <div className="lg:col-span-4 space-y-10">
+            <div className="space-y-2">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.4em]">Source Audio</h3>
+                <div className="h-1 w-8 bg-slate-800 rounded-full" />
+             </div>
+             <div className="bg-slate-900 rounded-[2.5rem] p-8 space-y-6 text-white shadow-2xl shadow-slate-200">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
+                    <Headphones className="w-6 h-6 text-slate-300" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Verbatim Master</p>
+                    <p className="text-xs text-white/60 font-medium">Session MP3</p>
+                  </div>
+                </div>
+                {session.recordingUrl ? (
+                  <audio src={session.recordingUrl} controls className="w-full h-10 opacity-80" />
+                ) : (
+                  <p className="text-xs text-slate-500 italic">No audio recorded.</p>
+                )}
+             </div>
+          </div>
+
+        </div>
+
+        {/* INSIGHTS GRID */}
+        <section className="space-y-12">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.4em]">Section 03 / Core Insight Mapping</h3>
+              <div className="h-1 w-12 bg-slate-800 rounded-full" />
+            </div>
+            <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-4 py-2 rounded-full border border-slate-100 uppercase tracking-widest">
+              {opportunities.length} Total Logs
+            </span>
+          </div>
+          
+          <div className="space-y-8">
+            {opportunities.map((opp, index) => {
+              const isExpanded = expandedId === opp.id;
+              const oppEvidence = session.evidence.filter(e => (e as any).opportunity_id === opp.id)
+
+              return (
+                <div key={opp.id} className={cn(
+                  "group bg-white border border-slate-100 rounded-[2.5rem] transition-all duration-500 overflow-hidden",
+                  opp.status === 'Hidden' && "opacity-40",
+                  isExpanded ? "ring-2 ring-slate-800/10 shadow-2xl shadow-slate-100" : "hover:border-slate-300 hover:shadow-xl hover:shadow-slate-100/50"
+                )}>
+                  <div className="p-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                    
+                    <div className="flex-1 space-y-4">
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs font-black text-slate-300 bg-slate-50 px-3 py-1 rounded-lg">#{(index + 1).toString().padStart(2, '0')}</span>
+                        <span className={cn('text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border', tagColors[opp.tag])}>
+                          {opp.tag} Index
+                        </span>
+                        {opp.paid && <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 bg-emerald-50 px-2 rounded-md">Validated Asset</span>}
+                      </div>
+                      <h4 className="text-2xl font-bold text-slate-800 tracking-tight group-hover:translate-x-1 transition-transform uppercase">
+                        {opp.title}
+                      </h4>
+                      <p className="text-base text-slate-500 font-medium leading-relaxed max-w-2xl px-1 border-l-2 border-slate-100 ml-1">
+                        {opp.description?.substring(0, 140)}{opp.description?.length > 140 ? '...' : ''}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-6 shrink-0">
+                      <div className="flex gap-2">
+                         <button 
+                           onClick={() => handleStatusUpdate(opp.id, 'Approved')} 
+                           className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-all border outline-none", 
+                            opp.status === 'Approved' ? "bg-slate-800 text-white border-slate-800 shadow-lg" : "bg-white text-slate-300 border-slate-100 hover:text-emerald-500 hover:border-emerald-100")}
+                         >
+                           <Check className="w-5 h-5" />
+                         </button>
+                         <button 
+                           onClick={() => handleStatusUpdate(opp.id, 'Hidden')} 
+                           className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-all border outline-none", 
+                            opp.status === 'Hidden' ? "bg-slate-800 text-white border-slate-800 shadow-lg" : "bg-white text-slate-300 border-slate-100 hover:text-red-500 hover:border-red-100")}
+                         >
+                           <X className="w-5 h-5" />
+                         </button>
+                      </div>
+                      
+                      <button 
+                        onClick={() => setExpandedId(isExpanded ? null : opp.id)}
+                        className="h-12 px-6 bg-slate-50 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-slate-800 hover:bg-slate-100 flex items-center gap-2 transition-all"
+                      >
+                        {isExpanded ? 'Collapse' : 'Detailed View'} {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </button>
+                    </div>
+
+                  </div>
+
+                  {/* EXPANDED DETAILS */}
+                  {isExpanded && (
+                    <div className="px-10 pb-12 space-y-12 animate-in slide-in-from-top-4 duration-500">
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-16 pt-10 border-t border-slate-50">
+                        <div className="space-y-6">
+                          <h5 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Full Log Narrative</h5>
+                          <p className="text-lg text-slate-600 leading-relaxed font-normal">{opp.description || 'No descriptive details provided.'}</p>
+                        </div>
+                        <div className="space-y-8">
+                          <h5 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Commercial Specifications</h5>
+                          <div className="grid grid-cols-2 gap-y-8 gap-x-12">
+                            {[
+                              { label: 'Timeline', val: opp.duration, icon: Clock },
+                              { label: 'Resource Model', val: opp.engagementType, icon: Briefcase },
+                              { label: 'Skill Vector', val: opp.skills, icon: BarChart2 },
+                              { label: 'Tool Stack', val: opp.toolset, icon: Globe },
+                            ].map(m => (
+                              <div key={m.label} className="space-y-2">
+                                <span className="text-[9px] font-black text-slate-200 uppercase tracking-[0.2em] flex items-center gap-2">
+                                  <m.icon className="w-3 h-3" /> {m.label}
+                                </span>
+                                <span className="block text-sm font-bold text-slate-700">{m.val || 'Unspecified'}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ASSETS */}
+                      {oppEvidence.length > 0 && (
+                        <div className="pt-10 border-t border-slate-50 space-y-6">
+                          <h5 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Linked Verification Assets</h5>
+                          <div className="flex flex-wrap gap-4">
+                            {oppEvidence.map((ev, i) => (
+                               <a key={i} href={ev.url} target="_blank" rel="noopener noreferrer" className="h-12 px-6 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-3 hover:bg-slate-100 hover:border-slate-200 transition-all group/asset shadow-sm">
+                                  {ev.type === 'link' ? <LinkIcon className="w-4 h-4 text-slate-400 group-hover/asset:text-slate-800" /> : <FileIcon className="w-4 h-4 text-slate-400 group-hover/asset:text-slate-800" />}
+                                  <span className="text-[10px] font-bold text-slate-500 group-hover/asset:text-slate-800 uppercase tracking-widest truncate max-w-[180px]">{ev.title || ev.type}</span>
+                               </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </section>
+
       </div>
 
     </div>

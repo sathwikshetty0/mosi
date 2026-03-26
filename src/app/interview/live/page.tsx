@@ -214,24 +214,29 @@ export default function LiveInterviewPage() {
       <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
 
       {/* 2X2 CEED QUADRANT SELECTOR */}
-      <header className="py-6 space-y-4 shrink-0">
+      <header className="py-10 space-y-6 shrink-0 border-b-2 border-slate-50">
         <div className="flex items-center justify-between px-2">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Discovery Protocol</p>
-          <div className="flex items-center gap-2">
-            <div className={cn("w-2 h-2 rounded-full", isRecording && !isPaused ? "bg-red-500 animate-pulse" : "bg-slate-300")} />
-            <span className="text-xs font-mono font-bold text-slate-600 tracking-wider bg-slate-100 px-3 py-1 rounded-lg">{formatDuration(recordingSeconds)}</span>
+          <div className="space-y-1">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Section 00 / Discovery Protocol</h2>
+            <div className="h-1 w-8 bg-slate-800 rounded-full" />
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className={cn("w-2 h-2 rounded-full", isRecording && !isPaused ? "bg-red-500 animate-pulse" : "bg-slate-300")} />
+              <span className="text-sm font-mono font-black text-slate-800 tracking-wider bg-slate-50 border border-slate-100 px-4 py-1.5 rounded-xl shadow-inner">{formatDuration(recordingSeconds)}</span>
+            </div>
           </div>
         </div>
         
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {quadrants.map(q => (
             <button 
               key={q.id}
               onClick={() => { setActiveQuadrant(q.id); setQuestionIndex(0) }}
               className={cn(
-                "h-14 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border-2 text-center flex items-center justify-center gap-2",
+                "h-14 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all border-2 text-center flex items-center justify-center gap-2",
                 activeQuadrant === q.id 
-                  ? 'bg-slate-900 text-white border-slate-900 shadow-xl shadow-slate-200' 
+                  ? 'bg-slate-800 text-white border-slate-800 shadow-2xl shadow-slate-200' 
                   : 'bg-white text-slate-400 border-slate-100 hover:border-slate-300 hover:text-slate-600'
               )}
             >
@@ -252,7 +257,7 @@ export default function LiveInterviewPage() {
               </span>
             )}
           </div>
-          <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
+          <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-slate-700 leading-tight">
             {questions[questionIndex]}
           </h1>
           <button 
@@ -306,7 +311,7 @@ export default function LiveInterviewPage() {
             {isRecording && (
               <button 
                 onClick={handlePauseInterview} 
-                className="h-9 px-4 rounded-full border border-slate-200 bg-white text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-all shadow-sm"
+                className="h-9 px-4 rounded-full border border-slate-200 bg-white text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-700 hover:border-slate-300 transition-all shadow-sm"
               >
                 {isPaused ? 'Resume' : 'Pause'}
               </button>
@@ -333,7 +338,7 @@ export default function LiveInterviewPage() {
             {!isRecording ? (
               <button 
                 onClick={startRecording}
-                className="w-10 h-10 bg-slate-900 text-white rounded-full flex items-center justify-center hover:bg-slate-800 active:scale-90 transition-all shadow-lg"
+                className="w-10 h-10 bg-slate-700 text-white rounded-full flex items-center justify-center hover:bg-slate-800 active:scale-90 transition-all shadow-lg"
               >
                 <Play className="w-5 h-5 fill-current" />
               </button>
@@ -368,7 +373,7 @@ export default function LiveInterviewPage() {
                 disabled={!isRecording}
                 className={cn(
                   "w-10 h-10 rounded-full flex items-center justify-center transition-all",
-                  showAssetMenu ? "bg-slate-900 text-white rotate-45" : 
+                  showAssetMenu ? "bg-slate-700 text-white rotate-45" : 
                   isRecording ? "bg-slate-100 text-slate-500 hover:bg-slate-200" : "bg-slate-50 text-slate-200 cursor-not-allowed"
                 )}
               >
@@ -385,7 +390,7 @@ export default function LiveInterviewPage() {
                     <button 
                       key={item.id}
                       onClick={() => handleCaptureEvidence(item.id as any)}
-                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 text-left transition-all text-xs font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900"
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 text-left transition-all text-xs font-bold uppercase tracking-widest text-slate-600 hover:text-slate-700"
                     >
                       <item.icon className="w-4 h-4 text-slate-400" />
                       {item.label}
@@ -402,10 +407,10 @@ export default function LiveInterviewPage() {
       {isFinishing && (
         <div className="fixed inset-0 bg-white/95 backdrop-blur-md z-[100] flex flex-col items-center justify-center gap-6 animate-in fade-in duration-200 text-center">
           <div className="w-16 h-16 border-2 border-slate-200 rounded-full flex items-center justify-center">
-            <div className="w-10 h-10 border-2 border-slate-900 rounded-full animate-spin border-t-transparent" />
+            <div className="w-10 h-10 border-2 border-slate-700 rounded-full animate-spin border-t-transparent" />
           </div>
           <div>
-            <p className="text-lg font-semibold text-slate-900">Processing Session...</p>
+            <p className="text-lg font-semibold text-slate-700">Processing Session...</p>
             <p className="text-sm text-slate-400 mt-1">Preparing your review dashboard.</p>
           </div>
         </div>

@@ -43,7 +43,7 @@ export default function SetupPage() {
     router.push('/interview/live')
   }
 
-  const inputClass = "w-full h-12 px-4 rounded-xl bg-white border border-slate-200 focus:border-slate-900 outline-none transition-all text-sm font-medium placeholder:text-slate-300"
+  const inputClass = "w-full h-12 px-4 rounded-xl bg-white border border-slate-200 focus:border-slate-700 outline-none transition-all text-sm font-medium placeholder:text-slate-300"
   const labelClass = "block text-xs font-medium text-slate-500 mb-2"
 
   return (
@@ -51,7 +51,7 @@ export default function SetupPage() {
       
       {/* HEADER */}
       <div className="space-y-2">
-        <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-slate-700">
           New Discovery Session
         </h1>
         <p className="text-sm text-slate-500">Set up your stakeholder profile before starting the interview.</p>
@@ -69,7 +69,7 @@ export default function SetupPage() {
             onClick={() => setStep(s.n)}
             className={cn(
               "flex-1 py-3 rounded-lg text-sm font-medium transition-all",
-              step === s.n ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'
+              step === s.n ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'
             )}
           >
             {s.label}
@@ -85,7 +85,7 @@ export default function SetupPage() {
               <User className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-semibold text-slate-900">Stakeholder Info</h3>
+              <h3 className="font-semibold text-slate-700">Stakeholder Info</h3>
               <p className="text-xs text-slate-400">Who are you interviewing?</p>
             </div>
           </div>
@@ -108,7 +108,7 @@ export default function SetupPage() {
               <Building2 className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-semibold text-slate-900">Company Details</h3>
+              <h3 className="font-semibold text-slate-700">Company Details</h3>
               <p className="text-xs text-slate-400">Context about their organization.</p>
             </div>
           </div>
@@ -138,7 +138,7 @@ export default function SetupPage() {
                 <Mic className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900">Recording Settings</h3>
+                <h3 className="font-semibold text-slate-700">Recording Settings</h3>
                 <p className="text-xs text-slate-400">Configure capture preferences.</p>
               </div>
             </div>
@@ -153,7 +153,7 @@ export default function SetupPage() {
                   onClick={() => update(opt.key, !(form as any)[opt.key])}
                   className={cn(
                     "p-5 rounded-xl border-2 transition-all flex flex-col items-center gap-3",
-                    (form as any)[opt.key] ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-400 border-slate-100 hover:border-slate-200"
+                    (form as any)[opt.key] ? "bg-slate-700 text-white border-slate-700" : "bg-white text-slate-400 border-slate-100 hover:border-slate-200"
                   )}
                 >
                   <opt.icon className="w-6 h-6" />
@@ -169,7 +169,7 @@ export default function SetupPage() {
                 <Calendar className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900">Meeting Details</h3>
+                <h3 className="font-semibold text-slate-700">Meeting Details</h3>
                 <p className="text-xs text-slate-400">Optional scheduling info.</p>
               </div>
             </div>
@@ -185,12 +185,12 @@ export default function SetupPage() {
       {/* NAVIGATION */}
       <div className="flex items-center gap-4 pt-4">
         {step > 1 && (
-          <button onClick={() => setStep(step - 1)} className="h-12 px-6 rounded-xl border border-slate-200 text-sm font-medium text-slate-500 hover:text-slate-900 hover:border-slate-300 transition-all">
+          <button onClick={() => setStep(step - 1)} className="h-12 px-6 rounded-xl border border-slate-200 text-sm font-medium text-slate-500 hover:text-slate-700 hover:border-slate-300 transition-all">
             Back
           </button>
         )}
         {step < 3 ? (
-          <button onClick={() => setStep(step + 1)} className="flex-1 h-12 bg-slate-900 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+          <button onClick={() => setStep(step + 1)} className="flex-1 h-12 bg-slate-700 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
             Next <ChevronRight className="w-4 h-4" />
           </button>
         ) : (
@@ -203,7 +203,7 @@ export default function SetupPage() {
             </button>
             <button
               onClick={handleStart}
-              className="flex-1 h-12 bg-slate-900 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              className="flex-1 h-12 bg-slate-700 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             >
               <Mic className="w-4 h-4" /> Start Interview
             </button>

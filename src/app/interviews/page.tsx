@@ -32,17 +32,17 @@ export default function InterviewsPage() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-slate-400 font-bold uppercase tracking-widest text-[10px]">
-             <Link href="/" className="hover:text-slate-900 transition-colors flex items-center gap-1">
+             <Link href="/" className="hover:text-slate-700 transition-colors flex items-center gap-1">
                 <ArrowLeft className="w-3 h-3" /> Dashboard
              </Link>
              <span>/</span>
-             <span className="text-slate-900">Repository</span>
+             <span className="text-slate-700">Repository</span>
           </div>
-          <h2 className="text-4xl font-black tracking-tight text-slate-900 uppercase tracking-tighter">Interview Log</h2>
+          <h2 className="text-4xl font-black tracking-tight text-slate-700 uppercase tracking-tighter">Interview Log</h2>
           <p className="text-sm text-slate-500 font-bold uppercase tracking-widest">Managing {sessions.length} discovered stakeholder archives</p>
         </div>
         <Link href="/setup">
-          <button id="new-interview-btn" className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-slate-200 hover:bg-blue-600 transition-all active:scale-95 flex items-center gap-2">
+          <button id="new-interview-btn" className="px-8 py-4 bg-slate-700 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-slate-200 hover:bg-blue-600 transition-all active:scale-95 flex items-center gap-2">
             <Plus className="w-4 h-4" />
             New Interview Archive
           </button>
@@ -56,7 +56,7 @@ export default function InterviewsPage() {
           <input
             type="text"
             placeholder="Search by stakeholder or corporation..."
-            className="w-full h-14 pl-12 pr-6 rounded-2xl border-2 border-transparent bg-slate-50 focus:bg-white focus:border-slate-900 outline-none transition-all text-sm font-bold uppercase tracking-tight"
+            className="w-full h-14 pl-12 pr-6 rounded-2xl border-2 border-transparent bg-slate-50 focus:bg-white focus:border-slate-700 outline-none transition-all text-sm font-bold uppercase tracking-tight"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -73,7 +73,7 @@ export default function InterviewsPage() {
               className={cn(
                  "whitespace-nowrap h-12 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2",
                  statusFilter === status 
-                   ? 'bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-200' 
+                   ? 'bg-slate-700 text-white border-slate-700 shadow-lg shadow-slate-200' 
                    : 'bg-white text-slate-400 border-slate-100 hover:border-slate-300 hover:text-slate-600'
               )}
             >
@@ -105,7 +105,7 @@ export default function InterviewsPage() {
             <Search className="w-10 h-10 text-slate-200" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Zero Archives Discovered</h3>
+            <h3 className="text-xl font-black text-slate-700 uppercase tracking-tighter">Zero Archives Discovered</h3>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest max-w-[200px] leading-loose mx-auto">
               Try adjusting your synthetic search or filters to locate session records.
             </p>

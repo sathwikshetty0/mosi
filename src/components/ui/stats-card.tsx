@@ -16,18 +16,18 @@ interface StatsCardProps {
 
 export function StatsCard({ title, value, icon: Icon, description, trend }: StatsCardProps) {
   return (
-    <div className="premium-card p-8 bg-white border-2 border-slate-50 shadow-2xl shadow-slate-200/50 hover:border-slate-900 group transition-all duration-500 rounded-[2.5rem]">
+    <div className="premium-card p-8 bg-white border-2 border-slate-50 shadow-2xl shadow-slate-200/50 hover:border-slate-700 group transition-all duration-500 rounded-[2.5rem]">
       <div className="flex items-start justify-between">
         <div className="space-y-3">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{title}</p>
           <div className="space-y-1">
-             <h3 className="text-4xl font-black text-slate-900 tracking-tighter group-hover:text-blue-600 transition-colors">{value}</h3>
+             <h3 className="text-4xl font-black text-slate-700 tracking-tighter group-hover:text-blue-600 transition-colors">{value}</h3>
              {description && (
                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{description}</p>
              )}
           </div>
         </div>
-        <div className="w-16 h-16 bg-slate-50 rounded-[1.5rem] flex items-center justify-center text-slate-900 border-2 border-slate-100 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-all duration-500 shadow-xl shadow-slate-100">
+        <div className="w-16 h-16 bg-slate-50 rounded-[1.5rem] flex items-center justify-center text-slate-700 border-2 border-slate-100 group-hover:bg-slate-700 group-hover:text-white group-hover:border-slate-700 transition-all duration-500 shadow-xl shadow-slate-100">
           <Icon className="w-8 h-8" />
         </div>
       </div>

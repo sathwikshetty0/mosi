@@ -33,7 +33,7 @@ interface InterviewCardProps {
 
 const statusConfig = {
   Scheduled: { 
-    color: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+    color: 'bg-indigo-50 text-indigo-600 border-slate-50',
     icon: Calendar,
     label: 'Temporal Hold'
   },
@@ -88,7 +88,7 @@ export function InterviewCard({
 
   return (
     <Link href={status === 'Review' ? '/review' : status === 'Published' ? '/preview' : `/interview/${id}`}>
-      <div className="group relative bg-white rounded-[2.5rem] border-2 border-slate-50 p-8 transition-all duration-500 hover:shadow-3xl hover:shadow-slate-200/50 hover:border-slate-900 overflow-hidden h-full flex flex-col">
+      <div className="group relative bg-white rounded-[2.5rem] border-2 border-slate-50 p-8 transition-all duration-500 hover:shadow-3xl hover:shadow-slate-200/50 hover:border-slate-700 overflow-hidden h-full flex flex-col">
         {/* Decorative Element */}
         <div className={cn(
           "absolute top-0 right-0 w-48 h-48 -mr-24 -mt-24 rounded-full opacity-[0.03] transition-all duration-700 group-hover:opacity-[0.1] group-hover:scale-110",
@@ -115,7 +115,7 @@ export function InterviewCard({
           <div className="space-y-4">
              <div className="space-y-1">
                 <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Stakeholder</p>
-                <h3 className="text-2xl font-black text-slate-900 tracking-tighter leading-none group-hover:text-blue-600 transition-colors uppercase">
+                <h3 className="text-2xl font-black text-slate-700 tracking-tighter leading-none group-hover:text-blue-600 transition-colors uppercase">
                   {stakeholder}
                 </h3>
              </div>
@@ -123,14 +123,14 @@ export function InterviewCard({
              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                    <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Enterprise</p>
-                   <div className="flex items-center gap-2 text-[10px] font-black text-slate-900 uppercase tracking-tight truncate">
+                   <div className="flex items-center gap-2 text-[10px] font-black text-slate-700 uppercase tracking-tight truncate">
                       <Building2 className="w-3.5 h-3.5 text-slate-200" />
                       {company}
                    </div>
                 </div>
                 <div className="space-y-1">
                    <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Sector</p>
-                   <div className="flex items-center gap-2 text-[10px] font-black text-slate-900 uppercase tracking-tight truncate">
+                   <div className="flex items-center gap-2 text-[10px] font-black text-slate-700 uppercase tracking-tight truncate">
                       <Briefcase className="w-3.5 h-3.5 text-slate-200" />
                       {sector}
                    </div>
@@ -140,12 +140,12 @@ export function InterviewCard({
 
           <div className="pt-8 border-t border-slate-50 mt-auto flex items-center justify-between">
             <div className="flex items-center gap-2">
-               <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all">
+               <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-700 group-hover:text-white transition-all">
                   <Calendar className="w-4 h-4" />
                </div>
                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{date}</span>
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-white border-2 border-slate-50 text-slate-300 flex items-center justify-center transition-all group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 group-hover:rotate-[-45deg] shadow-xl shadow-slate-100">
+            <div className="w-12 h-12 rounded-2xl bg-white border-2 border-slate-50 text-slate-300 flex items-center justify-center transition-all group-hover:bg-slate-700 group-hover:text-white group-hover:border-slate-700 group-hover:rotate-[-45deg] shadow-xl shadow-slate-100">
                <ChevronRight className="w-6 h-6" />
             </div>
           </div>

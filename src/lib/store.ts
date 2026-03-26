@@ -289,88 +289,137 @@ export const useMosiStore = create<MosiStore>()(
     if (supabase) {
       ;(async () => {
         try {
+          console.log('Starting Supabase sync for session:', newId)
+          
           // 1. STAKEHOLDER
-          const dbStakeholder = {
-            name: stakeholder.name,
-            role: stakeholder.role,
-            company: stakeholder.company,
-            sector: stakeholder.sector,
-            employees: stakeholder.employees,
-            revenue: stakeholder.revenue,
-            geography: stakeholder.geography,
-            domain: stakeholder.domain,
-            address: stakeholder.address,
-            pincode: stakeholder.pincode
+          let stakeholderId: any = null
+          try {
+            const dbStakeholder = {
+              name: stakeholder.name,
+              role: stakeholder.role,
+              company: stakeholder.company,
+              sector: stakeholder.sector,
+              employees: stakeholder.employees,
+              revenue: stakeholder.revenue,
+              geography: stakeholder.geography,
+              domain: stakeholder.domain,
+              address: stakeholder.address,
+              pincode: stakeholder.pincode
+            }
+            const { data: sData, error: sErr } = await supabase.from('stakeholders').insert(dbStakeholder).select().single()
+            if (sErr || !sData) {
+              console.error('Stakeholder sync failed:', sErr)
+            } else {
+              stakeholderId = sData.id
+            }
+          } catch (e) {
+            console.error('Stakeholder sync exception:', e)
           }
-          const { data: sData, error: sErr } = await supabase.from('stakeholders').insert(dbStakeholder).select().single()
-          if (sErr || !sData) return
 
-          // 2. SESSION
-          const { error: sessErr } = await supabase.from('sessions').insert({
-            id: newId,
-            stakeholder_id: sData.id,
-            status: 'Review',
-            date: session.date,
-            duration: session.duration,
-            audio_settings: session.settings
-          })
-          if (sessErr) return
+          // 2. SESSION (Crucial step)
+          try {
+            const { error: sessErr } = await supabase.from('sessions').insert({
+              id: newId,
+              stakeholder_id: stakeholderId, // might be null if stakeholder sync failed but we still want the session
+              status: 'Review',
+              date: session.date,
+              duration: session.duration,
+              audio_settings: session.settings
+            })
+            if (sessErr) {
+               console.error('Session sync failed:', sessErr)
+               // If session insert fails, we can't link anything else, but we can still try to upload the audio file
+            }
+          } catch (e) {
+            console.error('Session sync exception:', e)
+          }
 
           // 3. OPPORTUNITIES
-          if (session.opportunities.length > 0) {
-            await supabase.from('opportunities').insert(
-              session.opportunities.map(o => ({
-                session_id: newId,
-                title: o.title,
-                description: o.description,
-                tag: o.tag,
-                timestamp: o.timestamp,
-                status: 'Pending'
-              }))
-            )
+          try {
+            if (session.opportunities.length > 0) {
+              const { error: oppErr } = await supabase.from('opportunities').insert(
+                session.opportunities.map(o => ({
+                  session_id: newId,
+                  title: o.title,
+                  description: o.description,
+                  tag: o.tag,
+                  timestamp: o.timestamp,
+                  status: 'Pending'
+                }))
+              )
+              if (oppErr) console.error('Opportunities sync failed:', oppErr)
+            }
+          } catch (e) {
+            console.error('Opportunities sync exception:', e)
           }
 
-          // 4. EVIDENCE
-          if (session.evidence.length > 0) {
-            await supabase.from('evidence').insert(
-              session.evidence.map(e => ({
+          // 4. EVIDENCE & OPPORTUNITY EVIDENCE
+          try {
+            const evidenceToInsert = [
+              ...session.evidence.map(e => ({
                 session_id: newId,
                 type: e.type,
                 url: e.url,
                 title: e.title
-              }))
-            )
-          }
-
-          // 4b. OPPORTUNITY EVIDENCE
-          const oppEvidence = session.opportunities.flatMap(o => 
-            (o.evidence || []).map(e => ({
-              session_id: newId,
-              opportunity_id: o.id,
-              type: e.type,
-              url: e.url,
-              title: e.title
-            }))
-          )
-          if (oppEvidence.length > 0) {
-            await supabase.from('evidence').insert(oppEvidence)
-          }
-
-          // 5. AUDIO UPLOAD
-          if (recordingUrl && recordingUrl.startsWith('blob:')) {
-            const response = await fetch(recordingUrl)
-            const blob = await response.blob()
-            const fileName = `${newId}.webm`
-            const { data: uploadData } = await supabase.storage.from('recordings').upload(fileName, blob)
+              })),
+              ...session.opportunities.flatMap(o => 
+                (o.evidence || []).map(e => ({
+                  session_id: newId,
+                  opportunity_id: o.id,
+                  type: e.type,
+                  url: e.url,
+                  title: e.title
+                }))
+              )
+            ]
             
-            if (uploadData) {
-              const { data: { publicUrl } } = supabase.storage.from('recordings').getPublicUrl(fileName)
-              await supabase.from('sessions').update({ recording_url: publicUrl }).eq('id', newId)
-              get().setRecordingUrl(newId, publicUrl)
+            if (evidenceToInsert.length > 0) {
+              const { error: evErr } = await supabase.from('evidence').insert(evidenceToInsert)
+              if (evErr) console.error('Evidence sync failed:', evErr)
             }
+          } catch (e) {
+            console.error('Evidence sync exception:', e)
           }
-        } catch (err) {
-          console.error('Supabase sync error:', err)
+
+          // 5. AUDIO UPLOAD & RECORDING URL UPDATE
+          // This is often the most important but also the most fragile step
+          try {
+            if (recordingUrl && recordingUrl.startsWith('blob:')) {
+              console.log('Fetching audio blob for upload...')
+              const response = await fetch(recordingUrl)
+              const blob = await response.blob()
+              const fileName = `${newId}.webm`
+              
+              console.log('Uploading audio to Supabase Storage...')
+              const { data: uploadData, error: uploadErr } = await supabase.storage.from('recordings').upload(fileName, blob)
+              
+              if (uploadErr) {
+                console.error('Audio upload failed:', uploadErr)
+              } else if (uploadData) {
+                console.log('Audio uploaded successfully, retrieving public URL...')
+                const { data: { publicUrl } } = supabase.storage.from('recordings').getPublicUrl(fileName)
+                
+                console.log('Updating session with recording URL...')
+                const { error: updateErr } = await supabase.from('sessions').update({ recording_url: publicUrl }).eq('id', newId)
+                
+                if (updateErr) {
+                  console.error('Failed to update session with recording URL:', updateErr)
+                } else {
+                  console.log('Recording URL sync complete.')
+                  get().setRecordingUrl(newId, publicUrl)
+                }
+              }
+            } else if (recordingUrl) {
+              // Not a blob, maybe already a URL? update it directly
+              await supabase.from('sessions').update({ recording_url: recordingUrl }).eq('id', newId)
+            }
+          } catch (e) {
+            console.error('Audio sync exception:', e)
+          }
+
+          console.log('Supabase background sync finished for session:', newId)
+        } catch (globalErr) {
+          console.error('Global Supabase sync error:', globalErr)
         }
       })()
     }

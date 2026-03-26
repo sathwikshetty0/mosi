@@ -26,13 +26,13 @@ export default function SchedulePage() {
           <div className="flex items-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1.5 rounded-full w-fit">
             <Clock className="w-3.5 h-3.5" /> Temporal Management
           </div>
-          <h2 className="text-4xl lg:text-5xl font-black tracking-tighter text-slate-900 uppercase leading-[0.9]">
+          <h2 className="text-4xl lg:text-5xl font-black tracking-tighter text-slate-700 uppercase leading-[0.9]">
             Session <br/><span className="text-indigo-600">Chronology</span>
           </h2>
           <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Global scheduling and meeting orchestration hub.</p>
         </div>
         <a href="/setup">
-          <button id="book-meeting-btn" className="px-8 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-slate-200 hover:bg-indigo-600 transition-all active:scale-95 flex items-center gap-2">
+          <button id="book-meeting-btn" className="px-8 py-5 bg-slate-700 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-slate-200 hover:bg-indigo-600 transition-all active:scale-95 flex items-center gap-2">
             <Plus className="w-5 h-5" />
             Schedule New Archive
           </button>
@@ -46,7 +46,7 @@ export default function SchedulePage() {
           <div className="premium-card p-8 bg-white border-2 border-slate-100 shadow-2xl shadow-slate-200/50">
             <div className="flex items-center justify-between mb-8">
                <div className="space-y-1">
-                  <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">March 2026</h3>
+                  <h3 className="text-lg font-black text-slate-700 uppercase tracking-tighter">March 2026</h3>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Standardized Time (UTC)</p>
                </div>
                <div className="flex gap-2">
@@ -70,7 +70,7 @@ export default function SchedulePage() {
                     key={day}
                     className={cn(
                        "aspect-square flex flex-col items-center justify-center text-xs font-black rounded-2xl cursor-pointer transition-all relative border-2 border-transparent",
-                       isToday ? "bg-slate-900 text-white shadow-xl shadow-slate-300 border-slate-900" : "hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 text-slate-500"
+                       isToday ? "bg-slate-700 text-white shadow-xl shadow-slate-300 border-slate-700" : "hover:bg-indigo-50 hover:text-indigo-600 hover:border-slate-50 text-slate-500"
                     )}
                   >
                     {day}
@@ -83,7 +83,7 @@ export default function SchedulePage() {
             </div>
           </div>
 
-          <div className="premium-card p-8 bg-slate-900 text-white overflow-hidden relative shadow-2xl">
+          <div className="premium-card p-8 bg-slate-700 text-white overflow-hidden relative shadow-2xl">
             <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
               <CalendarIcon className="w-32 h-32 -mr-16 -mt-16" />
             </div>
@@ -112,7 +112,7 @@ export default function SchedulePage() {
               onClick={() => setView('upcoming')} 
               className={cn(
                  "px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                 view === 'upcoming' ? "bg-white text-slate-900 shadow-xl" : "text-slate-500 hover:text-slate-700"
+                 view === 'upcoming' ? "bg-white text-slate-700 shadow-xl" : "text-slate-500 hover:text-slate-700"
               )}
             >
                Upcoming Logic
@@ -121,7 +121,7 @@ export default function SchedulePage() {
               onClick={() => setView('completed')} 
               className={cn(
                  "px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                 view === 'completed' ? "bg-white text-slate-900 shadow-xl" : "text-slate-500 hover:text-slate-700"
+                 view === 'completed' ? "bg-white text-slate-700 shadow-xl" : "text-slate-500 hover:text-slate-700"
               )}
             >
                Execution History
@@ -130,18 +130,18 @@ export default function SchedulePage() {
 
           <div className="space-y-6">
             {list.length > 0 ? list.map((meeting, i) => (
-              <div key={meeting.id} className="premium-card p-1 lg:p-1 flex flex-col md:flex-row items-stretch bg-white border-2 border-slate-100 shadow-xl hover:border-slate-900 transition-all group overflow-hidden h-fit md:h-32">
-                 <div className="w-full md:w-32 bg-slate-50 flex flex-col items-center justify-center text-slate-900 border-b md:border-b-0 md:border-r border-slate-100 p-4 md:p-0">
+              <div key={meeting.id} className="premium-card p-1 lg:p-1 flex flex-col md:flex-row items-stretch bg-white border-2 border-slate-100 shadow-xl hover:border-slate-700 transition-all group overflow-hidden h-fit md:h-32">
+                 <div className="w-full md:w-32 bg-slate-50 flex flex-col items-center justify-center text-slate-700 border-b md:border-b-0 md:border-r border-slate-100 p-4 md:p-0">
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">{meeting.date.split(',')[0].split(' ')[0]}</span>
                     <span className="text-3xl font-black tracking-tighter">{meeting.date.split(',')[0].split(' ')[1]}</span>
                  </div>
                  <div className="flex-1 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="space-y-2">
                        <div className="flex items-center gap-3">
-                          <span className="bg-indigo-50 text-indigo-600 text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-widest border border-indigo-100">Synchronized</span>
+                          <span className="bg-indigo-50 text-indigo-600 text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-widest border border-slate-50">Synchronized</span>
                           <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{meeting.date.includes(',') ? meeting.date.split(',')[1] : 'TIME TBD'}</span>
                        </div>
-                       <h4 className="text-xl font-black text-slate-900 uppercase tracking-tighter group-hover:text-indigo-600 transition-colors">Stakeholder: {meeting.stakeholder.name}</h4>
+                       <h4 className="text-xl font-black text-slate-700 uppercase tracking-tighter group-hover:text-indigo-600 transition-colors">Stakeholder: {meeting.stakeholder.name}</h4>
                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[9px] font-black text-slate-400 uppercase tracking-widest">
                           <span className="flex items-center gap-1.5"><Building2IconFix className="w-3 h-3" />{meeting.stakeholder.company}</span>
                           <span className="flex items-center gap-1.5"><MapPin className="w-3 h-3" />{meeting.location || 'ONLINE NODE'}</span>
@@ -149,7 +149,7 @@ export default function SchedulePage() {
                     </div>
                     
                     <a href="/interview/live" className="shrink-0">
-                      <button className="h-full px-8 bg-slate-50 group-hover:bg-slate-900 group-hover:text-white rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 border border-slate-100 group-hover:border-slate-900">
+                      <button className="h-full px-8 bg-slate-50 group-hover:bg-slate-700 group-hover:text-white rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 border border-slate-100 group-hover:border-slate-700">
                         {meeting.status === 'Scheduled' ? 'Initiate Session' : 'Access History'}
                       </button>
                     </a>
@@ -161,7 +161,7 @@ export default function SchedulePage() {
                   <BarChart3 className="w-10 h-10 text-slate-200" />
                 </div>
                 <div className="space-y-2">
-                   <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Chronology Empty</h3>
+                   <h3 className="text-xl font-black text-slate-700 uppercase tracking-tighter">Chronology Empty</h3>
                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest max-w-[200px] leading-loose">No {view} meeting threads were discovered in the local lattice.</p>
                 </div>
               </div>

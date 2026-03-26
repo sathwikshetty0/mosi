@@ -41,12 +41,12 @@ export default function StakeholdersPage() {
           <div className="flex items-center gap-2 text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1.5 rounded-full w-fit">
             <Users className="w-3.5 h-3.5" /> Human Infrastructure
           </div>
-          <h2 className="text-4xl lg:text-5xl font-black tracking-tighter text-slate-900 uppercase leading-[0.9]">
+          <h2 className="text-4xl lg:text-5xl font-black tracking-tighter text-slate-700 uppercase leading-[0.9]">
             Stakeholder <br/><span className="text-emerald-600">Directory</span>
           </h2>
           <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Managing the collective intelligence of engaged experts.</p>
         </div>
-        <button id="add-stakeholder-btn" className="px-8 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-slate-200 hover:bg-emerald-600 transition-all active:scale-95 flex items-center gap-2">
+        <button id="add-stakeholder-btn" className="px-8 py-5 bg-slate-700 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-slate-200 hover:bg-emerald-600 transition-all active:scale-95 flex items-center gap-2">
           <Plus className="w-5 h-5" />
           Provision New Expert
         </button>
@@ -58,7 +58,7 @@ export default function StakeholdersPage() {
         <input
           type="text"
           placeholder="Search by identity, organization, or industrial sector..."
-          className="w-full h-16 pl-16 pr-6 rounded-[2rem] border-2 border-slate-100 bg-white focus:border-slate-900 shadow-xl shadow-slate-200/50 outline-none transition-all text-sm font-black uppercase tracking-tight placeholder:text-slate-300"
+          className="w-full h-16 pl-16 pr-6 rounded-[2rem] border-2 border-slate-100 bg-white focus:border-slate-700 shadow-xl shadow-slate-200/50 outline-none transition-all text-sm font-black uppercase tracking-tight placeholder:text-slate-300"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -67,14 +67,14 @@ export default function StakeholdersPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {filteredStakeholders.length > 0 ? (
           filteredStakeholders.map((sh, i) => (
-            <div key={i} className="premium-card p-8 lg:p-10 flex flex-col bg-white border-2 border-slate-50 shadow-2xl shadow-slate-200/40 hover:border-slate-900 transition-all group rounded-[2.5rem]">
+            <div key={i} className="premium-card p-8 lg:p-10 flex flex-col bg-white border-2 border-slate-50 shadow-2xl shadow-slate-200/40 hover:border-slate-700 transition-all group rounded-[2.5rem]">
               <div className="flex items-start justify-between mb-8">
                 <div className="flex items-center gap-5">
-                  <div className="w-16 h-16 bg-slate-900 text-white rounded-[1.5rem] flex items-center justify-center font-black text-2xl shadow-xl transition-all group-hover:scale-110 group-hover:bg-emerald-600">
+                  <div className="w-16 h-16 bg-slate-700 text-white rounded-[1.5rem] flex items-center justify-center font-black text-2xl shadow-xl transition-all group-hover:scale-110 group-hover:bg-emerald-600">
                     {sh.name.charAt(0)}
                   </div>
                   <div className="space-y-1">
-                    <h4 className="text-xl font-black text-slate-900 uppercase tracking-tighter">{sh.name}</h4>
+                    <h4 className="text-xl font-black text-slate-700 uppercase tracking-tighter">{sh.name}</h4>
                     <p className="text-[10px] text-emerald-600 font-black uppercase tracking-widest">{sh.role}</p>
                   </div>
                 </div>
@@ -105,15 +105,15 @@ export default function StakeholdersPage() {
               <div className="pt-6 border-t border-slate-100 flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
                 <div className="space-y-1">
                    <p className="text-slate-300">Archives</p>
-                   <p className="text-slate-900 text-sm font-black">{sh.interviewCount}</p>
+                   <p className="text-slate-700 text-sm font-black">{sh.interviewCount}</p>
                 </div>
                 <div className="space-y-1 text-right">
                    <p className="text-slate-300">Last Session</p>
-                   <p className="text-slate-900 font-black">{sh.lastInterview}</p>
+                   <p className="text-slate-700 font-black">{sh.lastInterview}</p>
                 </div>
               </div>
               
-              <button className="mt-8 w-full h-12 bg-white border border-slate-100 hover:bg-slate-900 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 group/btn">
+              <button className="mt-8 w-full h-12 bg-white border border-slate-100 hover:bg-slate-700 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 group/btn">
                  View Expert profile <ChevronRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
               </button>
             </div>
@@ -124,7 +124,7 @@ export default function StakeholdersPage() {
               <Users className="w-10 h-10 text-slate-200" />
             </div>
             <div className="space-y-2">
-               <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Directory Empty</h3>
+               <h3 className="text-2xl font-black text-slate-700 uppercase tracking-tighter">Directory Empty</h3>
                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest max-w-sm mx-auto leading-loose">
                  Your stakeholder infrastructure is currently unpopulated. Initiate active sessions to capture and provision expert profiles.
                </p>

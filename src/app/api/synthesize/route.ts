@@ -1,16 +1,40 @@
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
 
 // Export config for Next.js to parse the body natively
-export const maxDuration = 300; // Allow enough time for transcription and GPT generation
+export const maxDuration = 300; // Allow enough time for transcription
+
+async function transcribeWithElevenLabs(audioBuffer: Buffer): Promise<string> {
+  if (!process.env.ELEVENLABS_API_KEY) {
+    throw new Error('ELEVENLABS_API_KEY not configured in .env.local');
+  }
+
+  const formData = new FormData();
+  // Using Uint8Array to avoid Node Buffer/Blob compatibility issues in TS
+  const blob = new Blob([new Uint8Array(audioBuffer)], { type: 'audio/webm' });
+  formData.append('file', blob, 'recording.webm');
+  formData.append('model_id', 'scribe_v1'); 
+
+  console.log('Transcribing with ElevenLabs...');
+  const response = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
+    method: 'POST',
+    headers: {
+      'xi-api-key': process.env.ELEVENLABS_API_KEY,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`ElevenLabs Transcription failed: ${errorText}`);
+  }
+
+  const data = await response.json();
+  console.log('Transcription successful with ElevenLabs.');
+  return data.text || '';
+}
 
 export async function POST(req: Request) {
   try {
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json({ error: 'OPENAI_API_KEY not configured in .env.local' }, { status: 500 });
-    }
-
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const contentType = req.headers.get('content-type') || '';
     
     let transcriptText = '';
@@ -29,17 +53,9 @@ export async function POST(req: Request) {
       const audioFile = formData.get('audioFile') as File | null;
       
       if (audioFile) {
-        console.log('Transcribing local File object directly with Whisper...');
-        try {
-          const transcription = await openai.audio.transcriptions.create({
-            file: audioFile,
-            model: 'whisper-1',
-          });
-          transcriptText = transcription.text;
-          console.log('Transcription successful.');
-        } catch (aiErr: any) {
-          throw new Error(`OpenAI Transcription failed: ${aiErr.message}`);
-        }
+        console.log('Transcribing local File object with ElevenLabs Scribe...');
+        const arrayBuffer = await audioFile.arrayBuffer();
+        transcriptText = await transcribeWithElevenLabs(Buffer.from(arrayBuffer));
       }
     } else {
       console.log('Receiving JSON request...');
@@ -48,12 +64,7 @@ export async function POST(req: Request) {
       stakeholder = body.stakeholder || {};
       const recordingUrl = body.recordingUrl;
       
-      // 1. Fetch & Transcribe the Audio from URL
       if (recordingUrl) {
-        if (recordingUrl.startsWith('blob:')) {
-           throw new Error('Blob URL sent as JSON! It must be sent as multipart/form-data. This is a frontend logic error.');
-        }
-        
         let fetchUrl = recordingUrl;
         let arrayBuffer: ArrayBuffer | null = null;
         
@@ -74,60 +85,22 @@ export async function POST(req: Request) {
           arrayBuffer = await fallbackResponse.arrayBuffer();
         }
 
-        if (!arrayBuffer) {
-           throw new Error('Failed to download audio from the provided URL.');
-        }
-        
-        const buffer = Buffer.from(arrayBuffer);
-        
-        try {
-          const file = await OpenAI.toFile(buffer, 'recording.webm', { type: 'audio/webm' });
-
-          console.log('Transcribing with Whisper...');
-          const transcription = await openai.audio.transcriptions.create({
-            file,
-            model: 'whisper-1',
-          });
-          
-          transcriptText = transcription.text;
-          console.log('Transcription successful.');
-        } catch (aiErr: any) {
-          console.error('OpenAI Error while processing audio:', aiErr);
-          throw new Error(`OpenAI Transcription failed: ${aiErr.message}`);
+        if (arrayBuffer) {
+           transcriptText = await transcribeWithElevenLabs(Buffer.from(arrayBuffer));
         }
       }
     }
 
-    // 2. Synthesize using GPT-4o-mini
-    console.log('Synthesizing summary...');
-    const prompt = `
-You are an expert Executive Research Analyst reviewing a stakeholder interview.
-Stakeholder Profile: ${JSON.stringify(stakeholder)}
-Logs Captured during the interview: ${JSON.stringify(opportunities)}
-
-${transcriptText ? `Raw Audio Transcript: """\n${transcriptText}\n"""\n` : ''}
-
-Based on the logs ${transcriptText ? 'and the transcript' : ''}, draft a highly professional, concise, and insightful Executive Synthesis (3-4 readable paragraphs max). Do not use markdown headers, just plain text paragraphs. Do not mention that you read a JSON or transcript, just speak as the analyst who conducted the interview.
-
-Focus heavily on:
-1. The stakeholder's core problem, constraints, and operational context.
-2. The specific opportunities/logs identified and whether they present immediate commercial value.
-3. Recommended implementation next steps based on the findings.
-`;
-
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'system', content: prompt }],
-      temperature: 0.7,
-    });
-
-    const summary = completion.choices[0].message.content || 'Synthesis generation failed.';
-    console.log('Synthesis successful.');
+    // Synthesis block removed as per user request (GPT not required)
+    // We provide the transcript as the summary for now.
+    const summary = transcriptText || "No transcription generated by ElevenLabs.";
 
     return NextResponse.json({ summary, transcript: transcriptText });
 
   } catch (error: any) {
-    console.error('Synthesis API Error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to synthesize session.' }, { status: 500 });
+    console.error('Transcription API Error:', error);
+    return NextResponse.json({ error: error.message || 'Failed to process audio with ElevenLabs.' }, { status: 500 });
   }
 }
+
+

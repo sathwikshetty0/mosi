@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Play, Pause, FastForward, Rewind, Clock, ChevronRight, ChevronLeft,
   CheckCircle2, Trash2, BarChart2, CheckCircle, Sparkles,
@@ -12,10 +12,10 @@ import { useMosiStore, CEEDTag, formatDuration, Opportunity } from '@/lib/store'
 import { cn } from '@/lib/utils'
 
 const tagColors: Record<CEEDTag, { bg: string; text: string }> = {
-  Core: { bg: 'bg-blue-50', text: 'text-blue-600' },
-  Efficiency: { bg: 'bg-amber-50', text: 'text-amber-600' },
-  Expansion: { bg: 'bg-emerald-50', text: 'text-emerald-600' },
-  Disrupt: { bg: 'bg-rose-50', text: 'text-rose-600' }
+  Core: { bg: 'bg-blue-50/50', text: 'text-blue-500' },
+  Efficiency: { bg: 'bg-amber-50/50', text: 'text-amber-500' },
+  Expansion: { bg: 'bg-emerald-50/50', text: 'text-emerald-500' },
+  Disrupt: { bg: 'bg-rose-50/50', text: 'text-rose-500' }
 }
 
 const CHECKLIST = [
@@ -30,9 +30,15 @@ const CHECKLIST = [
 
 export default function ReviewPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const sessionId = searchParams.get('id')
+  
   const { sessions, updateOpportunity, deleteSession, updateSessionSummary } = useMosiStore()
   
-  const session = sessions.find(s => s.status === 'Review') || sessions[0]
+  const session = React.useMemo(() => {
+    if (sessionId) return sessions.find(s => s.id === sessionId)
+    return sessions.find(s => s.status === 'Review') || sessions[0]
+  }, [sessions, sessionId])
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
   const [showChecklistPopup, setShowChecklistPopup] = React.useState(false)
@@ -61,7 +67,7 @@ export default function ReviewPage() {
         updateSessionSummary(session.id, localSummary)
       }
       setShowChecklistPopup(false)
-      router.push('/preview')
+      router.push(`/preview?id=${session.id}`)
     }
   }
 
@@ -194,38 +200,38 @@ export default function ReviewPage() {
         <BarChart2 className="w-7 h-7 text-slate-300" />
       </div>
       <div>
-        <h3 className="text-lg font-semibold text-slate-900">No sessions to review</h3>
+        <h3 className="text-lg font-semibold text-slate-700">No sessions to review</h3>
         <p className="text-sm text-slate-400 mt-1">Start an interview first.</p>
       </div>
-      <button onClick={() => router.push('/setup')} className="h-10 px-5 bg-slate-900 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-all">
+      <button onClick={() => router.push('/setup')} className="h-10 px-5 bg-slate-700 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-all">
         Start Interview
       </button>
     </div>
   )
 
   return (
-    <div className="space-y-6 pb-24 animate-in fade-in duration-700 max-w-5xl mx-auto">
+    <div className="space-y-12 pb-32 animate-in fade-in duration-1000 max-w-5xl mx-auto px-6">
       
-      {/* HEADER */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400">
-            <BarChart2 className="w-6 h-6" />
+      {/* PREMIUM HEADER */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-10 border-b-2 border-slate-100">
+        <div className="flex items-center gap-8">
+          <div className="w-20 h-20 bg-slate-900 border border-slate-800 rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-slate-200">
+            <BarChart2 className="w-8 h-8" />
           </div>
-          <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md">Synthesis Mode</span>
-              <span className="text-xs text-slate-400 font-medium">{session.date}</span>
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 bg-slate-50 px-3 py-1 rounded-md border border-slate-100">Analysis In-Progress</span>
+              <span className="text-xs text-slate-400 font-bold uppercase tracking-widest">{session.date}</span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">{session.stakeholder?.name || 'Untitled Participant'}</h2>
-            <p className="text-xs text-slate-400 flex items-center gap-1 font-medium mt-1">
-              <Clock className="w-3 h-3" /> Duration: {formatDuration(session.duration)} / {session.stakeholder?.company || 'N/A'}
+            <h2 className="text-4xl font-bold text-slate-800 tracking-tight">{session.stakeholder?.name || 'Anonymous Participant'}</h2>
+            <p className="text-xs text-slate-500 flex items-center gap-2 font-bold uppercase tracking-widest">
+              <Clock className="w-4 h-4 text-slate-300" /> {formatDuration(session.duration)} Total Duration / <span className="text-slate-800">{session.stakeholder?.company || 'Internal Entity'}</span>
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={handleDelete} className="p-3 rounded-xl border border-slate-100 text-slate-400 hover:text-red-500 hover:bg-red-50 hover:border-red-100 transition-all">
-            <Trash2 className="w-4 h-4" />
+        <div className="flex items-center gap-4">
+           <button onClick={handleDelete} className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 hover:text-red-500 transition-colors py-2 px-4 hover:bg-red-50 rounded-full">
+            Delete Session Record
           </button>
         </div>
       </div>
@@ -243,59 +249,56 @@ export default function ReviewPage() {
 
       <div className="grid grid-cols-1 gap-8">
         
-        {/* LOGS SECTION */}
-        <section className="space-y-4">
+        {/* LOGS TABLE - MINIMAL */}
+        <section className="space-y-6">
           <div className="flex items-center justify-between px-2">
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2">
-              <Zap className="w-4 h-4 text-amber-500" /> Logs
-            </h3>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-lg">
-              {session.opportunities.length} Items
+            <div className="space-y-2">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.4em]">Section 02 / Log Audit</h3>
+              <div className="h-1 w-12 bg-slate-800 rounded-full" />
+            </div>
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-2 border-slate-100 px-4 py-2 rounded-full bg-white shadow-sm">
+              {session.opportunities.length} Points Found
             </span>
           </div>
           
-          <div className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
+          <div className="bg-white rounded-[2rem] overflow-hidden border-2 border-slate-100 shadow-xl shadow-slate-100/50">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  {['#', 'Log Title', 'Tag', 'Status', 'Action'].map(h => (
-                    <th key={h} className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
+                <tr className="bg-slate-50 border-b-2 border-slate-100">
+                   {['Index', 'Context & Title', 'Tagging', 'Commercial', 'Refinement'].map(h => (
+                    <th key={h} className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-slate-100">
                 {session.opportunities.map((opp, i) => (
-                  <tr key={opp.id} className="group hover:bg-slate-50 transition-all">
-                    <td className="px-6 py-5 text-xs text-slate-300 font-mono font-bold">{String(i + 1).padStart(2, '0')}</td>
-                    <td className="px-6 py-5">
-                      <p className="font-bold text-slate-900 text-sm tracking-tight">{opp.title}</p>
-                      <div className="flex items-center gap-2 mt-1.5 object-center">
-                         <button 
-                           onClick={() => toggleAudio(opp.timestamp)}
-                           className="text-[10px] text-blue-500 hover:text-blue-700 font-bold uppercase tracking-widest flex items-center gap-1 bg-blue-50 px-2 rounded-md"
-                         >
-                           <Play className="w-3 h-3" /> {formatDuration(opp.timestamp)}
-                         </button>
-                      </div>
+                  <tr key={opp.id} className="group hover:bg-slate-50/50 transition-all">
+                    <td className="px-10 py-8 text-xs text-slate-300 font-black">{(i + 1).toString().padStart(2, '0')}</td>
+                    <td className="px-10 py-8">
+                      <p className="font-bold text-slate-800 text-lg tracking-tight uppercase">{opp.title}</p>
+                      <button 
+                        onClick={() => toggleAudio(opp.timestamp)}
+                        className="text-[10px] text-slate-400 hover:text-slate-800 font-black uppercase tracking-[0.2em] flex items-center gap-2 mt-3 group/btn"
+                      >
+                        <Play className="w-3.5 h-3.5 text-slate-300 group-hover/btn:text-slate-800 transition-colors" /> Jump to {formatDuration(opp.timestamp)}
+                      </button>
                     </td>
-                    <td className="px-6 py-5">
-                      <span className={cn('text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg', tagColors[opp.tag].bg, tagColors[opp.tag].text)}>{opp.tag}</span>
+                    <td className="px-10 py-8">
+                      <span className={cn('text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border-2', tagColors[opp.tag].text, 'border-slate-100 bg-white')}>
+                        {opp.tag}
+                      </span>
                     </td>
-                    <td className="px-6 py-5">
-                      {opp.paid ? (
-                        <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md">Paid</span>
-                      ) : (
-                        <span className="bg-slate-100 text-slate-500 border border-slate-200 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md">Unpaid</span>
-                      )}
-                      {opp.engagementType === 'Gig' && <span className="ml-2 bg-purple-50 text-purple-600 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md">Gig</span>}
-                      {opp.engagementType === 'Internship' && <span className="ml-2 bg-blue-50 text-blue-600 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md">Intern</span>}
+                    <td className="px-10 py-8">
+                      <span className={cn("text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-md", opp.paid ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-slate-50 text-slate-400 border border-slate-100")}>
+                        {opp.paid ? 'Monetized' : 'Descriptive'}
+                      </span>
                     </td>
-                    <td className="px-6 py-5">
+                    <td className="px-10 py-8 text-right">
                       <button 
                         onClick={() => setSelectedId(opp.id)}
-                        className="text-xs font-bold text-slate-400 hover:text-slate-900 transition-all uppercase tracking-widest underline decoration-slate-200 underline-offset-4"
+                        className="h-10 px-6 bg-white border-2 border-slate-100 rounded-xl text-[10px] font-black text-slate-400 hover:text-slate-800 hover:border-slate-800 transition-all uppercase tracking-widest shadow-sm"
                       >
-                        Edit Log
+                        Refine
                       </button>
                     </td>
                   </tr>
@@ -303,7 +306,7 @@ export default function ReviewPage() {
               </tbody>
             </table>
             {session.opportunities.length === 0 && (
-              <div className="p-16 text-center text-slate-300 italic text-sm">No logs captured during session.</div>
+              <div className="p-20 text-center text-slate-400 italic text-sm font-medium">No log points identified in this session.</div>
             )}
           </div>
         </section>
@@ -311,7 +314,7 @@ export default function ReviewPage() {
         {/* DIGITAL LOGS SECTION (EVIDENCE) */}
         <section className="space-y-4">
           <div className="flex items-center justify-between px-2">
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2">
+            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
               <ImageIcon className="w-4 h-4 text-emerald-500" /> Digital Logs
             </h3>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-lg">
@@ -333,7 +336,7 @@ export default function ReviewPage() {
                       <p className="text-xs font-bold text-slate-400 truncate px-4 w-full text-center">{ev.title || 'Attached Link'}</p>
                     </div>
                   )}
-                  <div className="absolute inset-x-0 bottom-0 bg-slate-900/90 backdrop-blur-md p-3 transform translate-y-full group-hover:translate-y-0 transition-transform">
+                  <div className="absolute inset-x-0 bottom-0 bg-slate-700/90 backdrop-blur-md p-3 transform translate-y-full group-hover:translate-y-0 transition-transform">
                     <p className="text-[10px] text-white font-black uppercase tracking-widest truncate">{ev.title || ev.type}</p>
                   </div>
                 </div>
@@ -346,28 +349,22 @@ export default function ReviewPage() {
           )}
         </section>
 
-        {/* TRANSCRIBE / SUMMARY SECTION */}
-        <section className="bg-white border border-slate-100 rounded-3xl p-8 lg:p-10 space-y-6 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -z-0 opacity-50 pointer-events-none" />
-          <div className="flex items-center justify-between relative z-10">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                <FileText className="w-4 h-4 text-blue-500" /> Transcribe & Summary (AI / Manual)
-              </h3>
-              <p className="text-[10px] text-slate-400 font-medium uppercase tracking-[0.2em] mt-1">Refine and synthesize the total session</p>
+        {/* SUMMARY SECTION - CLEAN */}
+        <section className="bg-slate-50/50 border-2 border-slate-100 rounded-[2.5rem] p-12 space-y-10 relative overflow-hidden">
+           <div className="flex items-center justify-between relative z-10">
+            <div className="space-y-2">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.4em]">Synthetic Logic Record</h3>
+              <div className="h-1 w-12 bg-slate-800 rounded-full" />
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <button 
                 onClick={handleSynthesize} 
                 disabled={isSynthesizing}
-                className={cn("h-11 px-6 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 transition-all shadow-xl",
-                  isSynthesizing ? "bg-slate-300 text-slate-500 shadow-none cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 shadow-blue-600/20"
+                className={cn("h-12 px-8 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 transition-all shadow-xl shadow-slate-200",
+                  isSynthesizing ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none" : "bg-slate-800 text-white hover:bg-slate-900"
                 )}
               >
                 <Sparkles className={cn("w-4 h-4", isSynthesizing && "animate-pulse")} /> 
-                {isSynthesizing ? "Synthesizing..." : "Auto-Synthesize (AI)"}
-              </button>
-              <button onClick={handleSaveSummary} className="h-11 px-6 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl shadow-slate-200">
                 <Save className="w-4 h-4" /> Save Record
               </button>
             </div>
@@ -394,14 +391,14 @@ export default function ReviewPage() {
 
       {/* LOG EDIT POPUP */}
       {selectedOpp && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+        <div className="fixed inset-0 bg-slate-700/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-white w-full max-w-3xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div>
-                <h3 className="font-bold text-slate-900 uppercase tracking-tight text-lg">Edit {selectedOpp.title}</h3>
+                <h3 className="font-bold text-slate-700 uppercase tracking-tight text-lg">Edit {selectedOpp.title}</h3>
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Reviewing Logic & Data</p>
               </div>
-              <button onClick={() => setSelectedId(null)} className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 shadow-sm border border-slate-100 transition-all">
+              <button onClick={() => setSelectedId(null)} className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-sm border border-slate-100 transition-all">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -421,9 +418,9 @@ export default function ReviewPage() {
                     </p>
                     {session.recordingUrl && (
                       <div className="flex gap-2">
-                        <button onClick={() => skipAudio(-10)} className="w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all"><Rewind className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => toggleAudio()} className="w-8 h-8 bg-slate-900 text-white rounded-full flex items-center justify-center hover:bg-slate-800 transition-all shadow-md">{isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}</button>
-                        <button onClick={() => skipAudio(10)} className="w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all"><FastForward className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => skipAudio(-10)} className="w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 transition-all"><Rewind className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => toggleAudio()} className="w-8 h-8 bg-slate-700 text-white rounded-full flex items-center justify-center hover:bg-slate-800 transition-all shadow-md">{isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}</button>
+                        <button onClick={() => skipAudio(10)} className="w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 transition-all"><FastForward className="w-3.5 h-3.5" /></button>
                       </div>
                     )}
                   </div>
@@ -470,7 +467,7 @@ export default function ReviewPage() {
                       <label className="text-[10px] font-black text-slate-400 mb-2 block uppercase tracking-widest">Commercial Status</label>
                       <div className="flex gap-2 p-1 bg-slate-50 border border-slate-200 rounded-xl">
                         <button onClick={() => updateOpportunity(selectedOpp.id, { paid: true })} className={cn("flex-1 h-9 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all", selectedOpp.paid ? "bg-emerald-500 text-white shadow-lg" : "text-slate-400 hover:text-slate-700")}>Paid</button>
-                        <button onClick={() => updateOpportunity(selectedOpp.id, { paid: false })} className={cn("flex-1 h-9 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all", !selectedOpp.paid ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-700")}>Unpaid</button>
+                        <button onClick={() => updateOpportunity(selectedOpp.id, { paid: false })} className={cn("flex-1 h-9 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all", !selectedOpp.paid ? "bg-slate-700 text-white shadow-lg" : "text-slate-400 hover:text-slate-700")}>Unpaid</button>
                       </div>
                     </div>
                   </div>
@@ -480,7 +477,7 @@ export default function ReviewPage() {
                       <div className="flex gap-2 p-1 bg-slate-50 border border-slate-200 rounded-xl">
                         <button onClick={() => updateOpportunity(selectedOpp.id, { engagementType: 'Gig' })} className={cn("flex-1 h-9 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all", selectedOpp.engagementType === 'Gig' ? "bg-purple-600 text-white shadow-lg" : "text-slate-400 hover:text-slate-700")}>Gig</button>
                         <button onClick={() => updateOpportunity(selectedOpp.id, { engagementType: 'Internship' })} className={cn("flex-1 h-9 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all", selectedOpp.engagementType === 'Internship' ? "bg-blue-600 text-white shadow-lg" : "text-slate-400 hover:text-slate-700")}>Intern</button>
-                        <button onClick={() => updateOpportunity(selectedOpp.id, { engagementType: 'Full-time' })} className={cn("flex-1 h-9 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all", selectedOpp.engagementType === 'Full-time' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-700")}>Full-time</button>
+                        <button onClick={() => updateOpportunity(selectedOpp.id, { engagementType: 'Full-time' })} className={cn("flex-1 h-9 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all", selectedOpp.engagementType === 'Full-time' ? "bg-slate-700 text-white shadow-lg" : "text-slate-400 hover:text-slate-700")}>Full-time</button>
                       </div>
                     </div>
                   </div>
@@ -490,7 +487,7 @@ export default function ReviewPage() {
             </div>
             
             <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-              <button onClick={() => setSelectedId(null)} className="h-12 px-8 bg-slate-900 text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all shadow-md">
+              <button onClick={() => setSelectedId(null)} className="h-12 px-8 bg-slate-700 text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all shadow-md">
                 Done
               </button>
             </div>
@@ -500,13 +497,13 @@ export default function ReviewPage() {
 
       {/* CHECKLIST POPUP */}
       {showChecklistPopup && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+        <div className="fixed inset-0 bg-slate-700/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-8 space-y-8 relative">
             <div className="text-center space-y-2">
               <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 tracking-tight">Post-Interview Checklist</h3>
+              <h3 className="text-xl font-bold text-slate-700 tracking-tight">Post-Interview Checklist</h3>
               <p className="text-sm font-medium text-slate-400">Please confirm these steps before proceeding to Stakeholder Preview.</p>
             </div>
             
@@ -536,7 +533,7 @@ export default function ReviewPage() {
               </button>
               <button 
                 onClick={handleGoToPreview}
-                className="h-12 bg-slate-900 text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-lg"
+                className="h-12 bg-slate-700 text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-lg"
               >
                 Proceed <ChevronRight className="w-4 h-4" />
               </button>
