@@ -30,6 +30,14 @@ function PreviewContent() {
   const router = useRouter()
   const [approved, setApproved] = React.useState(session?.status === 'Published')
   const [expandedId, setExpandedId] = React.useState<string | null>(null)
+  const [isCopied, setIsCopied] = React.useState(false)
+
+  const handleShare = () => {
+    const url = window.location.href
+    navigator.clipboard.writeText(url)
+    setIsCopied(true)
+    setTimeout(() => setIsCopied(false), 2000)
+  }
 
   React.useEffect(() => {
     if (session) setApproved(session.status === 'Published')
@@ -107,8 +115,20 @@ function PreviewContent() {
                 Publish Report <Check className="w-4 h-4" />
               </button>
             ) : (
-              <button className="h-11 px-8 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl flex items-center justify-center gap-2 text-sm font-bold hover:bg-slate-100 transition-all">
-                <Share className="w-4 h-4" /> Share Link
+              <button 
+                onClick={handleShare}
+                className="h-11 px-8 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl flex items-center justify-center gap-2 text-sm font-bold hover:bg-slate-100 transition-all transition-colors active:scale-95 shadow-sm"
+              >
+                {isCopied ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-500" /> 
+                    <span className="text-emerald-700">Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Share className="w-4 h-4" /> Share Link
+                  </>
+                )}
               </button>
             )}
             <button onClick={() => router.push('/')} className="w-11 h-11 border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-all">

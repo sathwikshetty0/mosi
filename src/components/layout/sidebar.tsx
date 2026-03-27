@@ -3,13 +3,15 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import {
+import { 
   LayoutDashboard, Users, Calendar, Settings,
   FileText, CheckSquare, Mic,
-  Eye, BarChart2, ChevronLeft, ChevronRight, Menu, X, PlusCircle, Sparkles
+  Eye, BarChart2, ChevronLeft, ChevronRight, Menu, X, PlusCircle, Sparkles,
+  ShieldCheck, LogOut
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useMosiStore } from '@/lib/store'
+import { useAuth } from '@/lib/auth-context'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -27,9 +29,14 @@ const interviewFlow = [
 export function Sidebar() {
   const pathname = usePathname()
   const { sessions, isSidebarCollapsed, toggleSidebar } = useMosiStore()
+  const { profile, signOut } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
+
+  // 🛡️ AUTH: Hide sidebar on login page and all admin routes
+  if (pathname === '/login' || pathname.startsWith('/admin')) return null
   
   const pendingReviews = sessions.filter(s => s.status === 'Review').length
+  const isAdmin = profile?.role === 'admin'
 
   const renderNavItems = (items: typeof navigation, label: string) => (
     <div className="space-y-4">
@@ -119,48 +126,118 @@ export function Sidebar() {
         <div className="flex-1 overflow-y-auto px-4 py-8 space-y-12 no-scrollbar">
           {renderNavItems(navigation, "Core Matrix")}
           
-          <div className="space-y-4">
-            {!isSidebarCollapsed && (
-              <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] px-4 mb-2">Discovery Hub</p>
-            )}
-            <div className="space-y-1">
-              {interviewFlow.map((item) => {
-                const isActive = pathname.startsWith(item.href)
-                const hasBadge = item.href === '/review' && pendingReviews > 0
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
+          {isAdmin && (
+            <div className="space-y-4">
+               {!isSidebarCollapsed && (
+                <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] px-4 mb-2">Admin Panel</p>
+              )}
+              <div className="space-y-1">
+                 <Link
+                    href="/admin"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={cn(
                       'nav-item group relative',
-                      isActive ? 'nav-item-active' : 'nav-item-inactive',
+                      pathname === '/admin' ? 'nav-item-active' : 'nav-item-inactive',
                       isSidebarCollapsed && 'justify-center px-0'
                     )}
-                    title={isSidebarCollapsed ? item.name : ''}
                   >
-                    <div className="flex items-center gap-4">
-                      <item.icon className={cn('h-4 w-4 shrink-0 transition-transform duration-300', !isActive && 'group-hover:scale-110')} />
-                      {!isSidebarCollapsed && <span className="uppercase tracking-tighter">{item.name}</span>}
-                    </div>
-                    {!isSidebarCollapsed && hasBadge && (
-                      <span className="bg-rose-500 text-white text-[8px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg shadow-rose-200 animate-pulse">
-                        {pendingReviews}
-                      </span>
-                    )}
-                    {isActive && (
+                    <ShieldCheck className={cn('h-4 w-4 shrink-0 transition-transform duration-300', pathname !== '/admin' && 'group-hover:scale-110')} />
+                    {!isSidebarCollapsed && <span className="uppercase tracking-tighter">Command Center</span>}
+                    {pathname === '/admin' && (
                       <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-2/3 bg-blue-500 rounded-r-full shadow-lg shadow-blue-500/50" />
                     )}
-                  </Link>
-                )
-              })}
+                 </Link>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Hide Discovery Hub for admins on the admin page */}
+          {!isAdmin && (
+            <div className="space-y-4">
+              {!isSidebarCollapsed && (
+                <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] px-4 mb-2">Discovery Hub</p>
+              )}
+              <div className="space-y-1">
+                {interviewFlow.map((item) => {
+                  const isActive = pathname.startsWith(item.href)
+                  const hasBadge = item.href === '/review' && pendingReviews > 0
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={cn(
+                        'nav-item group relative',
+                        isActive ? 'nav-item-active' : 'nav-item-inactive',
+                        isSidebarCollapsed && 'justify-center px-0'
+                      )}
+                      title={isSidebarCollapsed ? item.name : ''}
+                    >
+                      <div className="flex items-center gap-4">
+                        <item.icon className={cn('h-4 w-4 shrink-0 transition-transform duration-300', !isActive && 'group-hover:scale-110')} />
+                        {!isSidebarCollapsed && <span className="uppercase tracking-tighter">{item.name}</span>}
+                      </div>
+                      {!isSidebarCollapsed && hasBadge && (
+                        <span className="bg-rose-500 text-white text-[8px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg shadow-rose-200 animate-pulse">
+                          {pendingReviews}
+                        </span>
+                      )}
+                      {isActive && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-2/3 bg-blue-500 rounded-r-full shadow-lg shadow-blue-500/50" />
+                      )}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Admin gets discovery hub too if not on /admin */}
+          {isAdmin && pathname !== '/admin' && (
+            <div className="space-y-4">
+              {!isSidebarCollapsed && (
+                <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] px-4 mb-2">Discovery Hub</p>
+              )}
+              <div className="space-y-1">
+                {interviewFlow.map((item) => {
+                  const isActive = pathname.startsWith(item.href)
+                  const hasBadge = item.href === '/review' && pendingReviews > 0
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={cn(
+                        'nav-item group relative',
+                        isActive ? 'nav-item-active' : 'nav-item-inactive',
+                        isSidebarCollapsed && 'justify-center px-0'
+                      )}
+                      title={isSidebarCollapsed ? item.name : ''}
+                    >
+                      <div className="flex items-center gap-4">
+                        <item.icon className={cn('h-4 w-4 shrink-0 transition-transform duration-300', !isActive && 'group-hover:scale-110')} />
+                        {!isSidebarCollapsed && <span className="uppercase tracking-tighter">{item.name}</span>}
+                      </div>
+                      {!isSidebarCollapsed && hasBadge && (
+                        <span className="bg-rose-500 text-white text-[8px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg shadow-rose-200 animate-pulse">
+                          {pendingReviews}
+                        </span>
+                      )}
+                      {isActive && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-2/3 bg-blue-500 rounded-r-full shadow-lg shadow-blue-500/50" />
+                      )}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ⚡ FOOTER ACTIONS */}
         <div className="p-6 border-t-2 border-slate-50 space-y-4">
-           {!isSidebarCollapsed && (
+           {/* Only show New Stakeholder for non-admin OR admin not on /admin */}
+           {(!isAdmin || pathname !== '/admin') && !isSidebarCollapsed && (
               <Link
                 href="/setup"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -171,24 +248,40 @@ export function Sidebar() {
                 <span className="relative z-10">New Stakeholder</span>
               </Link>
            )}
-           {isSidebarCollapsed && (
+           {(!isAdmin || pathname !== '/admin') && isSidebarCollapsed && (
               <Link href="/setup" className="w-12 h-12 bg-slate-700 hover:bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto shadow-2xl shadow-slate-300 transition-all active:scale-90">
                 <PlusCircle className="w-6 h-6" />
               </Link>
            )}
            
-          <Link
-            href="/settings"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className={cn(
-              "nav-item",
-              pathname === '/settings' ? 'nav-item-active' : 'nav-item-inactive',
-              isSidebarCollapsed && "justify-center"
-            )}
-          >
-            <Settings className={cn("w-4 h-4", pathname === '/settings' ? "text-white" : "text-slate-400")} />
-            {!isSidebarCollapsed && <span className="uppercase tracking-tighter">Settings</span>}
-          </Link>
+          <div className="flex flex-col gap-1">
+            <Link
+              href="/settings"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={cn(
+                "nav-item",
+                pathname === '/settings' ? 'nav-item-active' : 'nav-item-inactive',
+                isSidebarCollapsed && "justify-center"
+              )}
+            >
+              <Settings className={cn("w-4 h-4", pathname === '/settings' ? "text-white" : "text-slate-400")} />
+              {!isSidebarCollapsed && <span className="uppercase tracking-tighter">Settings</span>}
+            </Link>
+            
+            <button
+              onClick={async () => {
+                await signOut()
+                setIsMobileMenuOpen(false)
+              }}
+              className={cn(
+                "nav-item nav-item-inactive group hover:bg-rose-50 hover:text-rose-600 transition-all w-full",
+                isSidebarCollapsed && "justify-center"
+              )}
+            >
+              <LogOut className="w-4 h-4 text-slate-400 group-hover:text-rose-600" />
+              {!isSidebarCollapsed && <span className="uppercase tracking-tighter font-medium text-slate-400 group-hover:text-rose-600">Disconnect</span>}
+            </button>
+          </div>
         </div>
       </div>
     </>
