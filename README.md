@@ -88,8 +88,3 @@ A central command center for the entire discovery cycle:
 
 ## 🛡 Security & Privacy
 MOSI utilizes a **Local Buffer Secure** architecture. All discovery metadata is processed and stored within local state buffers, ensuring that sensitive stakeholder dialogues remain encrypted and protected throughout the synthesis cycle.
-
----
-
-## 📝 License
-Copyright © 2026 MOSI Intelligence Team. All Rights Reserved. Used for professional discovery and strategic synthesis.
