@@ -1,277 +1,532 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { useMosiStore } from '@/lib/store'
+import { useSearchParams } from 'next/navigation'
 import { 
-  Users, Video, BarChart3, Search, Filter, ShieldCheck, 
-  Clock, Zap, Activity, Globe, Database, UserCheck, Inbox
+  Users, Video, Search, ShieldCheck, 
+  Zap, Activity, UserCheck, Inbox,
+  BarChart3, Clock, TrendingUp, Globe, CheckCircle2
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { InterviewCard } from '@/components/ui/interview-card'
+import { cn } from '@/lib/utils'
+import Link from 'next/link'
+
+interface SessionData {
+  id: string
+  status: string
+  date: string
+  duration: number
+  summary?: string
+  user_id?: string
+  recording_url?: string
+  stakeholders: { name: string; role: string; company: string; sector: string; employees?: string; geography?: string } | null
+  opportunities: { id: string; tag: string; title: string }[]
+  evidence: { id: string }[]
+}
+
+interface ProfileData {
+  id: string
+  full_name: string
+  role: string
+  avatar_url?: string
+  updated_at: string
+}
+
+const statusConfig: Record<string, { pill: string; label: string }> = {
+  Scheduled: { pill: 'bg-indigo-50 text-indigo-600 border-indigo-100', label: 'Scheduled' },
+  Recording: { pill: 'bg-rose-50 text-rose-600 border-rose-100', label: 'Live' },
+  Review:    { pill: 'bg-amber-50 text-amber-600 border-amber-100', label: 'In Review' },
+  Published: { pill: 'bg-emerald-50 text-emerald-600 border-emerald-100', label: 'Published' },
+}
+
+type Tab = 'overview' | 'sessions' | 'users' | 'stakeholders'
 
 export default function AdminDashboard() {
-  const { sessions, fetchSessions, profiles, fetchAllProfiles } = useMosiStore()
+  const searchParams = useSearchParams()
+  const urlTab = searchParams.get('tab') as Tab | null
+  const [tab, setTab] = useState<Tab>(urlTab || 'overview')
+  const [sessions, setSessions] = useState<SessionData[]>([])
+  const [profiles, setProfiles] = useState<ProfileData[]>([])
   const [search, setSearch] = useState('')
-  const [view, setView] = useState<'overview' | 'users' | 'archive'>('overview')
+  const [loading, setLoading] = useState(true)
+  const [statusFilter, setStatusFilter] = useState('all')
+
+  // Sync tab with URL param
+  useEffect(() => {
+    if (urlTab && ['overview', 'sessions', 'users', 'stakeholders'].includes(urlTab)) {
+      setTab(urlTab)
+    }
+  }, [urlTab])
+
 
   useEffect(() => {
-    fetchSessions()
-    fetchAllProfiles()
-  }, [fetchSessions, fetchAllProfiles])
+    async function load() {
+      setLoading(true)
+      try {
+        const res = await fetch('/api/admin/sessions')
+        const data = await res.json()
+        if (data.sessions) setSessions(data.sessions)
+        if (data.profiles) setProfiles(data.profiles)
+      } catch (e) {
+        console.error('Admin data fetch failed:', e)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
 
-  // Advanced Stats Calculation
   const stats = useMemo(() => {
-    const totalUsers = (profiles || []).length
-    const totalSessions = (sessions || []).length
-    const avgInsightsPerUser = totalUsers > 0 ? (totalSessions / totalUsers).toFixed(1) : '0'
-    const publishedRate = totalSessions > 0 ? Math.round((sessions.filter(s => s.status === 'Published').length / totalSessions) * 100) : 0
+    const total = sessions.length
+    const insights = sessions.reduce((a, s) => a + (s.opportunities?.length || 0), 0)
+    const published = sessions.filter(s => s.status === 'Published').length
+    const inReview = sessions.filter(s => s.status === 'Review').length
+    const publishRate = total ? Math.round((published / total) * 100) : 0
+    const stakeholders = new Set(sessions.map(s => s.stakeholders?.name).filter(Boolean)).size
+    return { total, insights, published, inReview, publishRate, stakeholders }
+  }, [sessions])
 
-    return { totalUsers, totalSessions, avgInsightsPerUser, publishedRate }
-  }, [profiles, sessions])
+  const userStats = useMemo(() =>
+    profiles.map(p => {
+      const us = sessions.filter(s => s.user_id === p.id)
+      return { ...p, sessionCount: us.length, insightCount: us.reduce((a, s) => a + (s.opportunities?.length || 0), 0), publishedCount: us.filter(s => s.status === 'Published').length }
+    }).sort((a, b) => b.sessionCount - a.sessionCount)
+  , [profiles, sessions])
 
-  const userStats = useMemo(() => {
-    return (profiles || []).map(p => ({
-      ...p,
-      sessionCount: sessions.filter(s => s.user_id === p.id).length,
-      insightCount: sessions.filter(s => s.user_id === p.id).reduce((acc, s) => acc + (s.opportunities?.length || 0), 0)
-    }))
-  }, [profiles, sessions])
+  const filteredSessions = useMemo(() =>
+    sessions.filter(s => {
+      const q = search.toLowerCase()
+      const matchSearch = (s.stakeholders?.name || '').toLowerCase().includes(q) || (s.stakeholders?.company || '').toLowerCase().includes(q)
+      const matchStatus = statusFilter === 'all' || s.status === statusFilter
+      return matchSearch && matchStatus
+    })
+  , [sessions, search, statusFilter])
+
+  const tabs: { id: Tab; label: string }[] = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'sessions', label: 'All Sessions' },
+    { id: 'stakeholders', label: 'Stakeholders' },
+    { id: 'users', label: 'Users' },
+  ]
+
+  // Unique stakeholders from all sessions
+  const allStakeholders = useMemo(() => {
+    const map = new Map<string, { name: string; company: string; role: string; sector: string; employees?: string; geography?: string; sessionCount: number; sessions: SessionData[] }>()
+    sessions.forEach(s => {
+      const sh = s.stakeholders
+      if (!sh) return
+      const key = sh.name + '|' + sh.company
+      if (map.has(key)) {
+        const existing = map.get(key)!
+        existing.sessionCount++
+        existing.sessions.push(s)
+      } else {
+        map.set(key, { ...sh, sessionCount: 1, sessions: [s] })
+      }
+    })
+    return Array.from(map.values()).sort((a, b) => b.sessionCount - a.sessionCount)
+  }, [sessions])
+
+  const kpis = [
+    { label: 'Total Sessions', val: stats.total, icon: Video, color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100' },
+    { label: 'Total Insights', val: stats.insights, icon: Zap, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+    { label: 'Stakeholders', val: stats.stakeholders, icon: Globe, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+    { label: 'Published', val: stats.published, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+    { label: 'In Review', val: stats.inReview, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+    { label: 'Publish Rate', val: `${stats.publishRate}%`, icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+  ]
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-10 font-['Inter']">
-      <div className="max-w-7xl mx-auto space-y-12 pb-20">
-        
-        {/* 🏢 CORPORATE HEADER */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b border-white/5 pb-10">
-          <div className="space-y-3">
-             <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-blue-600/10 border border-blue-500/20">
-                   <Database className="w-5 h-5 text-blue-400" />
-                </div>
-                <Badge className="text-[10px] uppercase font-black tracking-widest bg-blue-500/5 text-blue-400 border-blue-500/20 px-3 py-1">Master Console</Badge>
-             </div>
-             <h1 className="text-4xl font-black tracking-tight text-white">Platform Oversight</h1>
-             <p className="text-white/40 text-lg font-medium">Central intelligence and administrative controls for all MOSI sessions.</p>
+    <div className="min-h-screen bg-slate-50/30 animate-in fade-in duration-500">
+      {/* Page Header */}
+      <div className="bg-white border-b border-slate-100 px-8 py-6 flex items-center justify-between sticky top-0 z-10">
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-slate-800 tracking-tight">
+              {tab === 'overview' && 'Platform Overview'}
+              {tab === 'sessions' && 'All Sessions'}
+              {tab === 'stakeholders' && 'All Stakeholders'}
+              {tab === 'users' && 'Researchers'}
+            </h1>
+            <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-[0.2em]">
+              {tab === 'overview' && `${stats.total} total sessions · ${stats.stakeholders} unique stakeholders`}
+              {tab === 'sessions' && `${filteredSessions.length} sessions in repository`}
+              {tab === 'stakeholders' && `${allStakeholders.length} unique stakeholders profiled`}
+              {tab === 'users' && `${profiles.length} registered researchers`}
+            </p>
           </div>
+        </div>
 
-          <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-3xl shadow-2xl">
-             {['overview', 'users', 'archive'].map((v) => (
-               <button
-                key={v}
-                onClick={() => setView(v as any)}
-                className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                  view === v ? 'bg-white text-black shadow-lg shadow-white/5' : 'text-white/40 hover:text-white hover:bg-white/5'
-                }`}
-               >
-                 {v}
-               </button>
-             ))}
-          </div>
-        </header>
-
-        <AnimatePresence mode="wait">
-          {/* 📊 PLATFORM PULSE */}
-          {view === 'overview' && (
-            <motion.div 
-              key="overview"
-              initial={{ opacity: 0, scale: 0.98 }} 
-              animate={{ opacity: 1, scale: 1 }} 
-              exit={{ opacity: 0, scale: 0.98 }}
-              className="space-y-12"
+        {/* Tab Switcher */}
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+          {tabs.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={cn(
+                'px-5 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all',
+                tab === t.id ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-700'
+              )}
             >
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {[
-                  { label: 'Platform Users', val: stats.totalUsers, icon: UserCheck, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-                  { label: 'Global Sessions', val: stats.totalSessions, icon: Video, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-                  { label: 'Avg. Activity', val: `${stats.avgInsightsPerUser} s/u`, icon: Zap, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-                  { label: 'Release Rate', val: `${stats.publishedRate}%`, icon: Globe, color: 'text-purple-400', bg: 'bg-purple-500/10' },
-                ].map(item => (
-                  <div key={item.label} className="bg-white/[0.03] border border-white/10 p-8 rounded-[2.5rem] hover:bg-white/[0.06] transition-all group border-b-4 border-b-transparent hover:border-b-blue-500/40">
-                     <div className={`w-12 h-12 rounded-2xl ${item.bg} flex items-center justify-center mb-6 ${item.color} group-hover:scale-110 transition-transform`}>
-                        <item.icon className="w-6 h-6" />
-                     </div>
-                     <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">{item.label}</p>
-                     <h3 className="text-4xl font-black">{item.val}</h3>
-                  </div>
-                ))}
-              </div>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                 {/* USER ACTIVITY BOARD */}
-                 <div className="bg-white/[0.02] border border-white/10 rounded-[3rem] p-10 space-y-8">
+      <div className="p-8 max-w-7xl mx-auto space-y-8 pb-20">
+        {loading ? (
+          <div className="flex items-center justify-center py-40">
+            <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-700 rounded-full animate-spin" />
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+
+            {/* ─── OVERVIEW ─── */}
+            {tab === 'overview' && (
+              <motion.div key="overview" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-8">
+                {/* KPI Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  {kpis.map(k => (
+                    <div key={k.label} className="bg-white border border-slate-100 rounded-2xl p-6 hover:shadow-sm hover:border-slate-200 transition-all group">
+                      <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center mb-4 border', k.bg, k.border)}>
+                        <k.icon className={cn('w-4 h-4', k.color)} />
+                      </div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{k.label}</p>
+                      <h3 className="text-2xl font-black text-slate-800">{k.val}</h3>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Two-col layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Top Researchers */}
+                  <div className="bg-white border border-slate-100 rounded-2xl p-8 space-y-6">
                     <div className="flex items-center justify-between">
-                       <h3 className="text-xl font-bold flex items-center gap-3">
-                          <Users className="w-5 h-5 text-blue-400" /> Top Researchers
-                       </h3>
-                       <button onClick={() => setView('users')} className="text-[10px] font-black text-white/20 hover:text-white uppercase tracking-widest transition-colors">See all</button>
+                      <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <UserCheck className="w-4 h-4 text-blue-500" /> Top Researchers
+                      </h2>
+                      <button onClick={() => setTab('users')} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors">
+                        View all →
+                      </button>
                     </div>
-                    <div className="space-y-4">
-                       {userStats.slice(0, 5).sort((a, b) => b.sessionCount - a.sessionCount).map((user, i) => (
-                         <div key={user.id} className="flex items-center justify-between p-5 bg-white/[0.03] border border-white/5 rounded-2xl hover:bg-white/10 hover:border-white/10 transition-all group">
-                            <div className="flex items-center gap-4">
-                               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center font-bold text-blue-300 border border-white/5">
-                                  {user.full_name?.[0] || '?'}
-                               </div>
-                               <div>
-                                  <p className="text-base font-bold text-white/90 group-hover:text-white transition-colors">{user.full_name || 'Anonymous'}</p>
-                                  <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">{user.role}</p>
-                               </div>
+                    <div className="space-y-2">
+                      {userStats.slice(0, 6).map((u, i) => (
+                        <div key={u.id} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl hover:bg-white hover:border-slate-200 hover:shadow-sm transition-all group">
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              'w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black border',
+                              i === 0 ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                              i === 1 ? 'bg-slate-100 text-slate-500 border-slate-200' :
+                              'bg-white text-slate-400 border-slate-100'
+                            )}>
+                              {u.full_name?.[0] || 'U'}
                             </div>
-                            <div className="text-right">
-                               <p className="text-lg font-black text-white">{user.sessionCount}</p>
-                               <p className="text-[9px] text-white/20 font-bold uppercase tracking-tighter">Interviews</p>
+                            <div>
+                              <p className="text-sm font-bold text-slate-700">{u.full_name || 'Anonymous'}</p>
+                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{u.role}</p>
                             </div>
-                         </div>
-                       ))}
-                       {userStats.length === 0 && <p className="text-center py-10 text-white/20 font-bold uppercase tracking-widest">No researchers tracked</p>}
+                          </div>
+                          <div className="flex items-center gap-6 text-right">
+                            <div>
+                              <p className="text-base font-black text-slate-800">{u.sessionCount}</p>
+                              <p className="text-[9px] text-slate-400 uppercase">Sessions</p>
+                            </div>
+                            <div>
+                              <p className="text-base font-black text-blue-600">{u.insightCount}</p>
+                              <p className="text-[9px] text-slate-400 uppercase">Insights</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {userStats.length === 0 && <p className="text-center py-10 text-slate-400 text-sm">No users registered yet</p>}
                     </div>
-                 </div>
+                  </div>
 
-                 {/* GLOBAL VOLUME CHART */}
-                 <div className="bg-white/[0.02] border border-white/10 rounded-[3rem] p-12 flex flex-col items-center justify-center text-center space-y-10 group overflow-hidden relative">
-                    <div className="absolute inset-0 bg-blue-600/5 blur-[100px] -z-10 group-hover:bg-blue-600/10 transition-all duration-700" />
-                    <div className="h-56 w-56 rounded-full border-[12px] border-white/5 flex flex-col items-center justify-center relative shadow-2xl shadow-blue-500/5 transition-all group-hover:border-white/10">
-                      <Activity className="w-12 h-12 text-blue-400 mb-2 animate-pulse" />
-                      <span className="text-5xl font-black tracking-tighter">{sessions.length}</span>
-                      <span className="text-[10px] font-black uppercase text-white/30 tracking-[0.2em] mt-1">Global Volume</span>
-                      
-                      {/* Decorative elements */}
-                      <div className="absolute top-0 left-0 w-full h-full border-t-2 border-blue-500/40 rounded-full animate-[spin_10s_linear_infinite]" />
+                  {/* Recent Sessions */}
+                  <div className="bg-white border border-slate-100 rounded-2xl p-8 space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-emerald-500" /> Recent Activity
+                      </h2>
+                      <button onClick={() => setTab('sessions')} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors">
+                        View all →
+                      </button>
                     </div>
-                    <div className="space-y-4">
-                       <h4 className="text-xl font-bold text-white/80">Platform Throughput</h4>
-                       <p className="text-white/40 text-sm font-medium max-w-xs leading-relaxed">System-wide monitoring of interview distribution and data saturation across all active accounts.</p>
-                       <div className="flex gap-2 justify-center">
-                          {[1,2,3,4,5].map(i => <div key={i} className="w-8 h-1 bg-white/5 rounded-full" />)}
-                       </div>
+                    <div className="space-y-2">
+                      {sessions.slice(0, 7).map(s => {
+                        const cfg = statusConfig[s.status] || statusConfig.Review
+                        return (
+                          <Link key={s.id} href={s.status === 'Review' ? `/review?id=${s.id}` : `/preview?id=${s.id}`}
+                            className="flex items-center gap-4 p-4 bg-slate-50 border border-slate-100 rounded-xl hover:bg-white hover:border-slate-200 hover:shadow-sm transition-all group"
+                          >
+                            <div className="w-9 h-9 rounded-xl bg-white border border-slate-100 flex items-center justify-center shrink-0 shadow-sm">
+                              <Video className="w-4 h-4 text-slate-300 group-hover:text-slate-600 transition-colors" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-slate-700 truncate">{s.stakeholders?.name || 'Unknown Stakeholder'}</p>
+                              <p className="text-[11px] text-slate-400 truncate">{s.stakeholders?.company || 'N/A'} · {s.date}</p>
+                            </div>
+                            <span className={cn('text-[10px] font-bold px-2 py-1 rounded-lg border uppercase tracking-widest shrink-0', cfg.pill)}>
+                              {cfg.label}
+                            </span>
+                          </Link>
+                        )
+                      })}
+                      {sessions.length === 0 && <p className="text-center py-10 text-slate-400 text-sm">No sessions recorded yet</p>}
                     </div>
-                 </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* 👤 USER REGISTRY */}
-          {view === 'users' && (
-             <motion.div 
-              key="users"
-              initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-              className="space-y-8"
-             >
-                <div className="bg-white/[0.02] border border-white/10 rounded-[2.5rem] overflow-hidden backdrop-blur-xl">
-                   <table className="w-full text-left">
-                      <thead className="bg-white/5 text-[10px] font-black uppercase tracking-[0.3em] text-white/40">
-                         <tr>
-                            <th className="px-10 py-8">Researcher</th>
-                            <th className="px-10 py-8">Status/Role</th>
-                            <th className="px-10 py-8">Activity</th>
-                            <th className="px-10 py-8">Impact Metrics</th>
-                            <th className="px-10 py-8 text-right">System ID</th>
-                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/5">
-                         {userStats.map(user => (
-                           <tr key={user.id} className="hover:bg-white/[0.03] transition-all group">
-                              <td className="px-10 py-8">
-                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-sm font-black group-hover:scale-110 transition-transform">
-                                       {user.full_name?.[0] || 'U'}
-                                    </div>
-                                    <div className="space-y-0.5">
-                                       <span className="text-base font-bold text-white/90 group-hover:text-white transition-colors">{user.full_name || 'Anonymous'}</span>
-                                       <p className="text-xs text-white/30 font-medium">Joined {new Date(user.created_at).toLocaleDateString()}</p>
-                                    </div>
-                                 </div>
-                              </td>
-                              <td className="px-10 py-8">
-                                 <Badge className={`${user.role === 'admin' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20 shadow-[0_0_20px_-5px_rgba(168,85,247,0.2)]' : 'bg-white/5 text-white/60 border-white/10'} text-[10px] uppercase font-black px-3 py-1`}>
-                                    {user.role}
-                                 </Badge>
-                              </td>
-                              <td className="px-10 py-8 font-black text-2xl text-white/90">{user.sessionCount}</td>
-                              <td className="px-10 py-8">
-                                 <div className="space-y-3 w-48">
-                                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-white/30">
-                                       <span>Insights Map</span>
-                                       <span className="text-blue-400">{user.insightCount}⚡</span>
-                                    </div>
-                                    <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                                       <motion.div 
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${Math.min(user.sessionCount * 12, 100)}%` }}
-                                        transition={{ duration: 1, ease: 'easeOut' }}
-                                        className="h-full bg-blue-500" 
-                                       />
-                                    </div>
-                                 </div>
-                              </td>
-                              <td className="px-10 py-8 font-mono text-[10px] text-white/10 text-right group-hover:text-white/30 transition-colors uppercase tracking-widest">{user.id.split('-')[0]}...</td>
-                           </tr>
-                         ))}
-                      </tbody>
-                   </table>
+                  </div>
                 </div>
-             </motion.div>
-          )}
+              </motion.div>
+            )}
 
-          {/* 📀 GLOBAL REPOSITORY */}
-          {view === 'archive' && (
-             <motion.div 
-              key="archive"
-              initial={{ opacity: 0, scale: 1.02 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}
-              className="space-y-10"
-             >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/5 pb-8">
-                   <div className="space-y-1">
-                      <h2 className="text-[11px] font-black text-white/40 uppercase tracking-[0.4em]">The Deep Repository</h2>
-                      <p className="text-sm font-medium text-white/20">Audit-level access to all platform raw data.</p>
-                   </div>
-                   <div className="bg-white/5 p-2 rounded-2xl flex items-center gap-3 border border-white/10 w-full md:w-96 pl-4 group focus-within:border-blue-500/40 transition-all">
-                      <Search className="w-5 h-5 text-white/20 group-focus-within:text-blue-400" />
-                      <Input 
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Filter platform sessions..." 
-                        className="bg-transparent border-none h-10 text-sm font-bold p-0 focus:ring-0 placeholder:text-white/10" 
-                      />
-                   </div>
+            {/* ─── ALL SESSIONS ─── */}
+            {tab === 'sessions' && (
+              <motion.div key="sessions" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  <div className="relative group flex-1">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
+                    <input
+                      value={search}
+                      onChange={e => setSearch(e.target.value)}
+                      placeholder="Search by stakeholder or company..."
+                      className="w-full h-11 pl-12 pr-4 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all"
+                    />
+                  </div>
+                  <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
+                    {['all', 'Scheduled', 'Review', 'Published'].map(s => (
+                      <button key={s} onClick={() => setStatusFilter(s)}
+                        className={cn(
+                          'px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all',
+                          statusFilter === s ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-700'
+                        )}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                   {sessions.filter(s => 
-                     (s.stakeholder?.name || '').toLowerCase().includes(search.toLowerCase()) || 
-                     (s.stakeholder?.company || '').toLowerCase().includes(search.toLowerCase())
-                   ).map((s, i) => (
-                     <motion.div
-                      key={s.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                     >
-                       <InterviewCard 
-                        id={s.id}
-                        stakeholder={s.stakeholder?.name || 'Anonymous'}
-                        company={s.stakeholder?.company || 'N/A'}
-                        sector={s.stakeholder?.sector || 'N/A'}
-                        date={s.date}
-                        status={s.status}
-                        opportunityCount={s.opportunities?.length || 0}
-                       />
-                     </motion.div>
-                   ))}
-                   {sessions.length === 0 && (
-                     <div className="col-span-full py-40 bg-white/[0.01] border border-dashed border-white/5 rounded-[4rem] text-center space-y-4">
-                        <Inbox className="w-16 h-16 text-white/5 mx-auto" />
-                        <h3 className="text-lg font-bold text-white/20 uppercase tracking-[0.3em]">Master Database Empty</h3>
-                        <p className="text-sm text-white/10 font-medium">Awaiting first successful architectural sync.</p>
-                     </div>
-                   )}
-                </div>
-             </motion.div>
-          )}
-        </AnimatePresence>
+                <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-widest">{filteredSessions.length} sessions in repository</p>
 
+                <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                  <table className="w-full text-left">
+                    <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-100">
+                      <tr>
+                        <th className="px-6 py-5">Stakeholder</th>
+                        <th className="px-6 py-5">Company / Sector</th>
+                        <th className="px-6 py-5">Date</th>
+                        <th className="px-6 py-5">Status</th>
+                        <th className="px-6 py-5">Insights</th>
+                        <th className="px-6 py-5 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {filteredSessions.map(s => {
+                        const cfg = statusConfig[s.status] || statusConfig.Review
+                        return (
+                          <tr key={s.id} className="hover:bg-slate-50/50 transition-all group">
+                            <td className="px-6 py-5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center text-sm font-black text-slate-500 shrink-0">
+                                  {(s.stakeholders?.name || 'A')[0]}
+                                </div>
+                                <span className="font-bold text-slate-700 group-hover:text-slate-900 transition-colors text-sm">
+                                  {s.stakeholders?.name || 'Unknown'}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-5">
+                              <p className="text-sm font-semibold text-slate-600">{s.stakeholders?.company || '—'}</p>
+                              <p className="text-[10px] text-slate-400 uppercase font-bold">{s.stakeholders?.sector || '—'}</p>
+                            </td>
+                            <td className="px-6 py-5 text-sm text-slate-500 font-medium">{s.date}</td>
+                            <td className="px-6 py-5">
+                              <span className={cn('text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase tracking-widest', cfg.pill)}>
+                                {cfg.label}
+                              </span>
+                            </td>
+                            <td className="px-6 py-5">
+                              <div className="flex items-center gap-1.5">
+                                <Zap className="w-3.5 h-3.5 text-blue-400" />
+                                <span className="text-sm font-bold text-slate-700">{s.opportunities?.length || 0}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-5 text-right">
+                              <Link href={s.status === 'Review' ? `/review?id=${s.id}` : `/preview?id=${s.id}`}
+                                className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl hover:bg-white hover:shadow-sm inline-block"
+                              >
+                                Open →
+                              </Link>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                  {filteredSessions.length === 0 && (
+                    <div className="py-24 text-center space-y-3">
+                      <Inbox className="w-10 h-10 text-slate-200 mx-auto" />
+                      <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">No sessions match your filter</p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ─── USERS ─── */}
+            {tab === 'users' && (
+              <motion.div key="users" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
+                <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-widest">{profiles.length} registered researchers</p>
+
+                <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                  <table className="w-full text-left">
+                    <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-100">
+                      <tr>
+                        <th className="px-6 py-5">Researcher</th>
+                        <th className="px-6 py-5">Role</th>
+                        <th className="px-6 py-5">Sessions</th>
+                        <th className="px-6 py-5">Insights</th>
+                        <th className="px-6 py-5">Published</th>
+                        <th className="px-6 py-5">Activity</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {userStats.map((u, i) => (
+                        <tr key={u.id} className="hover:bg-slate-50/50 transition-all group">
+                          <td className="px-6 py-5">
+                            <div className="flex items-center gap-3">
+                              <div className={cn(
+                                'w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black border shrink-0',
+                                i === 0 ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                                i === 1 ? 'bg-slate-100 text-slate-500 border-slate-200' :
+                                'bg-white text-slate-400 border-slate-100'
+                              )}>
+                                {u.full_name?.[0] || 'U'}
+                              </div>
+                              <span className="font-bold text-slate-700 group-hover:text-slate-900 transition-colors">{u.full_name || 'Anonymous'}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <span className={cn(
+                              'text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase tracking-widest',
+                              u.role === 'admin' ? 'bg-purple-50 text-purple-600 border-purple-100' : 'bg-slate-50 text-slate-500 border-slate-100'
+                            )}>
+                              {u.role}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5 text-xl font-black text-slate-800">{u.sessionCount}</td>
+                          <td className="px-6 py-5">
+                            <div className="flex items-center gap-2">
+                              <Zap className="w-3.5 h-3.5 text-blue-400" />
+                              <span className="text-base font-black text-blue-600">{u.insightCount}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                              <span className="text-base font-black text-emerald-600">{u.publishedCount}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <div className="w-28">
+                              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-500 rounded-full"
+                                  style={{ width: `${Math.min((u.sessionCount / Math.max(...userStats.map(x => x.sessionCount), 1)) * 100, 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {userStats.length === 0 && (
+                    <div className="py-24 text-center space-y-3">
+                      <Users className="w-10 h-10 text-slate-200 mx-auto" />
+                      <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">No users registered yet</p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ─── STAKEHOLDERS ─── */}
+            {tab === 'stakeholders' && (
+              <motion.div key="stakeholders" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {allStakeholders.map((sh, i) => (
+                    <div key={i} className="bg-white border border-slate-100 rounded-2xl p-6 hover:shadow-md hover:border-slate-200 transition-all group space-y-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-11 h-11 bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200 rounded-xl flex items-center justify-center text-base font-black text-slate-600 shrink-0 group-hover:from-blue-50 group-hover:to-blue-100 group-hover:text-blue-600 group-hover:border-blue-100 transition-all">
+                            {sh.name[0]}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-800 text-sm leading-tight">{sh.name}</p>
+                            <p className="text-[11px] text-slate-400 font-medium">{sh.role}</p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-black text-slate-400 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-lg">
+                          {sh.sessionCount} {sh.sessionCount === 1 ? 'session' : 'sessions'}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2 pt-1 border-t border-slate-50">
+                        {sh.company && (
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-slate-400 font-medium">Company</span>
+                            <span className="font-semibold text-slate-700">{sh.company}</span>
+                          </div>
+                        )}
+                        {sh.sector && (
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-slate-400 font-medium">Sector</span>
+                            <span className="font-semibold text-slate-600">{sh.sector}</span>
+                          </div>
+                        )}
+                        {sh.geography && (
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-slate-400 font-medium">Geography</span>
+                            <span className="font-semibold text-slate-600">{sh.geography}</span>
+                          </div>
+                        )}
+                        {sh.employees && (
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-slate-400 font-medium">Team Size</span>
+                            <span className="font-semibold text-slate-600">{sh.employees}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5">
+                        {sh.sessions.map(s => {
+                          const cfg = statusConfig[s.status] || statusConfig.Review
+                          return (
+                            <Link
+                              key={s.id}
+                              href={s.status === 'Review' ? `/review?id=${s.id}` : `/preview?id=${s.id}`}
+                              className={cn('text-[10px] font-bold px-2 py-1 rounded-lg border uppercase tracking-widest hover:opacity-80 transition-opacity', cfg.pill)}
+                            >
+                              {s.date} · {cfg.label}
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                  {allStakeholders.length === 0 && (
+                    <div className="col-span-full py-24 text-center space-y-3">
+                      <Users className="w-10 h-10 text-slate-200 mx-auto" />
+                      <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">No stakeholders found</p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+          </AnimatePresence>
+        )}
       </div>
     </div>
   )
