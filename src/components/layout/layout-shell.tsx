@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import { Suspense } from 'react'
 import { Sidebar } from '@/components/layout/sidebar'
 import { AdminSidebar } from '@/components/layout/admin-sidebar'
 
@@ -18,7 +19,9 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     // Admin gets its own dark sidebar + mobile top bar
     return (
       <div className="flex flex-col lg:flex-row h-screen h-[100dvh] overflow-hidden bg-slate-50">
-        <AdminSidebar />
+        <Suspense fallback={<div className="w-64 bg-slate-900" />}>
+          <AdminSidebar />
+        </Suspense>
         <main className="flex-1 min-w-0 overflow-y-auto">
           {children}
         </main>
