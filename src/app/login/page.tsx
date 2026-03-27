@@ -188,7 +188,10 @@ function LoginForm() {
             {/* Google */}
             <button
               type="button"
-              onClick={() => signInWithGoogle(searchParams.get('next') || '/')}
+              onClick={() => signInWithGoogle(
+                searchParams.get('next') || '/',
+                typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
+              )}
               className="w-full h-12 sm:h-12 bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-700 border border-slate-200 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-3 shadow-sm hover:shadow-md hover:border-slate-300"
             >
               {/* Google 'G' icon */}

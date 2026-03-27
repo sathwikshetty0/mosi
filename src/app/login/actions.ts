@@ -74,12 +74,12 @@ export async function signup(formData: FormData) {
   redirect('/')
 }
 
-export async function signInWithGoogle(next: string = '/') {
+export async function signInWithGoogle(next: string = '/', origin: string = 'http://localhost:3000') {
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?next=${encodeURIComponent(next)}`,
+      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   })
 
