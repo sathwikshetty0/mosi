@@ -4,20 +4,20 @@ import * as React from 'react'
 import { useMosiStore } from '@/lib/store'
 import { 
   Users, Video, Lightbulb, Activity, Plus, 
-  ArrowRight, Layers, CheckCircle2
+  ArrowRight, Layers, CheckCircle2, X, Trash2
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
 export default function Home() {
-  const { sessions, fetchSessions } = useMosiStore()
+  const { sessions, fetchSessions, deleteSession } = useMosiStore()
 
   React.useEffect(() => {
     fetchSessions()
   }, [fetchSessions])
 
   const totalInterviews = sessions.length
-  const totalOpportunities = sessions.reduce((acc, s) => acc + s.opportunities.length, 0)
+  const totalOpportunities = sessions.reduce((acc, s) => acc + (s.opportunities?.length || 0), 0)
   const uniqueStakeholders = new Set(sessions.map(s => s.stakeholder?.name || 'Unknown')).size
   const pendingApprovals = sessions.filter(s => s.status === 'Review').length
 
@@ -92,7 +92,7 @@ export default function Home() {
                             <span className="text-xs text-slate-400 font-medium">{session.date}</span>
                         </div>
                         <h4 className="text-base font-bold text-slate-700 truncate tracking-tight">{session.stakeholder?.name || 'Untitled Participant'}</h4>
-                        <p className="text-xs text-slate-400 font-medium">{session.stakeholder?.company || 'N/A'} · {session.opportunities.length} Insights</p>
+                        <p className="text-xs text-slate-400 font-medium">{session.stakeholder?.company || 'N/A'} · {session.opportunities?.length || 0} Insights</p>
                     </div>
                     <ArrowRight className="w-4 h-4 text-slate-200 group-hover:text-slate-800 transition-all shrink-0" />
                 </div>

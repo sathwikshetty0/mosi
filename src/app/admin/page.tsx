@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { 
   Users, Video, Search, ShieldCheck, 
   Zap, Activity, UserCheck, Inbox,
-  BarChart3, Clock, TrendingUp, Globe, CheckCircle2
+  BarChart3, Clock, TrendingUp, Globe, CheckCircle2, Trash2
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -350,11 +350,24 @@ function AdminDashboardContent() {
                               </div>
                             </td>
                             <td className="px-6 py-5 text-right">
-                              <Link href={s.status === 'Review' ? `/review?id=${s.id}` : `/preview?id=${s.id}`}
-                                className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl hover:bg-white hover:shadow-sm inline-block"
-                              >
-                                Open →
-                              </Link>
+                              <div className="flex items-center justify-end gap-2">
+                                <Link href={s.status === 'Review' ? `/review?id=${s.id}` : `/preview?id=${s.id}`}
+                                  className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl hover:bg-white hover:shadow-sm inline-block"
+                                >
+                                  Open →
+                                </Link>
+                                <button
+                                  onClick={async () => {
+                                    if (confirm('Delete this session permanently?')) {
+                                      await fetch(`/api/admin/sessions?id=${s.id}`, { method: 'DELETE' })
+                                      setSessions(prev => prev.filter(x => x.id !== s.id))
+                                    }
+                                  }}
+                                  className="w-9 h-9 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         )
@@ -459,10 +472,21 @@ function AdminDashboardContent() {
                           <div className="w-11 h-11 bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200 rounded-xl flex items-center justify-center text-base font-black text-slate-600 shrink-0 group-hover:from-blue-50 group-hover:to-blue-100 group-hover:text-blue-600 group-hover:border-blue-100 transition-all">
                             {sh.name[0]}
                           </div>
-                          <div>
+                          <div className="flex-1">
                             <p className="font-bold text-slate-800 text-sm leading-tight">{sh.name}</p>
                             <p className="text-[11px] text-slate-400 font-medium">{sh.role}</p>
                           </div>
+                          <button
+                            onClick={async () => {
+                              if (confirm(`Delete stakeholder ${sh.name} and all associated data?`)) {
+                                await fetch(`/api/admin/stakeholders?id=${sh.id}`, { method: 'DELETE' })
+                                setStakeholders(prev => prev.filter(x => x.id !== sh.id))
+                              }
+                            }}
+                            className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                         <span className="text-[10px] font-black text-slate-400 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-lg">
                           {sh.sessionCount} {sh.sessionCount === 1 ? 'session' : 'sessions'}
@@ -497,7 +521,7 @@ function AdminDashboardContent() {
                       </div>
 
                       <div className="flex flex-wrap gap-1.5">
-                        {sh.sessions.map(s => {
+                        {sh.sessions.map((s: SessionData) => {
                           const cfg = statusConfig[s.status] || statusConfig.Review
                           return (
                             <Link

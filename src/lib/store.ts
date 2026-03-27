@@ -121,7 +121,8 @@ interface MosiStore {
   profiles: any[]
   fetchAllProfiles: () => Promise<void>
   fetchSessions: () => Promise<void>
-  updateStakeholder: (oldName: string, updates: Partial<StakeholderProfile>) => void
+  updateStakeholder: (id: string, updates: Partial<StakeholderProfile>) => void
+  deleteStakeholder: (id: string) => void
 }
 
 
@@ -599,6 +600,15 @@ export const useMosiStore = create<MosiStore>()(
         .then((result: { error: any }) => {
           if (result.error) console.error('Stakeholder update failed:', result.error)
         })
+    }
+  },
+  
+  deleteStakeholder: (id: string) => {
+    set((s) => ({
+      sessions: s.sessions.filter(sess => sess.stakeholder?.id !== id)
+    }))
+    if (supabase) {
+      supabase.from('stakeholders').delete().eq('id', id).then()
     }
   },
 
