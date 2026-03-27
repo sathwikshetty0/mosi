@@ -1,16 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { login, signup } from './actions'
+import { login, signup, signInWithGoogle } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Chrome, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
+import { AlertCircle, Chrome, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react'
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
+  const searchParams = useSearchParams()
+  const error = searchParams.get('error')
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     setIsLoading(true)
@@ -54,6 +57,19 @@ export default function LoginPage() {
 
         <div className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
           <form action={isLogin ? login : signup} onSubmit={handleSubmit} className="space-x-0 space-y-6">
+            <AnimatePresence mode="wait">
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 flex items-center gap-3 text-rose-400 text-sm"
+                >
+                  <AlertCircle className="w-5 h-5 shrink-0" />
+                  <p>{error}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <AnimatePresence mode="wait">
               {!isLogin && (
                 <motion.div
@@ -127,6 +143,25 @@ export default function LoginPage() {
                   <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
+            </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-white/5"></span>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-[#050505] px-2 text-white/30 tracking-widest font-bold">Or continue with</span>
+              </div>
+            </div>
+
+            <Button 
+              type="button" 
+              variant="outline"
+              onClick={() => signInWithGoogle()}
+              className="w-full h-12 bg-white/5 hover:bg-white/10 text-white rounded-xl font-semibold text-sm transition-all border-white/10 group"
+            >
+              <Chrome className="mr-2 h-4 w-4 text-white group-hover:text-blue-400 transition-colors" />
+              Sign in with Google
             </Button>
           </form>
 
