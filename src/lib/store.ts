@@ -78,6 +78,7 @@ export interface InterviewSession {
   location?: string
   transcript?: TranscriptParagraph[]
   summary?: string
+  user_id?: string
 }
 
 
@@ -116,6 +117,8 @@ interface MosiStore {
   setSidebarCollapsed: (collapsed: boolean) => void
   updateSessionSummary: (id: string, summary: string) => void
   setRecordingUrl: (id: string, url: string) => void
+  profiles: any[]
+  fetchAllProfiles: () => Promise<void>
   fetchSessions: () => Promise<void>
 }
 
@@ -129,6 +132,7 @@ export const useMosiStore = create<MosiStore>()(
   setSidebarCollapsed: (collapsed) => set({ isSidebarCollapsed: collapsed }),
   currentSession: null,
   sessions: [],
+  profiles: [],
   isRecording: false,
   recordingSeconds: 0,
   activeQuadrant: 'Core',
@@ -219,6 +223,23 @@ export const useMosiStore = create<MosiStore>()(
     return { currentSession: newCurrent, sessions: newSessions }
   }),
 
+  fetchAllProfiles: async () => {
+    if (!supabase) return
+    const { data: profiles, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('full_name', { ascending: true })
+
+    if (error) {
+       console.error('Fetch profiles failed:', error.message)
+       return
+    }
+
+    if (profiles) {
+       set({ profiles })
+    }
+  },
+
   fetchSessions: async () => {
     if (!supabase) return
     // Flattened query to avoid relationship errors
@@ -251,7 +272,8 @@ export const useMosiStore = create<MosiStore>()(
           settings: s.audio_settings,
           evidence: rootEvidence,
           recordingUrl: s.recording_url,
-          summary: s.summary
+          summary: s.summary,
+          user_id: s.user_id
         }
       })
       set({ sessions: formattedSessions })

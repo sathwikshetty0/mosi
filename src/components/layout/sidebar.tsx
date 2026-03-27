@@ -224,17 +224,17 @@ export function Sidebar() {
             </Link>
             
             <button
-              onClick={() => {
-                signOut()
+              onClick={async () => {
+                await signOut()
                 setIsMobileMenuOpen(false)
               }}
               className={cn(
-                "nav-item nav-item-inactive group hover:bg-rose-50 hover:text-rose-600 transition-all",
+                "nav-item nav-item-inactive group hover:bg-rose-50 hover:text-rose-600 transition-all w-full",
                 isSidebarCollapsed && "justify-center"
               )}
             >
               <LogOut className="w-4 h-4 text-slate-400 group-hover:text-rose-600" />
-              {!isSidebarCollapsed && <span className="uppercase tracking-tighter font-medium">Disconnect</span>}
+              {!isSidebarCollapsed && <span className="uppercase tracking-tighter font-medium text-slate-400 group-hover:text-rose-600">Disconnect</span>}
             </button>
           </div>
         </div>
