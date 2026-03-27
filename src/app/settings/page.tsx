@@ -19,51 +19,54 @@ export default function SettingsPage() {
     <div className="space-y-12 pb-20 animate-in fade-in slide-in-from-bottom-2 duration-700">
       
       {/* 🚀 ELITE HEADER */}
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 px-2">
+      <div className="flex flex-col gap-4 sm:gap-6 px-1 sm:px-2">
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-3 py-1.5 rounded-full w-fit">
             <Settings className="w-3.5 h-3.5" /> System Architecture
           </div>
-          <h2 className="text-4xl lg:text-5xl font-black tracking-tighter text-slate-700 uppercase leading-[0.9]">
-            Platform <br/><span className="text-blue-600">Preferences</span>
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tighter text-slate-700 uppercase leading-[0.9]">
+            Platform <br className="hidden sm:block"/><span className="text-blue-600">Preferences</span>
           </h2>
-          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Global configuration and synthetic intelligence tuning.</p>
+          <p className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-widest">Global configuration and intelligence tuning.</p>
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-10">
-        {/* 🧭 NAVIGATION DOCK */}
-        <div className="w-full lg:w-72 flex-none bg-white p-3 rounded-[2.5rem] border-2 border-slate-50 shadow-2xl shadow-slate-200/50 h-fit space-y-2">
-          {sections.map((s) => (
-            <button
-              key={s.title}
-              onClick={() => setActiveTab(s.title)}
-              className={cn(
-                 "w-full flex items-center justify-between px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all",
-                 activeTab === s.title 
-                   ? 'bg-slate-700 text-white shadow-xl shadow-slate-300' 
-                   : 'text-slate-400 hover:text-slate-700 hover:bg-slate-50'
-              )}
-            >
-               <div className="flex items-center gap-4">
-                  <s.icon className="w-4 h-4" />
-                  {s.title}
-               </div>
-               {activeTab === s.title && <ChevronRight className="w-4 h-4 text-white/40" />}
-            </button>
-          ))}
+      <div className="flex flex-col lg:flex-row gap-6 sm:gap-10">
+        {/* 🧭 NAVIGATION DOCK — horizontal scroll on mobile, sidebar on desktop */}
+        <div className="w-full lg:w-72 flex-none">
+          <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible no-scrollbar bg-white p-2 sm:p-3 rounded-xl lg:rounded-[2.5rem] border-2 border-slate-50 shadow-lg lg:shadow-2xl shadow-slate-200/50">
+            {sections.map((s) => (
+              <button
+                key={s.title}
+                onClick={() => setActiveTab(s.title)}
+                className={cn(
+                   "flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 rounded-lg lg:rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap shrink-0 lg:w-full",
+                   activeTab === s.title 
+                     ? 'bg-slate-700 text-white shadow-xl shadow-slate-300' 
+                     : 'text-slate-400 hover:text-slate-700 hover:bg-slate-50'
+                )}
+              >
+                 <div className="flex items-center gap-2 sm:gap-4">
+                    <s.icon className="w-4 h-4" />
+                    <span className="hidden sm:inline">{s.title}</span>
+                    <span className="sm:hidden">{s.title.split(' ')[0]}</span>
+                 </div>
+                 {activeTab === s.title && <ChevronRight className="w-4 h-4 text-white/40 hidden lg:block" />}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* 📋 WORKSPACE AREA */}
         <div className="flex-1 space-y-8 animate-in zoom-in-95 duration-300">
-          <div className="premium-card p-10 lg:p-12 bg-white border-2 border-slate-100 shadow-2xl shadow-slate-200/50 rounded-[3rem] space-y-12">
-            <div className="flex items-center gap-4 border-b border-slate-50 pb-8">
-               <div className="w-14 h-14 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-xl shadow-blue-200">
-                  <Zap className="w-6 h-6" />
+          <div className="premium-card p-6 sm:p-10 lg:p-12 bg-white border-2 border-slate-100 shadow-2xl shadow-slate-200/50 rounded-2xl sm:rounded-[3rem] space-y-8 sm:space-y-12">
+            <div className="flex items-center gap-3 sm:gap-4 border-b border-slate-50 pb-6 sm:pb-8">
+               <div className="w-11 h-11 sm:w-14 sm:h-14 bg-blue-600 text-white rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl shadow-blue-200 shrink-0">
+                  <Zap className="w-5 h-5 sm:w-6 sm:h-6" />
                </div>
-               <div className="space-y-1">
-                  <h3 className="text-2xl font-black text-slate-700 uppercase tracking-tighter">{activeTab} Parameters</h3>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Modify technical constraints and baseline logic</p>
+               <div className="space-y-1 min-w-0">
+                  <h3 className="text-lg sm:text-2xl font-black text-slate-700 uppercase tracking-tighter truncate">{activeTab} Parameters</h3>
+                  <p className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Modify technical constraints</p>
                </div>
             </div>
             
@@ -137,9 +140,9 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-6 px-10">
-             <button className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-rose-600 transition-colors">Factory Reset</button>
-             <button className="h-16 px-12 bg-slate-700 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-slate-200 hover:bg-blue-600 transition-all active:scale-95">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 sm:gap-6 px-2 sm:px-10">
+             <button className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-rose-600 transition-colors order-2 sm:order-1 text-center py-2">Factory Reset</button>
+             <button className="h-14 sm:h-16 px-8 sm:px-12 bg-slate-700 text-white rounded-xl sm:rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-slate-200 hover:bg-blue-600 transition-all active:scale-95 order-1 sm:order-2">
                 Commit Changes
              </button>
           </div>

@@ -60,6 +60,7 @@ export interface StakeholderProfile {
   domain?: string
   address?: string
   pincode?: string
+  id?: string
 }
 
 export interface InterviewSession {
@@ -120,6 +121,8 @@ interface MosiStore {
   profiles: any[]
   fetchAllProfiles: () => Promise<void>
   fetchSessions: () => Promise<void>
+  updateStakeholder: (id: string, updates: Partial<StakeholderProfile>) => void
+  deleteStakeholder: (id: string) => void
 }
 
 
@@ -254,6 +257,13 @@ export const useMosiStore = create<MosiStore>()(
     }
 
     if (sessionsData) {
+      console.log(`Fetched ${sessionsData.length} sessions from Supabase`)
+      const fallbackStakeholder: StakeholderProfile = {
+        name: 'Untitled Stakeholder', role: 'N/A', phone: '', email: '', linkedin: '',
+        company: 'N/A', sector: '', products: '', employees: '', revenue: '',
+        yearsInBusiness: '', geography: ''
+      }
+      
       const formattedSessions: InterviewSession[] = sessionsData.map((s: any) => {
         const sessionEvidence = s.evidence || []
         const sessionOpps = (s.opportunities || []).map((o: any) => ({
@@ -264,19 +274,25 @@ export const useMosiStore = create<MosiStore>()(
 
         return {
           id: s.id,
-          stakeholder: s.stakeholders,
+          stakeholder: s.stakeholders || fallbackStakeholder,
           status: s.status,
           date: s.date,
           duration: s.duration,
           opportunities: sessionOpps,
-          settings: s.audio_settings,
+          settings: s.audio_settings || { audio: true, video: true },
           evidence: rootEvidence,
           recordingUrl: s.recording_url,
-          summary: s.summary,
+          summary: s.summary || '',
           user_id: s.user_id
         }
       })
-      set({ sessions: formattedSessions })
+
+      // Merge: Keep any local sessions that aren't in the DB yet
+      set((state) => {
+        const dbIds = new Set(formattedSessions.map(s => s.id))
+        const localOnly = state.sessions.filter(s => !dbIds.has(s.id) && s.status === 'Review')
+        return { sessions: [...localOnly, ...formattedSessions] }
+      })
     }
   },
 
@@ -312,13 +328,26 @@ export const useMosiStore = create<MosiStore>()(
       ;(async () => {
         try {
           console.log('Starting Supabase sync for session:', newId)
+
+          // 0. GET CURRENT USER ID
+          let currentUserId: string | null = null
+          try {
+            const { data: { user } } = await supabase.auth.getUser()
+            currentUserId = user?.id || null
+            console.log('Current user ID:', currentUserId)
+          } catch (e) {
+            console.error('Failed to get current user:', e)
+          }
           
-          // 1. STAKEHOLDER
+          // 1. STAKEHOLDER (Find existing or Create)
           let stakeholderId: any = null
           try {
-            const dbStakeholder = {
+            const dbStakeholder: any = {
               name: stakeholder.name || 'Anonymous',
               role: stakeholder.role || 'Unspecified',
+              phone: stakeholder.phone || '',
+              email: stakeholder.email || '',
+              linkedin: stakeholder.linkedin || '',
               company: stakeholder.company || 'N/A',
               sector: stakeholder.sector || '',
               employees: stakeholder.employees || '',
@@ -328,13 +357,34 @@ export const useMosiStore = create<MosiStore>()(
               address: stakeholder.address || '',
               pincode: stakeholder.pincode || ''
             }
-            console.log('Inserting stakeholder:', dbStakeholder)
-            const { data: sData, error: sErr } = await supabase.from('stakeholders').insert(dbStakeholder).select().single()
-            if (sErr || !sData) {
-              console.error('Stakeholder sync failed. Error:', sErr?.message || sErr, 'Details:', sErr?.details || 'none')
+
+            if (currentUserId) {
+              dbStakeholder.user_id = currentUserId
+            }
+
+            // First, try to find an existing stakeholder by name to avoid duplicates
+            console.log('Checking for existing stakeholder:', dbStakeholder.name)
+            const { data: existingSH } = await supabase
+              .from('stakeholders')
+              .select('id')
+              .eq('name', dbStakeholder.name)
+              .maybeSingle()
+
+            if (existingSH) {
+              stakeholderId = existingSH.id
+              console.log('Found existing stakeholder, linking to ID:', stakeholderId)
+              
+              // Update their details while we are at it
+              await supabase.from('stakeholders').update(dbStakeholder).eq('id', stakeholderId)
             } else {
-              stakeholderId = sData.id
-              console.log('Stakeholder synced successfully, ID:', stakeholderId)
+              console.log('Creating new stakeholder:', dbStakeholder.name)
+              const { data: sData, error: sErr } = await supabase.from('stakeholders').insert(dbStakeholder).select().single()
+              if (sErr || !sData) {
+                console.error('Stakeholder sync failed:', sErr?.message || sErr)
+              } else {
+                stakeholderId = sData.id
+                console.log('Stakeholder created successfully, ID:', stakeholderId)
+              }
             }
           } catch (e) {
             console.error('Stakeholder sync exception:', e)
@@ -342,17 +392,26 @@ export const useMosiStore = create<MosiStore>()(
 
           // 2. SESSION (Crucial step)
           try {
-            const { error: sessErr } = await supabase.from('sessions').insert({
+            const sessionInsert: any = {
               id: newId,
-              stakeholder_id: stakeholderId, // might be null if stakeholder sync failed but we still want the session
+              stakeholder_id: stakeholderId,
               status: 'Review',
               date: session.date,
               duration: session.duration,
-              audio_settings: session.settings
-            })
+              audio_settings: session.settings,
+              summary: session.summary || '',
+              transcript: session.transcript || []
+            }
+            // Only include user_id if we have one
+            if (currentUserId) {
+              sessionInsert.user_id = currentUserId
+            }
+            console.log('Inserting session row:', sessionInsert)
+            const { error: sessErr } = await supabase.from('sessions').insert(sessionInsert)
             if (sessErr) {
-               console.error('Session sync failed:', sessErr)
-               // If session insert fails, we can't link anything else, but we can still try to upload the audio file
+               console.error('Session sync failed:', sessErr, 'Message:', sessErr?.message, 'Code:', sessErr?.code)
+            } else {
+               console.log('Session row inserted successfully')
             }
           } catch (e) {
             console.error('Session sync exception:', e)
@@ -479,7 +538,13 @@ export const useMosiStore = create<MosiStore>()(
       )
     }))
     if (supabase) {
-      supabase.from('sessions').update({ status: 'Published' }).eq('id', id).then()
+      supabase.from('sessions')
+        .update({ status: 'Published' })
+        .eq('id', id)
+        .then(() => {
+          // Re-fetch to ensure everything is synced and visible
+          get().fetchSessions()
+        })
     }
   },
 
@@ -518,6 +583,34 @@ export const useMosiStore = create<MosiStore>()(
   setRecordingUrl: (id: string, url: string) => set((s) => ({
     sessions: s.sessions.map(sess => sess.id === id ? { ...sess, recordingUrl: url } : sess)
   })),
+
+  updateStakeholder: (id: string, updates: Partial<StakeholderProfile>) => {
+    set((s) => ({
+      sessions: s.sessions.map(sess =>
+        sess.stakeholder?.id === id
+          ? { ...sess, stakeholder: { ...sess.stakeholder, ...updates } }
+          : sess
+      )
+    }))
+    // Sync to Supabase
+    if (supabase) {
+      supabase.from('stakeholders')
+        .update(updates)
+        .eq('id', id)
+        .then((result: { error: any }) => {
+          if (result.error) console.error('Stakeholder update failed:', result.error)
+        })
+    }
+  },
+  
+  deleteStakeholder: (id: string) => {
+    set((s) => ({
+      sessions: s.sessions.filter(sess => sess.stakeholder?.id !== id)
+    }))
+    if (supabase) {
+      supabase.from('stakeholders').delete().eq('id', id).then()
+    }
+  },
 
   tick: () => set((s) => ({
     recordingSeconds: s.isRecording ? s.recordingSeconds + 1 : s.recordingSeconds

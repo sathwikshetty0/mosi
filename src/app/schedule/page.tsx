@@ -21,29 +21,31 @@ export default function SchedulePage() {
     <div className="space-y-10 pb-20 animate-in fade-in slide-in-from-bottom-2 duration-700">
       
       {/* 🚀 ELITE HEADER */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-2">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1.5 rounded-full w-fit">
-            <Clock className="w-3.5 h-3.5" /> Meeting Schedule
+      <div className="flex flex-col gap-4 sm:gap-6 px-1 sm:px-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1.5 rounded-full w-fit">
+              <Clock className="w-3.5 h-3.5" /> Meeting Schedule
+            </div>
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tighter text-slate-700 uppercase leading-[0.9]">
+              Interview <br className="hidden sm:block"/><span className="text-indigo-600">Chronology</span>
+            </h2>
+            <p className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-widest">Plan and manage upcoming stakeholder sessions.</p>
           </div>
-          <h2 className="text-4xl lg:text-5xl font-black tracking-tighter text-slate-700 uppercase leading-[0.9]">
-            Interview <br/><span className="text-indigo-600">Chronology</span>
-          </h2>
-          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Plan and manage upcoming stakeholder sessions.</p>
+          <a href="/setup" className="sm:shrink-0">
+            <button id="book-meeting-btn" className="w-full sm:w-auto px-6 sm:px-8 py-4 sm:py-5 bg-slate-700 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-slate-200 hover:bg-indigo-600 transition-all active:scale-95 flex items-center justify-center gap-2">
+              <Plus className="w-5 h-5" />
+              Schedule New
+            </button>
+          </a>
         </div>
-        <a href="/setup">
-          <button id="book-meeting-btn" className="px-8 py-5 bg-slate-700 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-slate-200 hover:bg-indigo-600 transition-all active:scale-95 flex items-center gap-2">
-            <Plus className="w-5 h-5" />
-            Schedule New Archive
-          </button>
-        </a>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10">
         
         {/* 📅 CALENDAR PERSPECTIVE */}
-        <div className="lg:col-span-4 space-y-8">
-          <div className="premium-card p-8 bg-white border-2 border-slate-100 shadow-2xl shadow-slate-200/50">
+        <div className="lg:col-span-4 space-y-6 sm:space-y-8">
+          <div className="premium-card p-5 sm:p-8 bg-white border-2 border-slate-100 shadow-2xl shadow-slate-200/50">
             <div className="flex items-center justify-between mb-8">
                <div className="space-y-1">
                   <h3 className="text-lg font-black text-slate-700 uppercase tracking-tighter">March 2026</h3>
@@ -83,7 +85,7 @@ export default function SchedulePage() {
             </div>
           </div>
 
-          <div className="premium-card p-8 bg-slate-700 text-white overflow-hidden relative shadow-2xl">
+          <div className="premium-card p-5 sm:p-8 bg-slate-700 text-white overflow-hidden relative shadow-2xl">
             <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
               <CalendarIcon className="w-32 h-32 -mr-16 -mt-16" />
             </div>
@@ -106,12 +108,12 @@ export default function SchedulePage() {
         </div>
 
         {/* 📋 CHRONOLOGICAL FEED */}
-        <div className="lg:col-span-8 space-y-8">
-          <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 w-fit">
+        <div className="lg:col-span-8 space-y-6 sm:space-y-8">
+          <div className="flex bg-slate-100 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-slate-200 w-fit">
             <button 
               onClick={() => setView('upcoming')} 
               className={cn(
-                 "px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                 "px-5 sm:px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
                  view === 'upcoming' ? "bg-white text-slate-700 shadow-xl" : "text-slate-500 hover:text-slate-700"
               )}
             >
@@ -120,7 +122,7 @@ export default function SchedulePage() {
             <button 
               onClick={() => setView('completed')} 
               className={cn(
-                 "px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                 "px-5 sm:px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
                  view === 'completed' ? "bg-white text-slate-700 shadow-xl" : "text-slate-500 hover:text-slate-700"
               )}
             >
@@ -130,12 +132,12 @@ export default function SchedulePage() {
 
           <div className="space-y-6">
             {list.length > 0 ? list.map((meeting, i) => (
-              <div key={meeting.id} className="premium-card p-1 lg:p-1 flex flex-col md:flex-row items-stretch bg-white border-2 border-slate-100 shadow-xl hover:border-slate-700 transition-all group overflow-hidden h-fit md:h-32">
-                 <div className="w-full md:w-32 bg-slate-50 flex flex-col items-center justify-center text-slate-700 border-b md:border-b-0 md:border-r border-slate-100 p-4 md:p-0">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">{meeting.date.split(',')[0].split(' ')[0]}</span>
-                    <span className="text-3xl font-black tracking-tighter">{meeting.date.split(',')[0].split(' ')[1]}</span>
+              <div key={meeting.id} className="premium-card p-1 flex flex-col sm:flex-row items-stretch bg-white border-2 border-slate-100 shadow-xl hover:border-slate-700 transition-all group overflow-hidden h-fit sm:h-32">
+                 <div className="w-full sm:w-32 bg-slate-50 flex flex-row sm:flex-col items-center justify-center text-slate-700 border-b sm:border-b-0 sm:border-r border-slate-100 p-3 sm:p-0 gap-2 sm:gap-0">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 sm:mb-1">{meeting.date.split(',')[0].split(' ')[0]}</span>
+                    <span className="text-xl sm:text-3xl font-black tracking-tighter">{meeting.date.split(',')[0].split(' ')[1]}</span>
                  </div>
-                 <div className="flex-1 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                 <div className="flex-1 p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
                     <div className="space-y-2">
                        <div className="flex items-center gap-3">
                           <span className="bg-indigo-50 text-indigo-600 text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-widest border border-slate-50">Synchronized</span>

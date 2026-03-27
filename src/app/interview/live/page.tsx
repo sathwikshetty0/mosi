@@ -212,33 +212,33 @@ export default function LiveInterviewPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto flex flex-col min-h-[calc(100vh-8rem)] relative animate-in fade-in duration-700">
+    <div className="max-w-2xl mx-auto flex flex-col min-h-[calc(100dvh-8rem)] relative animate-in fade-in duration-700 px-4 sm:px-6">
       <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
 
       {/* 2X2 CEED QUADRANT SELECTOR */}
-      <header className="py-10 space-y-6 shrink-0 border-b-2 border-slate-50">
-        <div className="flex items-center justify-between px-2">
+      <header className="py-6 sm:py-10 space-y-4 sm:space-y-6 shrink-0 border-b-2 border-slate-50">
+        <div className="flex items-center justify-between px-1 sm:px-2">
           <div className="space-y-1">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Section 00 / Live Session</h2>
-            <div className="h-1 w-8 bg-slate-800 rounded-full" />
+            <h2 className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.4em] text-slate-400">Section 00 / Live Session</h2>
+            <div className="h-1 w-6 sm:w-8 bg-slate-800 rounded-full" />
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <div className="flex items-center gap-2">
-              <div className={cn("w-2 h-2 rounded-full", isRecording && !isPaused ? "bg-red-500 animate-pulse" : "bg-slate-300")} />
-              <span className="text-sm font-mono font-black text-slate-800 tracking-wider bg-slate-50 border border-slate-100 px-4 py-1.5 rounded-xl shadow-inner">{formatDuration(recordingSeconds)}</span>
+              <div className={cn("w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full", isRecording && !isPaused ? "bg-red-500 animate-pulse" : "bg-slate-300")} />
+              <span className="text-xs sm:text-sm font-mono font-black text-slate-800 tracking-wider bg-slate-50 border border-slate-100 px-3 sm:px-4 py-1.5 rounded-xl shadow-inner">{formatDuration(recordingSeconds)}</span>
             </div>
           </div>
         </div>
         
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
           {quadrants.map(q => (
             <button 
               key={q.id}
               onClick={() => { setActiveQuadrant(q.id); setQuestionIndex(0) }}
               className={cn(
-                "h-14 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all border-2 text-center flex items-center justify-center gap-2",
+                "h-11 sm:h-14 rounded-xl sm:rounded-2xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest sm:tracking-[0.2em] transition-all border-2 text-center flex items-center justify-center gap-2 px-1",
                 activeQuadrant === q.id 
-                  ? 'bg-slate-800 text-white border-slate-800 shadow-2xl shadow-slate-200' 
+                  ? 'bg-slate-800 text-white border-slate-800 shadow-xl sm:shadow-2xl shadow-slate-200' 
                   : 'bg-white text-slate-400 border-slate-100 hover:border-slate-300 hover:text-slate-600'
               )}
             >
@@ -249,17 +249,17 @@ export default function LiveInterviewPage() {
       </header>
 
       {/* MAIN QUESTION */}
-      <div className="flex-1 flex flex-col justify-center pb-48 space-y-10">
-        <div className="space-y-4">
+      <div className="flex-1 flex flex-col justify-center pb-40 sm:pb-48 space-y-8 sm:space-y-10 py-8 sm:py-0">
+        <div className="space-y-3 sm:space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-blue-500 uppercase tracking-widest">{activeQuadrant} Focus</p>
+            <p className="text-[10px] sm:text-xs font-bold text-blue-500 uppercase tracking-widest">{activeQuadrant} Focus</p>
             {answeredQuestions.has(questions[questionIndex]) && (
-              <span className="bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border border-emerald-100 flex items-center gap-1">
+              <span className="bg-emerald-50 text-emerald-600 text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border border-emerald-100 flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3" /> Answered
               </span>
             )}
           </div>
-          <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-slate-700 leading-tight">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-700 leading-tight">
             {questions[questionIndex]}
           </h1>
           <button 
@@ -276,20 +276,20 @@ export default function LiveInterviewPage() {
         </div>
 
         {/* FOLLOW-UP OPTIONS */}
-        <div className="space-y-2">
-          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest px-1">Remaining Opportunities</p>
+        <div className="space-y-1 sm:space-y-2">
+          <p className="text-[9px] sm:text-[10px] font-black text-slate-300 uppercase tracking-widest px-1">Remaining Opportunities</p>
           {questions.map((q, i) => i !== questionIndex && (
             <button 
               key={i}
               onClick={() => setQuestionIndex(i)}
               className={cn(
-                "w-full text-left px-5 py-4 rounded-2xl border transition-all flex items-center justify-between group",
+                "w-full text-left px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border transition-all flex items-center justify-between group",
                 answeredQuestions.has(q) 
                   ? "bg-slate-50/50 border-slate-100 opacity-60" 
                   : "bg-white border-slate-100 hover:border-blue-200 hover:shadow-md hover:shadow-blue-50/50"
               )}
             >
-              <span className={cn("text-sm font-medium", answeredQuestions.has(q) ? "text-slate-400 line-through decoration-slate-300" : "text-slate-600")}>
+              <span className={cn("text-xs sm:text-sm font-medium", answeredQuestions.has(q) ? "text-slate-400 line-through decoration-slate-300" : "text-slate-600")}>
                 {q}
               </span>
               {answeredQuestions.has(q) ? (
@@ -305,8 +305,8 @@ export default function LiveInterviewPage() {
       </div>
 
       {/* BOTTOM CONTROLS */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 lg:p-8 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent pointer-events-none z-20">
-        <div className="max-w-2xl mx-auto flex flex-col gap-3 items-center pointer-events-auto">
+      <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-8 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent pointer-events-none z-20 safe-area-bottom">
+        <div className="max-w-2xl mx-auto flex flex-col gap-2 sm:gap-3 items-center pointer-events-auto">
           
           {/* UTILITY ROW */}
           <div className="flex items-center gap-3">
@@ -334,7 +334,7 @@ export default function LiveInterviewPage() {
           </div>
 
           {/* MAIN RECORDER BAR */}
-          <div className="w-full h-16 bg-white rounded-full border border-slate-200 shadow-2xl flex items-center px-4 gap-4">
+          <div className="w-full h-14 sm:h-16 bg-white rounded-2xl sm:rounded-full border border-slate-200 shadow-2xl flex items-center px-3 sm:px-4 gap-3 sm:gap-4 overflow-hidden">
             
             {/* START / STOP ACTION */}
             {!isRecording ? (
