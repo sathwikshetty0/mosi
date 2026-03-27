@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { 
   Users, Video, Search, ShieldCheck, 
@@ -41,7 +41,7 @@ const statusConfig: Record<string, { pill: string; label: string }> = {
 
 type Tab = 'overview' | 'sessions' | 'users' | 'stakeholders'
 
-export default function AdminDashboard() {
+function AdminDashboardContent() {
   const searchParams = useSearchParams()
   const urlTab = searchParams.get('tab') as Tab | null
   const [tab, setTab] = useState<Tab>(urlTab || 'overview')
@@ -529,5 +529,17 @@ export default function AdminDashboard() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function AdminDashboard() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-700 rounded-full animate-spin" />
+      </div>
+    }>
+      <AdminDashboardContent />
+    </Suspense>
   )
 }
