@@ -18,10 +18,14 @@ const tagColors: Record<CEEDTag, { text: string; border: string; bg: string; ico
 }
 
 function PreviewContent() {
-  const { sessions, publishSession, updateOpportunityStatus } = useMosiStore()
+  const { sessions, publishSession, updateOpportunityStatus, fetchSessions } = useMosiStore()
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('id')
   
+  React.useEffect(() => {
+    fetchSessions()
+  }, [fetchSessions])
+
   const session = React.useMemo(() => {
     if (sessionId) return sessions.find(s => s.id === sessionId)
     return sessions.find(s => s.status === 'Review' || s.status === 'Published') || sessions[0]

@@ -19,7 +19,7 @@ interface SessionData {
   summary?: string
   user_id?: string
   recording_url?: string
-  stakeholders: { name: string; role: string; company: string; sector: string; employees?: string; geography?: string } | null
+  stakeholders: { id?: string; name: string; role: string; company: string; sector: string; employees?: string; geography?: string } | null
   opportunities: { id: string; tag: string; title: string }[]
   evidence: { id: string }[]
 }
@@ -47,6 +47,7 @@ function AdminDashboardContent() {
   const [tab, setTab] = useState<Tab>(urlTab || 'overview')
   const [sessions, setSessions] = useState<SessionData[]>([])
   const [profiles, setProfiles] = useState<ProfileData[]>([])
+  const [stakeholders, setStakeholders] = useState<any[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('all')
@@ -67,6 +68,7 @@ function AdminDashboardContent() {
         const data = await res.json()
         if (data.sessions) setSessions(data.sessions)
         if (data.profiles) setProfiles(data.profiles)
+        if (data.stakeholders) setStakeholders(data.stakeholders)
       } catch (e) {
         console.error('Admin data fetch failed:', e)
       } finally {
@@ -82,9 +84,10 @@ function AdminDashboardContent() {
     const published = sessions.filter(s => s.status === 'Published').length
     const inReview = sessions.filter(s => s.status === 'Review').length
     const publishRate = total ? Math.round((published / total) * 100) : 0
-    const stakeholders = new Set(sessions.map(s => s.stakeholders?.name).filter(Boolean)).size
-    return { total, insights, published, inReview, publishRate, stakeholders }
-  }, [sessions])
+    // Use the explicit stakeholder list from DB
+    const totalStakeholders = stakeholders.length
+    return { total, insights, published, inReview, publishRate, stakeholders: totalStakeholders }
+  }, [sessions, stakeholders])
 
   const userStats = useMemo(() =>
     profiles.map(p => {
@@ -109,23 +112,17 @@ function AdminDashboardContent() {
     { id: 'users', label: 'Users' },
   ]
 
-  // Unique stakeholders from all sessions
-  const allStakeholders = useMemo(() => {
-    const map = new Map<string, { name: string; company: string; role: string; sector: string; employees?: string; geography?: string; sessionCount: number; sessions: SessionData[] }>()
-    sessions.forEach(s => {
-      const sh = s.stakeholders
-      if (!sh) return
-      const key = sh.name + '|' + sh.company
-      if (map.has(key)) {
-        const existing = map.get(key)!
-        existing.sessionCount++
-        existing.sessions.push(s)
-      } else {
-        map.set(key, { ...sh, sessionCount: 1, sessions: [s] })
+  // Full stakeholders list with merged session counts
+  const allStakeholdersList = useMemo(() => {
+    return stakeholders.map(sh => {
+      const shSessions = sessions.filter(s => (s.stakeholders?.name === sh.name && s.stakeholders?.company === sh.company) || s.stakeholders?.id === sh.id)
+      return { 
+        ...sh, 
+        sessionCount: shSessions.length, 
+        sessions: shSessions 
       }
-    })
-    return Array.from(map.values()).sort((a, b) => b.sessionCount - a.sessionCount)
-  }, [sessions])
+    }).sort((a, b) => b.sessionCount - a.sessionCount)
+  }, [stakeholders, sessions])
 
   const kpis = [
     { label: 'Total Sessions', val: stats.total, icon: Video, color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100' },
@@ -151,7 +148,7 @@ function AdminDashboardContent() {
             <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-[0.2em]">
               {tab === 'overview' && `${stats.total} total sessions · ${stats.stakeholders} unique stakeholders`}
               {tab === 'sessions' && `${filteredSessions.length} sessions in repository`}
-              {tab === 'stakeholders' && `${allStakeholders.length} unique stakeholders profiled`}
+              {tab === 'stakeholders' && `${allStakeholdersList.length} unique stakeholders profiled`}
               {tab === 'users' && `${profiles.length} registered researchers`}
             </p>
           </div>
@@ -455,7 +452,7 @@ function AdminDashboardContent() {
             {tab === 'stakeholders' && (
               <motion.div key="stakeholders" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {allStakeholders.map((sh, i) => (
+                  {allStakeholdersList.map((sh, i) => (
                     <div key={i} className="bg-white border border-slate-100 rounded-2xl p-6 hover:shadow-md hover:border-slate-200 transition-all group space-y-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
@@ -515,7 +512,7 @@ function AdminDashboardContent() {
                       </div>
                     </div>
                   ))}
-                  {allStakeholders.length === 0 && (
+                  {allStakeholdersList.length === 0 && (
                     <div className="col-span-full py-24 text-center space-y-3">
                       <Users className="w-10 h-10 text-slate-200 mx-auto" />
                       <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">No stakeholders found</p>

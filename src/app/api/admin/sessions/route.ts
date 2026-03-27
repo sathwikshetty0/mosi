@@ -30,9 +30,18 @@ export async function GET() {
     .select('*')
     .order('full_name', { ascending: true })
 
+  const { data: stakeholders, error: stakeholdersError } = await supabase
+    .from('stakeholders')
+    .select('*')
+    .order('name', { ascending: true })
+
   if (sessionsError) {
     return NextResponse.json({ error: sessionsError.message }, { status: 500 })
   }
 
-  return NextResponse.json({ sessions: sessions || [], profiles: profiles || [] })
+  return NextResponse.json({ 
+    sessions: sessions || [], 
+    profiles: profiles || [],
+    stakeholders: stakeholders || []
+  })
 }
