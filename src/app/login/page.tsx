@@ -13,8 +13,8 @@ function LoginForm() {
   const error = searchParams.get('error')
 
   return (
-    <div className="min-h-screen w-full flex bg-white">
-      {/* ── LEFT PANEL — Branding ── */}
+    <div className="min-h-screen min-h-[100dvh] w-full flex flex-col lg:flex-row bg-white">
+      {/* ── LEFT PANEL — Branding (hidden on mobile, shown on lg+) ── */}
       <div className="hidden lg:flex flex-col justify-between w-[42%] bg-slate-800 p-14 relative overflow-hidden">
         {/* Subtle texture */}
         <div className="absolute inset-0 opacity-[0.03]"
@@ -62,11 +62,11 @@ function LoginForm() {
       </div>
 
       {/* ── RIGHT PANEL — Form ── */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-slate-50">
+      <div className="flex-1 flex items-center justify-center px-5 py-10 sm:px-8 sm:py-12 bg-slate-50">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-sm space-y-8"
+          className="w-full max-w-sm space-y-7 sm:space-y-8"
         >
           {/* Mobile logo */}
           <div className="flex items-center gap-3 lg:hidden">
@@ -120,7 +120,7 @@ function LoginForm() {
                       id="fullName" name="fullName"
                       placeholder="John Doe"
                       required={!isLogin}
-                      className="w-full h-12 pl-11 pr-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                      className="w-full h-12 sm:h-12 pl-11 pr-4 bg-white border border-slate-200 rounded-xl text-base sm:text-sm text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
                     />
                   </div>
                 </motion.div>
@@ -136,7 +136,7 @@ function LoginForm() {
                   id="email" name="email" type="email"
                   placeholder="name@company.com"
                   required
-                  className="w-full h-12 pl-11 pr-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                  className="w-full h-12 sm:h-12 pl-11 pr-4 bg-white border border-slate-200 rounded-xl text-base sm:text-sm text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
                 />
               </div>
             </div>
@@ -152,7 +152,7 @@ function LoginForm() {
                   id="password" name="password" type="password"
                   placeholder="••••••••"
                   required
-                  className="w-full h-12 pl-11 pr-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                  className="w-full h-12 sm:h-12 pl-11 pr-4 bg-white border border-slate-200 rounded-xl text-base sm:text-sm text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
                 />
               </div>
             </div>
@@ -161,7 +161,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-12 bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-800/10 group"
+              className="w-full h-12 sm:h-12 bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-800/10 group"
             >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -187,7 +187,7 @@ function LoginForm() {
             <button
               type="button"
               onClick={() => signInWithGoogle()}
-              className="w-full h-12 bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-700 border border-slate-200 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-3 shadow-sm hover:shadow-md hover:border-slate-300"
+              className="w-full h-12 sm:h-12 bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-700 border border-slate-200 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-3 shadow-sm hover:shadow-md hover:border-slate-300"
             >
               {/* Google 'G' icon */}
               <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -201,7 +201,7 @@ function LoginForm() {
           </form>
 
           {/* Toggle Login/Signup */}
-          <p className="text-center text-sm text-slate-400">
+          <p className="text-center text-sm text-slate-400 pb-4 sm:pb-0">
             {isLogin ? "Don't have an account?" : 'Already have an account?'}
             {' '}
             <button
@@ -220,7 +220,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen min-h-[100dvh] flex items-center justify-center bg-slate-50">
         <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-800 rounded-full animate-spin" />
       </div>
     }>

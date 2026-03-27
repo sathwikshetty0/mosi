@@ -113,27 +113,27 @@ export default function SetupPage() {
   )
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8 pb-32 animate-in fade-in duration-700 px-6 pt-8">
+    <div className="max-w-2xl mx-auto space-y-6 sm:space-y-8 pb-36 animate-in fade-in duration-700 px-4 sm:px-6 pt-4 sm:pt-8">
       
       {/* HEADER */}
-      <div className="space-y-3 text-center">
+      <div className="space-y-2 sm:space-y-3 text-center">
         <div className="inline-flex items-center gap-2 text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-4 py-1.5 rounded-full">
           <Sparkles className="w-3 h-3" /> Setup Wizard
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-800">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800">
           New Stakeholder Setup
         </h1>
-        <p className="text-sm text-slate-400 font-medium">
-          Please provide the stakeholder and company context before starting.
+        <p className="text-xs sm:text-sm text-slate-400 font-medium px-2">
+          Provide the stakeholder and company context before starting.
         </p>
       </div>
 
       {/* STEP TABS — Progress Indicator */}
-      <div className="flex items-center gap-0 p-1.5 bg-slate-50/80 rounded-2xl border border-slate-100">
+      <div className="flex items-center gap-0 p-1 sm:p-1.5 bg-slate-50/80 rounded-xl sm:rounded-2xl border border-slate-100">
         {[
-          { n: 1, label: 'Stakeholder', icon: User },
-          { n: 2, label: 'Company', icon: Building2 },
-          { n: 3, label: 'Settings', icon: Activity }
+          { n: 1, label: 'Stakeholder', shortLabel: 'Person', icon: User },
+          { n: 2, label: 'Company', shortLabel: 'Company', icon: Building2 },
+          { n: 3, label: 'Settings', shortLabel: 'Config', icon: Activity }
         ].map((s, idx) => (
           <button
             key={s.n}
@@ -142,7 +142,7 @@ export default function SetupPage() {
               else if (s.n === step + 1) handleContinue()
             }}
             className={cn(
-              "flex-1 py-3 rounded-xl text-xs font-bold transition-all duration-300 flex items-center justify-center gap-2 relative",
+              "flex-1 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-2 relative",
               step === s.n 
                 ? 'bg-white text-slate-800 shadow-md border border-slate-200' 
                 : completedSteps[idx]
@@ -155,7 +155,8 @@ export default function SetupPage() {
             ) : (
               <s.icon className="w-3.5 h-3.5" />
             )}
-            {s.label}
+            <span className="hidden sm:inline">{s.label}</span>
+            <span className="sm:hidden">{s.shortLabel}</span>
           </button>
         ))}
       </div>
@@ -320,7 +321,7 @@ export default function SetupPage() {
 
           <div className="space-y-5">
             <h3 className="text-xs font-bold text-slate-500 px-1 uppercase tracking-widest">Capture Settings</h3>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {[
                 { key: 'audio', label: 'Audio', desc: 'Record audio', icon: Mic },
                 { key: 'video', label: 'Video', desc: 'Capture video', icon: Video },
@@ -330,7 +331,7 @@ export default function SetupPage() {
                   key={opt.key}
                   onClick={() => update(opt.key, !(form as any)[opt.key])}
                   className={cn(
-                    "p-5 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center gap-2.5 group relative overflow-hidden cursor-pointer",
+                    "p-3 sm:p-5 rounded-xl sm:rounded-2xl border-2 transition-all duration-300 flex flex-col items-center gap-2 sm:gap-2.5 group relative overflow-hidden cursor-pointer",
                     (form as any)[opt.key] 
                       ? "bg-blue-50/80 text-slate-800 border-blue-200 shadow-md shadow-blue-100/50" 
                       : "bg-white text-slate-400 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
@@ -370,7 +371,7 @@ export default function SetupPage() {
       )}
 
       {/* NAVIGATION */}
-      <div className="flex items-center gap-3 pt-6 border-t border-slate-100">
+      <div className="fixed bottom-0 left-0 right-0 sm:relative sm:bottom-auto bg-white sm:bg-transparent border-t border-slate-100 p-4 sm:p-0 sm:pt-6 flex items-center gap-3 z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] sm:shadow-none">
         {step > 1 && (
           <button 
             onClick={() => { setShowErrors(false); setStep(step - 1) }} 

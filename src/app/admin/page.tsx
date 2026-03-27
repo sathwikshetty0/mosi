@@ -84,7 +84,6 @@ function AdminDashboardContent() {
     const published = sessions.filter(s => s.status === 'Published').length
     const inReview = sessions.filter(s => s.status === 'Review').length
     const publishRate = total ? Math.round((published / total) * 100) : 0
-    // Use the explicit stakeholder list from DB
     const totalStakeholders = stakeholders.length
     return { total, insights, published, inReview, publishRate, stakeholders: totalStakeholders }
   }, [sessions, stakeholders])
@@ -105,11 +104,11 @@ function AdminDashboardContent() {
     })
   , [sessions, search, statusFilter])
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'sessions', label: 'All Sessions' },
-    { id: 'stakeholders', label: 'Stakeholders' },
-    { id: 'users', label: 'Users' },
+  const tabs: { id: Tab; label: string; shortLabel: string }[] = [
+    { id: 'overview', label: 'Overview', shortLabel: 'Overview' },
+    { id: 'sessions', label: 'All Sessions', shortLabel: 'Sessions' },
+    { id: 'stakeholders', label: 'Stakeholders', shortLabel: 'People' },
+    { id: 'users', label: 'Users', shortLabel: 'Users' },
   ]
 
   // Full stakeholders list with merged session counts
@@ -135,43 +134,44 @@ function AdminDashboardContent() {
 
   return (
     <div className="min-h-screen bg-slate-50/30 animate-in fade-in duration-500">
-      {/* Page Header */}
-      <div className="bg-white border-b border-slate-100 px-8 py-6 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-4">
+      {/* Page Header — responsive */}
+      <div className="bg-white border-b border-slate-100 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 sticky top-0 z-10">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">
+            <h1 className="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">
               {tab === 'overview' && 'Platform Overview'}
               {tab === 'sessions' && 'All Sessions'}
               {tab === 'stakeholders' && 'All Stakeholders'}
               {tab === 'users' && 'Researchers'}
             </h1>
-            <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-[0.2em]">
-              {tab === 'overview' && `${stats.total} total sessions · ${stats.stakeholders} unique stakeholders`}
+            <p className="text-[10px] sm:text-[11px] text-slate-400 font-semibold uppercase tracking-[0.15em] sm:tracking-[0.2em] mt-0.5">
+              {tab === 'overview' && `${stats.total} sessions · ${stats.stakeholders} stakeholders`}
               {tab === 'sessions' && `${filteredSessions.length} sessions in repository`}
-              {tab === 'stakeholders' && `${allStakeholdersList.length} unique stakeholders profiled`}
+              {tab === 'stakeholders' && `${allStakeholdersList.length} stakeholders profiled`}
               {tab === 'users' && `${profiles.length} registered researchers`}
             </p>
           </div>
-        </div>
 
-        {/* Tab Switcher */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-          {tabs.map(t => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={cn(
-                'px-5 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all',
-                tab === t.id ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-700'
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
+          {/* Tab Switcher — horizontal scroll on mobile */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto no-scrollbar -mx-1 sm:mx-0">
+            {tabs.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={cn(
+                  'px-3 sm:px-5 py-2 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-widest transition-all whitespace-nowrap shrink-0',
+                  tab === t.id ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-700'
+                )}
+              >
+                <span className="hidden sm:inline">{t.label}</span>
+                <span className="sm:hidden">{t.shortLabel}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="p-8 max-w-7xl mx-auto space-y-8 pb-20">
+      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-8 pb-20">
         {loading ? (
           <div className="flex items-center justify-center py-40">
             <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-700 rounded-full animate-spin" />
@@ -181,26 +181,26 @@ function AdminDashboardContent() {
 
             {/* ─── OVERVIEW ─── */}
             {tab === 'overview' && (
-              <motion.div key="overview" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-8">
-                {/* KPI Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <motion.div key="overview" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6 sm:space-y-8">
+                {/* KPI Grid — 2 cols on mobile, 3 on md, 6 on lg */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
                   {kpis.map(k => (
-                    <div key={k.label} className="bg-white border border-slate-100 rounded-2xl p-6 hover:shadow-sm hover:border-slate-200 transition-all group">
-                      <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center mb-4 border', k.bg, k.border)}>
-                        <k.icon className={cn('w-4 h-4', k.color)} />
+                    <div key={k.label} className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-6 hover:shadow-sm hover:border-slate-200 transition-all group">
+                      <div className={cn('w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center mb-3 sm:mb-4 border', k.bg, k.border)}>
+                        <k.icon className={cn('w-3.5 h-3.5 sm:w-4 sm:h-4', k.color)} />
                       </div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{k.label}</p>
-                      <h3 className="text-2xl font-black text-slate-800">{k.val}</h3>
+                      <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{k.label}</p>
+                      <h3 className="text-xl sm:text-2xl font-black text-slate-800">{k.val}</h3>
                     </div>
                   ))}
                 </div>
 
-                {/* Two-col layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Two-col layout — stacks on mobile */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   {/* Top Researchers */}
-                  <div className="bg-white border border-slate-100 rounded-2xl p-8 space-y-6">
+                  <div className="bg-white border border-slate-100 rounded-2xl p-5 sm:p-8 space-y-4 sm:space-y-6">
                     <div className="flex items-center justify-between">
-                      <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                      <h2 className="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2">
                         <UserCheck className="w-4 h-4 text-blue-500" /> Top Researchers
                       </h2>
                       <button onClick={() => setTab('users')} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors">
@@ -209,27 +209,27 @@ function AdminDashboardContent() {
                     </div>
                     <div className="space-y-2">
                       {userStats.slice(0, 6).map((u, i) => (
-                        <div key={u.id} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl hover:bg-white hover:border-slate-200 hover:shadow-sm transition-all group">
+                        <div key={u.id} className="flex items-center justify-between p-3 sm:p-4 bg-slate-50 border border-slate-100 rounded-xl hover:bg-white hover:border-slate-200 hover:shadow-sm transition-all group">
                           <div className="flex items-center gap-3">
                             <div className={cn(
-                              'w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black border',
+                              'w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-xs sm:text-sm font-black border shrink-0',
                               i === 0 ? 'bg-amber-50 text-amber-700 border-amber-100' :
                               i === 1 ? 'bg-slate-100 text-slate-500 border-slate-200' :
                               'bg-white text-slate-400 border-slate-100'
                             )}>
                               {u.full_name?.[0] || 'U'}
                             </div>
-                            <div>
-                              <p className="text-sm font-bold text-slate-700">{u.full_name || 'Anonymous'}</p>
-                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{u.role}</p>
+                            <div className="min-w-0">
+                              <p className="text-xs sm:text-sm font-bold text-slate-700 truncate">{u.full_name || 'Anonymous'}</p>
+                              <p className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">{u.role}</p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-6 text-right">
+                          <div className="flex items-center gap-4 sm:gap-6 text-right shrink-0">
                             <div>
-                              <p className="text-base font-black text-slate-800">{u.sessionCount}</p>
-                              <p className="text-[9px] text-slate-400 uppercase">Sessions</p>
+                              <p className="text-sm sm:text-base font-black text-slate-800">{u.sessionCount}</p>
+                              <p className="text-[8px] sm:text-[9px] text-slate-400 uppercase">Sessions</p>
                             </div>
-                            <div>
+                            <div className="hidden sm:block">
                               <p className="text-base font-black text-blue-600">{u.insightCount}</p>
                               <p className="text-[9px] text-slate-400 uppercase">Insights</p>
                             </div>
@@ -241,9 +241,9 @@ function AdminDashboardContent() {
                   </div>
 
                   {/* Recent Sessions */}
-                  <div className="bg-white border border-slate-100 rounded-2xl p-8 space-y-6">
+                  <div className="bg-white border border-slate-100 rounded-2xl p-5 sm:p-8 space-y-4 sm:space-y-6">
                     <div className="flex items-center justify-between">
-                      <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                      <h2 className="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2">
                         <Activity className="w-4 h-4 text-emerald-500" /> Recent Activity
                       </h2>
                       <button onClick={() => setTab('sessions')} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors">
@@ -255,16 +255,16 @@ function AdminDashboardContent() {
                         const cfg = statusConfig[s.status] || statusConfig.Review
                         return (
                           <Link key={s.id} href={s.status === 'Review' ? `/review?id=${s.id}` : `/preview?id=${s.id}`}
-                            className="flex items-center gap-4 p-4 bg-slate-50 border border-slate-100 rounded-xl hover:bg-white hover:border-slate-200 hover:shadow-sm transition-all group"
+                            className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-slate-50 border border-slate-100 rounded-xl hover:bg-white hover:border-slate-200 hover:shadow-sm transition-all group"
                           >
-                            <div className="w-9 h-9 rounded-xl bg-white border border-slate-100 flex items-center justify-center shrink-0 shadow-sm">
-                              <Video className="w-4 h-4 text-slate-300 group-hover:text-slate-600 transition-colors" />
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white border border-slate-100 flex items-center justify-center shrink-0 shadow-sm">
+                              <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-300 group-hover:text-slate-600 transition-colors" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold text-slate-700 truncate">{s.stakeholders?.name || 'Unknown Stakeholder'}</p>
-                              <p className="text-[11px] text-slate-400 truncate">{s.stakeholders?.company || 'N/A'} · {s.date}</p>
+                              <p className="text-xs sm:text-sm font-bold text-slate-700 truncate">{s.stakeholders?.name || 'Unknown Stakeholder'}</p>
+                              <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">{s.stakeholders?.company || 'N/A'} · {s.date}</p>
                             </div>
-                            <span className={cn('text-[10px] font-bold px-2 py-1 rounded-lg border uppercase tracking-widest shrink-0', cfg.pill)}>
+                            <span className={cn('text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded-lg border uppercase tracking-widest shrink-0', cfg.pill)}>
                               {cfg.label}
                             </span>
                           </Link>
@@ -279,8 +279,8 @@ function AdminDashboardContent() {
 
             {/* ─── ALL SESSIONS ─── */}
             {tab === 'sessions' && (
-              <motion.div key="sessions" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
-                <div className="flex flex-col md:flex-row md:items-center gap-4">
+              <motion.div key="sessions" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4 sm:space-y-6">
+                <div className="flex flex-col gap-3 sm:gap-4">
                   <div className="relative group flex-1">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
                     <input
@@ -290,11 +290,11 @@ function AdminDashboardContent() {
                       className="w-full h-11 pl-12 pr-4 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all"
                     />
                   </div>
-                  <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
+                  <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto no-scrollbar">
                     {['all', 'Scheduled', 'Review', 'Published'].map(s => (
                       <button key={s} onClick={() => setStatusFilter(s)}
                         className={cn(
-                          'px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all',
+                          'px-3 sm:px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap shrink-0',
                           statusFilter === s ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-700'
                         )}
                       >
@@ -306,7 +306,8 @@ function AdminDashboardContent() {
 
                 <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-widest">{filteredSessions.length} sessions in repository</p>
 
-                <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                {/* Desktop Table */}
+                <div className="hidden md:block bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
                   <table className="w-full text-left">
                     <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-100">
                       <tr>
@@ -381,15 +382,74 @@ function AdminDashboardContent() {
                     </div>
                   )}
                 </div>
+
+                {/* Mobile Card List */}
+                <div className="md:hidden space-y-3">
+                  {filteredSessions.map(s => {
+                    const cfg = statusConfig[s.status] || statusConfig.Review
+                    return (
+                      <div key={s.id} className="bg-white border border-slate-100 rounded-2xl p-4 space-y-3 hover:shadow-sm transition-all">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center text-sm font-black text-slate-500 shrink-0">
+                              {(s.stakeholders?.name || 'A')[0]}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-bold text-slate-700 truncate">{s.stakeholders?.name || 'Unknown'}</p>
+                              <p className="text-[11px] text-slate-400 truncate">{s.stakeholders?.company || '—'} · {s.stakeholders?.sector || '—'}</p>
+                            </div>
+                          </div>
+                          <span className={cn('text-[9px] font-bold px-2 py-1 rounded-lg border uppercase tracking-widest shrink-0 mt-1', cfg.pill)}>
+                            {cfg.label}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-50">
+                          <div className="flex items-center gap-4">
+                            <span className="text-[11px] text-slate-400 font-medium">{s.date}</span>
+                            <div className="flex items-center gap-1">
+                              <Zap className="w-3 h-3 text-blue-400" />
+                              <span className="text-xs font-bold text-slate-600">{s.opportunities?.length || 0}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Link href={s.status === 'Review' ? `/review?id=${s.id}` : `/preview?id=${s.id}`}
+                              className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-800 transition-colors px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg"
+                            >
+                              Open
+                            </Link>
+                            <button
+                              onClick={async () => {
+                                if (confirm('Delete this session permanently?')) {
+                                  await fetch(`/api/admin/sessions?id=${s.id}`, { method: 'DELETE' })
+                                  setSessions(prev => prev.filter(x => x.id !== s.id))
+                                }
+                              }}
+                              className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                  {filteredSessions.length === 0 && (
+                    <div className="py-20 text-center space-y-3">
+                      <Inbox className="w-10 h-10 text-slate-200 mx-auto" />
+                      <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">No sessions match</p>
+                    </div>
+                  )}
+                </div>
               </motion.div>
             )}
 
             {/* ─── USERS ─── */}
             {tab === 'users' && (
-              <motion.div key="users" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
+              <motion.div key="users" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4 sm:space-y-6">
                 <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-widest">{profiles.length} registered researchers</p>
 
-                <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                {/* Desktop Table */}
+                <div className="hidden md:block bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
                   <table className="w-full text-left">
                     <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-100">
                       <tr>
@@ -458,23 +518,70 @@ function AdminDashboardContent() {
                     </div>
                   )}
                 </div>
+
+                {/* Mobile User Cards */}
+                <div className="md:hidden space-y-3">
+                  {userStats.map((u, i) => (
+                    <div key={u.id} className="bg-white border border-slate-100 rounded-2xl p-4 space-y-3 hover:shadow-sm transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          'w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black border shrink-0',
+                          i === 0 ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                          i === 1 ? 'bg-slate-100 text-slate-500 border-slate-200' :
+                          'bg-white text-slate-400 border-slate-100'
+                        )}>
+                          {u.full_name?.[0] || 'U'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-slate-700 truncate">{u.full_name || 'Anonymous'}</p>
+                          <span className={cn(
+                            'text-[9px] font-bold px-2 py-0.5 rounded border uppercase tracking-widest inline-block mt-0.5',
+                            u.role === 'admin' ? 'bg-purple-50 text-purple-600 border-purple-100' : 'bg-slate-50 text-slate-500 border-slate-100'
+                          )}>
+                            {u.role}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 pt-2 border-t border-slate-50">
+                        <div className="text-center">
+                          <p className="text-lg font-black text-slate-800">{u.sessionCount}</p>
+                          <p className="text-[9px] text-slate-400 font-bold uppercase">Sessions</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-lg font-black text-blue-600">{u.insightCount}</p>
+                          <p className="text-[9px] text-slate-400 font-bold uppercase">Insights</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-lg font-black text-emerald-600">{u.publishedCount}</p>
+                          <p className="text-[9px] text-slate-400 font-bold uppercase">Published</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {userStats.length === 0 && (
+                    <div className="py-20 text-center space-y-3">
+                      <Users className="w-10 h-10 text-slate-200 mx-auto" />
+                      <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">No users registered yet</p>
+                    </div>
+                  )}
+                </div>
               </motion.div>
             )}
 
             {/* ─── STAKEHOLDERS ─── */}
             {tab === 'stakeholders' && (
-              <motion.div key="stakeholders" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <motion.div key="stakeholders" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                   {allStakeholdersList.map((sh, i) => (
-                    <div key={i} className="bg-white border border-slate-100 rounded-2xl p-6 hover:shadow-md hover:border-slate-200 transition-all group space-y-4">
+                    <div key={i} className="bg-white border border-slate-100 rounded-2xl p-5 sm:p-6 hover:shadow-md hover:border-slate-200 transition-all group space-y-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-11 h-11 bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200 rounded-xl flex items-center justify-center text-base font-black text-slate-600 shrink-0 group-hover:from-blue-50 group-hover:to-blue-100 group-hover:text-blue-600 group-hover:border-blue-100 transition-all">
+                          <div className="w-10 h-10 sm:w-11 sm:h-11 bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200 rounded-xl flex items-center justify-center text-sm sm:text-base font-black text-slate-600 shrink-0 group-hover:from-blue-50 group-hover:to-blue-100 group-hover:text-blue-600 group-hover:border-blue-100 transition-all">
                             {sh.name[0]}
                           </div>
-                          <div className="flex-1">
-                            <p className="font-bold text-slate-800 text-sm leading-tight">{sh.name}</p>
-                            <p className="text-[11px] text-slate-400 font-medium">{sh.role}</p>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-slate-800 text-sm leading-tight truncate">{sh.name}</p>
+                            <p className="text-[11px] text-slate-400 font-medium truncate">{sh.role}</p>
                           </div>
                           <button
                             onClick={async () => {
@@ -483,12 +590,12 @@ function AdminDashboardContent() {
                                 setStakeholders(prev => prev.filter(x => x.id !== sh.id))
                               }
                             }}
-                            className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                            className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all sm:opacity-0 sm:group-hover:opacity-100"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                        <span className="text-[10px] font-black text-slate-400 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-lg">
+                        <span className="text-[10px] font-black text-slate-400 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-lg shrink-0 ml-2">
                           {sh.sessionCount} {sh.sessionCount === 1 ? 'session' : 'sessions'}
                         </span>
                       </div>
@@ -497,25 +604,25 @@ function AdminDashboardContent() {
                         {sh.company && (
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-slate-400 font-medium">Company</span>
-                            <span className="font-semibold text-slate-700">{sh.company}</span>
+                            <span className="font-semibold text-slate-700 truncate ml-3">{sh.company}</span>
                           </div>
                         )}
                         {sh.sector && (
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-slate-400 font-medium">Sector</span>
-                            <span className="font-semibold text-slate-600">{sh.sector}</span>
+                            <span className="font-semibold text-slate-600 truncate ml-3">{sh.sector}</span>
                           </div>
                         )}
                         {sh.geography && (
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-slate-400 font-medium">Geography</span>
-                            <span className="font-semibold text-slate-600">{sh.geography}</span>
+                            <span className="font-semibold text-slate-600 truncate ml-3">{sh.geography}</span>
                           </div>
                         )}
                         {sh.employees && (
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-slate-400 font-medium">Team Size</span>
-                            <span className="font-semibold text-slate-600">{sh.employees}</span>
+                            <span className="font-semibold text-slate-600 truncate ml-3">{sh.employees}</span>
                           </div>
                         )}
                       </div>
@@ -527,7 +634,7 @@ function AdminDashboardContent() {
                             <Link
                               key={s.id}
                               href={s.status === 'Review' ? `/review?id=${s.id}` : `/preview?id=${s.id}`}
-                              className={cn('text-[10px] font-bold px-2 py-1 rounded-lg border uppercase tracking-widest hover:opacity-80 transition-opacity', cfg.pill)}
+                              className={cn('text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded-lg border uppercase tracking-widest hover:opacity-80 transition-opacity', cfg.pill)}
                             >
                               {s.date} · {cfg.label}
                             </Link>

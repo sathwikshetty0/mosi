@@ -54,28 +54,28 @@ function EditModal({ sh, onOpenChange, onSave }: { sh: any, onOpenChange: (open:
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => onOpenChange(false)} />
-      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-300">
+      <div className="relative w-full max-w-2xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-300 flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-8 py-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center border border-slate-100 shadow-sm">
-              <Users className="w-6 h-6 text-slate-800" />
+        <div className="px-5 sm:px-8 py-4 sm:py-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-xl sm:rounded-2xl flex items-center justify-center border border-slate-100 shadow-sm">
+              <Users className="w-5 h-5 sm:w-6 sm:h-6 text-slate-800" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
                 <Pencil className="w-4 h-4 text-blue-500" /> Edit Stakeholder
               </h2>
-              <p className="text-xs text-slate-400 font-medium mt-0.5">Update profile information</p>
+              <p className="text-[10px] sm:text-xs text-slate-400 font-medium mt-0.5">Update profile information</p>
             </div>
           </div>
-          <button onClick={() => onOpenChange(false)} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-white rounded-xl transition-all">
+          <button onClick={() => onOpenChange(false)} className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-white rounded-lg sm:rounded-xl transition-all">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="p-5 sm:p-8 overflow-y-auto custom-scrollbar">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
             {/* Personal Info */}
             <div className="space-y-6">
               <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em] pb-2 border-b border-slate-50">Personal Details</h3>
@@ -145,24 +145,24 @@ function EditModal({ sh, onOpenChange, onSave }: { sh: any, onOpenChange: (open:
             </div>
           </div>
 
-          <div className="mt-10 pt-8 border-t border-slate-50 flex items-center justify-between">
+          <div className="mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-slate-50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
             <button 
               onClick={handleDelete}
-              className="px-6 h-12 text-sm font-bold text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all flex items-center gap-2"
+              className="px-6 h-11 sm:h-12 text-xs sm:text-sm font-bold text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl sm:rounded-2xl transition-all flex items-center justify-center gap-2 order-3 sm:order-1"
             >
               <Trash2 className="w-4 h-4" /> Delete Profile
             </button>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 order-1 sm:order-2">
               <button 
                 onClick={() => onOpenChange(false)}
-                className="px-6 h-12 text-sm font-bold text-slate-400 hover:text-slate-800 transition-all"
+                className="px-6 h-11 sm:h-12 text-xs sm:text-sm font-bold text-slate-400 hover:text-slate-800 transition-all text-center"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleSave}
                 disabled={saving}
-                className="px-8 h-12 bg-slate-900 text-white rounded-2xl text-sm font-bold shadow-lg shadow-slate-200 hover:bg-slate-800 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2"
+                className="px-8 h-11 sm:h-12 bg-slate-900 text-white rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold shadow-lg shadow-slate-200 hover:bg-slate-800 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-2"
               >
                 {saving ? (
                   <><span className="animate-spin">⟳</span> Saving...</>
@@ -203,26 +203,26 @@ export default function StakeholdersPage() {
   }, [sessions])
 
   return (
-    <div className="space-y-10 pb-16 animate-in fade-in duration-700 max-w-6xl mx-auto px-6">
+    <div className="space-y-8 sm:space-y-10 pb-16 animate-in fade-in duration-700 max-w-6xl mx-auto px-4 sm:px-6">
       {/* Header */}
       <section className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-4">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-800">
+        <div className="space-y-1 sm:space-y-2">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800">
             Stakeholder Registry
           </h1>
-          <p className="text-sm text-slate-500 font-medium">
-            Manage your customer profiles and interview history.
+          <p className="text-xs sm:text-sm text-slate-500 font-medium">
+            Manage your profiles and interview history.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="relative group">
             <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
             <input 
               placeholder="Search registry..."
-              className="h-11 pl-11 pr-4 bg-white border border-slate-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-200 transition-all w-64 shadow-sm"
+              className="h-11 pl-11 pr-4 bg-white border border-slate-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-200 transition-all w-full sm:w-64 shadow-sm"
             />
           </div>
-          <button className="h-11 px-6 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-slate-200">
+          <button className="h-11 px-6 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-slate-200">
             <Plus className="w-4 h-4" />
             Add New
           </button>

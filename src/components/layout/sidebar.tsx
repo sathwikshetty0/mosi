@@ -73,16 +73,16 @@ export function Sidebar() {
   return (
     <>
       {/* 📱 MOBILE TOP NAV */}
-      <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b-2 border-slate-50 z-30 w-full shrink-0">
+      <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b-2 border-slate-50 z-30 w-full shrink-0 safe-area-top">
         <div className="flex items-center gap-3">
-           <div className="w-8 h-8 bg-slate-700 rounded-xl flex items-center justify-center text-white text-[10px] font-black shadow-xl shadow-slate-200">M</div>
+           <div className="w-9 h-9 bg-slate-700 rounded-xl flex items-center justify-center text-white text-[11px] font-black shadow-xl shadow-slate-200">M</div>
            <h1 className="text-xl font-black text-slate-700 tracking-tighter uppercase">MOSI</h1>
         </div>
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-700 active:scale-90 transition-all"
+          className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-700 active:scale-90 transition-all tap-highlight-none"
         >
-          {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          {isMobileMenuOpen ? <X className="w-5 h-5 transition-transform" /> : <Menu className="w-5 h-5 transition-transform" />}
         </button>
       </div>
 
@@ -235,24 +235,55 @@ export function Sidebar() {
         </div>
 
         {/* ⚡ FOOTER ACTIONS */}
-        <div className="p-6 border-t-2 border-slate-50 space-y-4">
+        <div className="p-4 sm:p-6 border-t-2 border-slate-50 space-y-4 safe-area-bottom">
+           {/* Profile Card — always show on mobile, show on desktop if not collapsed */}
+           <div className={cn("flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100", isSidebarCollapsed && "hidden lg:flex justify-center p-2")}>
+              <div className="w-10 h-10 bg-slate-700 rounded-xl flex items-center justify-center text-white text-sm font-black shadow-lg shrink-0">
+                {profile?.full_name?.[0] || 'U'}
+              </div>
+              {!isSidebarCollapsed && (
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-slate-700 truncate">{profile?.full_name || 'User'}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate">{profile?.role || 'Researcher'}</p>
+                </div>
+              )}
+              {/* Force visible on mobile even if collapsed state is true (shouldn't really happen on mobile but for safety) */}
+              <div className="lg:hidden flex-1 min-w-0">
+                  <p className="text-sm font-bold text-slate-700 truncate">{profile?.full_name || 'User'}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate">{profile?.role || 'Researcher'}</p>
+              </div>
+           </div>
+
            {/* Only show New Stakeholder for non-admin OR admin not on /admin */}
            {(!isAdmin || pathname !== '/admin') && !isSidebarCollapsed && (
               <Link
                 href="/setup"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="group w-full h-14 bg-slate-700 hover:bg-blue-600 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] transition-all shadow-2xl shadow-slate-300 flex items-center justify-center gap-2 overflow-hidden relative active:scale-95"
+                className="group w-full h-14 bg-slate-700 hover:bg-blue-600 text-white rounded-2xl font-bold uppercase tracking-[0.2em] text-[10px] transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2 overflow-hidden relative active:scale-95"
               >
                 <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                 <PlusCircle className="w-4 h-4 relative z-10" />
-                <span className="relative z-10">New Stakeholder</span>
+                <span className="relative z-10 font-bold">New Stakeholder</span>
               </Link>
            )}
            {(!isAdmin || pathname !== '/admin') && isSidebarCollapsed && (
-              <Link href="/setup" className="w-12 h-12 bg-slate-700 hover:bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto shadow-2xl shadow-slate-300 transition-all active:scale-90">
+              <Link href="/setup" className="w-12 h-12 bg-slate-700 hover:bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto shadow-2xl shadow-slate-300 transition-all active:scale-90 lg:flex hidden">
                 <PlusCircle className="w-6 h-6" />
               </Link>
            )}
+           {/* On mobile, ALWAYS show the full button if the sidebar is open */}
+           <div className="lg:hidden">
+            {(!isAdmin || pathname !== '/admin') && (
+                <Link
+                  href="/setup"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="group w-full h-14 bg-slate-700 hover:bg-blue-600 text-white rounded-2xl font-bold uppercase tracking-[0.2em] text-[10px] transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2 overflow-hidden relative active:scale-95"
+                >
+                  <PlusCircle className="w-4 h-4 relative z-10" />
+                  <span className="relative z-10 font-bold">New Stakeholder</span>
+                </Link>
+            )}
+           </div>
            
           <div className="flex flex-col gap-1">
             <Link
@@ -265,7 +296,7 @@ export function Sidebar() {
               )}
             >
               <Settings className={cn("w-4 h-4", pathname === '/settings' ? "text-white" : "text-slate-400")} />
-              {!isSidebarCollapsed && <span className="uppercase tracking-tighter">Settings</span>}
+              <span className={cn("uppercase tracking-tighter", isSidebarCollapsed && "lg:hidden")}>Settings</span>
             </Link>
             
             <button
@@ -279,7 +310,7 @@ export function Sidebar() {
               )}
             >
               <LogOut className="w-4 h-4 text-slate-400 group-hover:text-rose-600" />
-              {!isSidebarCollapsed && <span className="uppercase tracking-tighter font-medium text-slate-400 group-hover:text-rose-600">Disconnect</span>}
+              <span className={cn("uppercase tracking-tighter font-bold text-slate-400 group-hover:text-rose-600", isSidebarCollapsed && "lg:hidden")}>Logout</span>
             </button>
           </div>
         </div>
