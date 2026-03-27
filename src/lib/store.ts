@@ -122,6 +122,7 @@ interface MosiStore {
   fetchAllProfiles: () => Promise<void>
   fetchSessions: () => Promise<void>
   setSessions: (sessions: InterviewSession[]) => void
+  fetchSessionById: (id: string) => Promise<void>
   updateStakeholder: (id: string, updates: Partial<StakeholderProfile>) => void
   deleteStakeholder: (id: string) => void
 }
@@ -310,6 +311,38 @@ export const useMosiStore = create<MosiStore>()(
         const dbIds = new Set(formattedSessions.map(s => s.id))
         const localOnly = state.sessions.filter(s => !dbIds.has(s.id) && s.status === 'Review')
         return { sessions: [...localOnly, ...formattedSessions] }
+      })
+    }
+  },
+
+  fetchSessionById: async (id: string) => {
+    if (!supabase) return
+    
+    const { data: sessionData, error } = await supabase
+      .from('sessions')
+      .select('*, stakeholders(*), opportunities(*), evidence(*)')
+      .eq('id', id)
+      .single()
+
+    if (error) {
+       console.error('Fetch single session failed:', error.message)
+       return
+    }
+
+    if (sessionData) {
+      const formatted = {
+        ...sessionData,
+        stakeholder: sessionData.stakeholders,
+        findings: sessionData.opportunities || [],
+        evidence: sessionData.evidence || []
+      }
+      
+      set((state) => {
+        const exists = state.sessions.find(s => s.id === id)
+        if (exists) {
+           return { sessions: state.sessions.map(s => s.id === id ? formatted : s) }
+        }
+        return { sessions: [formatted, ...state.sessions] }
       })
     }
   },

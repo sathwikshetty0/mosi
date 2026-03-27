@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import React, { useState, useEffect, useMemo, Suspense } from 'react'
 import {
   FileCheck, Globe, Clock, BarChart2,
   ChevronDown, ChevronUp, Image as ImageIcon, Link as LinkIcon, File as FileIcon, Check, X,
@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useMosiStore, CEEDTag } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
+import Link from 'next/link'
 
 const tagColors: Record<CEEDTag, { text: string; border: string; bg: string; icon: string }> = {
   Core: { text: 'text-blue-600', border: 'border-blue-100', bg: 'bg-blue-50/50', icon: 'text-blue-400' },
@@ -19,25 +20,40 @@ const tagColors: Record<CEEDTag, { text: string; border: string; bg: string; ico
 }
 
 function PreviewContent() {
-  const { sessions, publishSession, updateOpportunityStatus, fetchSessions } = useMosiStore()
-  const { user, profile, loading } = useAuth()
+  const { sessions, publishSession, updateOpportunityStatus, fetchSessions, fetchSessionById } = useMosiStore()
+  const { user, profile, loading: authLoading } = useAuth()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const sessionId = searchParams.get('id')
-  const isGuest = !loading && !user
-  
-  React.useEffect(() => {
-    fetchSessions()
-  }, [fetchSessions])
+  const [dataLoading, setDataLoading] = useState(true)
 
-  const session = React.useMemo(() => {
+  useEffect(() => {
+    async function load() {
+      setDataLoading(true)
+      // 1. Fetch general sessions (if researcher)
+      await fetchSessions()
+
+      // 2. If session missing from list, fetch it by ID directly (Guest mode)
+      const found = sessions.find(s => s.id === sessionId)
+      if (!found && sessionId) {
+        await fetchSessionById(sessionId)
+      }
+      setDataLoading(false)
+    }
+    load()
+  }, [sessionId, fetchSessions, fetchSessionById, sessions]) // Added sessions to dependencies to react to its changes
+
+  const session = useMemo(() => {
     if (sessionId) return sessions.find(s => s.id === sessionId)
     return sessions.find(s => s.status === 'Review' || s.status === 'Published') || sessions[0]
   }, [sessions, sessionId])
 
-  const router = useRouter()
-  const [approved, setApproved] = React.useState(session?.status === 'Published')
-  const [expandedId, setExpandedId] = React.useState<string | null>(null)
-  const [isCopied, setIsCopied] = React.useState(false)
+  const isGuest = !authLoading && !user
+  const isLoading = authLoading || dataLoading
+
+  const [approved, setApproved] = useState(session?.status === 'Published')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [isCopied, setIsCopied] = useState(false)
 
   const handleShare = () => {
     const url = `${window.location.origin}/preview?id=${session?.id}`
@@ -55,13 +71,14 @@ function PreviewContent() {
     window.location.href = `mailto:${session.stakeholder.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (session) setApproved(session.status === 'Published')
   }, [session])
 
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-10 h-10 border-4 border-slate-700 border-t-transparent rounded-full animate-spin" />
+  if (isLoading) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in">
+        <div className="w-10 h-10 border-4 border-slate-700 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Constructing Matrix View...</p>
     </div>
   )
 
