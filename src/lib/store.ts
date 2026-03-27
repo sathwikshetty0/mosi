@@ -121,6 +121,7 @@ interface MosiStore {
   profiles: any[]
   fetchAllProfiles: () => Promise<void>
   fetchSessions: () => Promise<void>
+  setSessions: (sessions: InterviewSession[]) => void
   updateStakeholder: (id: string, updates: Partial<StakeholderProfile>) => void
   deleteStakeholder: (id: string) => void
 }
@@ -228,9 +229,18 @@ export const useMosiStore = create<MosiStore>()(
 
   fetchAllProfiles: async () => {
     if (!supabase) return
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    // 🛡️ SECURITY BLOCK: If no user, return NOTHING
+    if (!user) {
+      set({ profiles: [] })
+      return
+    }
+
     const { data: profiles, error } = await supabase
       .from('profiles')
       .select('*')
+      .eq('user_id', user.id)
       .order('full_name', { ascending: true })
 
     if (error) {
@@ -245,11 +255,18 @@ export const useMosiStore = create<MosiStore>()(
 
   fetchSessions: async () => {
     if (!supabase) return
-    // Flattened query to avoid relationship errors
-    const { data: sessionsData, error } = await supabase
-      .from('sessions')
-      .select('*, stakeholders(*), opportunities(*), evidence(*)')
-      .order('created_at', { ascending: false })
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    // 🛡️ SECURITY BLOCK: If no researcher is logged in, show ZERO data in the archive
+    if (!user) {
+      set({ sessions: [] })
+      return
+    }
+    
+    let query = supabase.from('sessions').select('*, stakeholders(*), opportunities(*), evidence(*)')
+    query = query.eq('user_id', user.id) // STRICTURE ENFORCEMENT
+
+    const { data: sessionsData, error } = await query.order('created_at', { ascending: false })
 
     if (error) {
       console.error('Fetch sessions failed:', error.message || error)
@@ -287,7 +304,8 @@ export const useMosiStore = create<MosiStore>()(
         }
       })
 
-      // Merge: Keep any local sessions that aren't in the DB yet
+      // 🚀 SMART MERGE: Keep local sessions (like newly generated ones) 
+      // until the DB sync is 100% complete and returned in the fetch.
       set((state) => {
         const dbIds = new Set(formattedSessions.map(s => s.id))
         const localOnly = state.sessions.filter(s => !dbIds.has(s.id) && s.status === 'Review')
@@ -295,6 +313,8 @@ export const useMosiStore = create<MosiStore>()(
       })
     }
   },
+
+  setSessions: (sessions) => set({ sessions }),
 
   finalizeSession: (recordingUrl) => {
     const newId = crypto.randomUUID()

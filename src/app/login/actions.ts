@@ -35,6 +35,11 @@ export async function login(formData: FormData) {
     }
   }
 
+  const next = formData.get('next') as string
+  if (next && next.startsWith('/')) {
+    redirect(next)
+  }
+
   redirect('/')
 }
 
@@ -60,15 +65,21 @@ export async function signup(formData: FormData) {
   }
 
   revalidatePath('/', 'layout')
+  
+  const next = formData.get('next') as string
+  if (next && next.startsWith('/')) {
+    redirect(next)
+  }
+
   redirect('/')
 }
 
-export async function signInWithGoogle() {
+export async function signInWithGoogle(next: string = '/') {
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   })
 

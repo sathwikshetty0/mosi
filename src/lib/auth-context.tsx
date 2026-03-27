@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from './supabase'
 import { User } from '@supabase/supabase-js'
+import { useMosiStore } from './store'
 
 interface AuthContextType {
   user: User | null
@@ -46,6 +47,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const { data: { subscription } } = supabase!.auth.onAuthStateChange(
       async (event: any, session: any) => {
+        const { setSessions } = useMosiStore.getState()
+        setSessions([]) // PURGE ON RE-AUTH OR LOGOUT
+
         setUser(session?.user ?? null)
         if (session?.user) {
           const { data: profile } = await supabase!

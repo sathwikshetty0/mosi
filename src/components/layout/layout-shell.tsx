@@ -4,15 +4,23 @@ import { usePathname } from 'next/navigation'
 import { Suspense } from 'react'
 import { Sidebar } from '@/components/layout/sidebar'
 import { AdminSidebar } from '@/components/layout/admin-sidebar'
+import { useAuth } from '@/lib/auth-context'
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const { user, loading } = useAuth()
   const isAdmin = pathname?.startsWith('/admin')
   const isLogin = pathname === '/login'
+  const isPreview = pathname === '/preview'
+  const isGuestPreview = isPreview && !loading && !user
 
-  if (isLogin) {
-    // No sidebar on login
-    return <>{children}</>
+  if (isLogin || isGuestPreview) {
+    // No sidebar on login OR preview (guest mode)
+    return (
+      <main className="min-h-screen bg-slate-50 overflow-y-auto">
+        {children}
+      </main>
+    )
   }
 
   if (isAdmin) {
