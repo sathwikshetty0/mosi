@@ -27,8 +27,29 @@ export async function GET(request: Request) {
         },
       }
     )
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      // CRITICAL: Ensure profile exists for Google Auth so they appear in Admin Dashboard
+      if (sessionData?.user) {
+        const user = sessionData.user
+        
+        // 1. Check if profile exists
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', user.id)
+          .single()
+        
+        // 2. If it doesn't exist, create it with their Google data
+        if (!profile) {
+           await supabase.from('profiles').insert({
+              id: user.id,
+              full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Google User',
+              role: 'researcher'
+           })
+        }
+      }
+      
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
