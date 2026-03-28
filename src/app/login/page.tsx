@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect } from 'react'
 import { login, signup, signInWithGoogle } from './actions'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
@@ -11,6 +11,11 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
+
+  // Prevent endless loading state if the server action returns with an error
+  useEffect(() => {
+    if (error) setIsLoading(false)
+  }, [error])
 
   return (
     <div className="min-h-screen min-h-[100dvh] w-full flex flex-col lg:flex-row bg-white">

@@ -4,7 +4,7 @@ import { useMosiStore, StakeholderProfile } from '@/lib/store'
 import { 
   Plus, Search, Mail, Phone, ExternalLink, Building2, 
   Users, Globe, Briefcase, ChevronRight, BarChart2,
-  X, Save, Pencil, AlertCircle, Trash2, Edit3, MapPin, Activity, Heart, Zap, Linkedin
+  X, Save, Pencil, AlertCircle, Trash2, Edit3, MapPin, Activity, Heart, Zap, Linkedin, Share2
 } from 'lucide-react'
 import * as React from 'react'
 import { cn } from '@/lib/utils'
@@ -276,15 +276,28 @@ export default function StakeholdersPage() {
               </div>
             </div>
 
-            <button 
-              onClick={(e) => {
-                e.stopPropagation()
-                setEditingStakeholder(sh)
-              }}
-              className="w-full h-12 bg-slate-50 border border-slate-200 text-slate-600 rounded-2xl text-xs font-bold hover:bg-slate-100 transition-all flex items-center justify-center gap-2"
-            >
-              <Edit3 className="w-3.5 h-3.5" /> Edit Profile Details
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setEditingStakeholder(sh)
+                }}
+                className="flex-1 h-12 bg-slate-50 border border-slate-200 text-slate-600 rounded-2xl text-xs font-bold hover:bg-slate-100 transition-all flex items-center justify-center gap-2"
+              >
+                <Edit3 className="w-3.5 h-3.5" /> Edit Profile Details
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  // In a real implementation this would trigger the share flow
+                  alert('Share feature activated! Allows sending this stakeholder\'s profile to colleagues.')
+                }}
+                className="w-12 h-12 bg-white border border-slate-200 text-slate-400 rounded-2xl flex items-center justify-center hover:text-blue-500 hover:border-blue-200 hover:bg-blue-50 transition-all shrink-0 tooltip-trigger"
+                title="Share Stakeholder"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         ))}
       </div>

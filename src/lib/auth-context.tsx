@@ -80,8 +80,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [])
 
   const signOut = async () => {
-    if (supabase) {
-      await supabase.auth.signOut()
+    try {
+      if (supabase) {
+        await supabase.auth.signOut()
+      }
+    } catch (e) {
+      console.error('Local signout error:', e)
+    }
+    
+    // Call Server Action to securely wipe cookies and redirect
+    const { logout } = await import('@/app/login/actions')
+    try {
+      await logout()
+    } catch (e) {
+      // Ignore: redirect() throws internally
+    } finally {
       window.location.href = '/login'
     }
   }

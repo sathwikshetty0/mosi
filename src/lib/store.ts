@@ -264,9 +264,9 @@ export const useMosiStore = create<MosiStore>()(
       return
     }
     
-    let query = supabase.from('sessions').select('*, stakeholders(*), opportunities(*), evidence(*)')
-    // Include the user's sessions OR sessions that haven't been assigned yet (orphaned/guest sessions)
-    query = query.or(`user_id.eq.${user.id},user_id.is.null`)
+    let query = supabase.from('sessions')
+      .select('*, stakeholders(*), opportunities(*), evidence(*)')
+      .eq('user_id', user.id)
 
     const { data: sessionsData, error } = await query.order('created_at', { ascending: false })
 
@@ -310,8 +310,8 @@ export const useMosiStore = create<MosiStore>()(
       // until the DB sync is 100% complete and returned in the fetch.
       set((state) => {
         const dbIds = new Set(formattedSessions.map(s => s.id))
-        // Keep ALL local-only sessions regardless of status, not just 'Review' ones
-        const localOnly = state.sessions.filter(s => !dbIds.has(s.id))
+        // Keep ONLY local-only sessions that are actively resolving their background sync
+        const localOnly = state.sessions.filter(s => !dbIds.has(s.id) && (s as any).isPendingSync)
         return { sessions: [...localOnly, ...formattedSessions] }
       })
     }
@@ -369,8 +369,9 @@ export const useMosiStore = create<MosiStore>()(
       evidence: state.currentSession.evidence || [],
       recordingUrl,
       transcript: [],
-      summary: ''
-    }
+      summary: '',
+      isPendingSync: true
+    } as any
 
     set((s) => ({
       sessions: [session, ...s.sessions],
@@ -391,6 +392,15 @@ export const useMosiStore = create<MosiStore>()(
             const { data: { user } } = await supabase.auth.getUser()
             currentUserId = user?.id || null
             console.log('Current user ID:', currentUserId)
+            
+            // Auto-assign this session locally so the UI updates immediately
+            if (currentUserId) {
+              set((s) => ({
+                sessions: s.sessions.map(sess => 
+                  sess.id === newId ? { ...sess, user_id: currentUserId || undefined } : sess
+                )
+              }))
+            }
           } catch (e) {
             console.error('Failed to get current user:', e)
           }
@@ -688,7 +698,6 @@ export const useMosiStore = create<MosiStore>()(
 }), {
   name: 'mosi-storage',
   partialize: (state) => ({ 
-    sessions: state.sessions, 
     currentSession: state.currentSession,
     isSidebarCollapsed: state.isSidebarCollapsed 
   }),

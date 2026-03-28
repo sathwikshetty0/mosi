@@ -19,14 +19,6 @@ export default function Home() {
       setIsLoading(true)
       await fetchSessions()
       
-      // Retry once after a brief delay if no sessions are found
-      // (handles race condition with auth token refresh)
-      const currentSessions = useMosiStore.getState().sessions
-      if (currentSessions.length === 0 && mounted) {
-        await new Promise(r => setTimeout(r, 1500))
-        if (mounted) await fetchSessions()
-      }
-      
       if (mounted) setIsLoading(false)
     }
     load()
