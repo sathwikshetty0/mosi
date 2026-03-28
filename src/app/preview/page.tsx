@@ -4,7 +4,7 @@ import * as React from 'react'
 import {
   FileCheck, Globe, Clock, BarChart2,
   ChevronDown, ChevronUp, Link as LinkIcon, File as FileIcon, Check, X,
-  MapPin, Briefcase, Headphones, FileText, Share, Zap, Sparkles, ArrowLeft, Mail, ChevronRight
+  MapPin, Briefcase, Headphones, FileText, Share, Zap, Sparkles, ArrowLeft, Mail, ChevronRight, Edit
 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useMosiStore, CEEDTag } from '@/lib/store'
@@ -213,6 +213,12 @@ function PreviewContent() {
                     </button>
                 </div>
             )}
+            <button
+               onClick={() => router.push(`/review?id=${session.id}`)}
+               className="h-11 px-6 border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-200 rounded-xl flex items-center justify-center gap-2 text-sm font-bold bg-white transition-all active:scale-95 shadow-sm"
+            >
+               <Edit className="w-4 h-4" /> Edit Briefing
+            </button>
           </div>)}
 
           {isGuest && !approved && (
