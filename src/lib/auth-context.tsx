@@ -25,31 +25,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const getSession = async () => {
+    let mounted = true
+    const initializeAuth = async () => {
       if (!supabase) return
       
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
+      // Use getUser() to ping the server to accurately read secure cookies
+      const { data: { user }, error } = await supabase.auth.getUser()
       
-      if (session?.user) {
+      if (!mounted) return
+      
+      setUser(user ?? null)
+      
+      if (user) {
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', session.user.id)
+          .eq('id', user.id)
           .single()
-        setProfile(profile)
+        if (mounted) setProfile(profile)
       }
       
-      setLoading(false)
+      if (mounted) setLoading(false)
     }
 
-    getSession()
+    initializeAuth()
 
     const { data: { subscription } } = supabase!.auth.onAuthStateChange(
       async (event: any, session: any) => {
+        if (!mounted) return
+        
+        // Ignore INITIAL_SESSION otherwise it immediately overwrites `getUser()` with null
+        if (event === 'INITIAL_SESSION') return
+
         const { setSessions, fetchSessions } = useMosiStore.getState()
         
-        // Only purge sessions on explicit sign-out, NOT on token refresh
         if (event === 'SIGNED_OUT') {
           setSessions([])
         }
@@ -61,20 +70,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             .select('*')
             .eq('id', session.user.id)
             .single()
-          setProfile(profile)
           
-          // Re-fetch sessions on sign-in to ensure fresh data
+          if (mounted) setProfile(profile)
+          
           if (event === 'SIGNED_IN') {
             fetchSessions()
           }
         } else {
-          setProfile(null)
+          if (mounted) setProfile(null)
         }
-        setLoading(false)
+        
+        if (mounted) setLoading(false)
       }
     )
 
     return () => {
+      mounted = false
       subscription.unsubscribe()
     }
   }, [])
