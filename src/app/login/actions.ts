@@ -10,7 +10,7 @@ export async function login(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
@@ -19,23 +19,22 @@ export async function login(formData: FormData) {
     return redirect(`/login?error=${encodeURIComponent(error.message)}`)
   }
 
+  // Ensure fresh cache
   revalidatePath('/', 'layout')
   
-  // Check role and redirect
-  const { data: { user } } = await supabase.auth.getUser()
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-    
-    if (profile?.role === 'admin') {
-      redirect('/admin')
-    }
+  // High-Speed Auth Redirect
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', data.user.id)
+    .single()
+  
+  const next = formData.get('next') as string
+  
+  if (profile?.role === 'admin') {
+    redirect('/admin')
   }
 
-  const next = formData.get('next') as string
   if (next && next.startsWith('/')) {
     redirect(next)
   }
@@ -50,7 +49,8 @@ export async function signup(formData: FormData) {
   const password = formData.get('password') as string
   const fullName = formData.get('fullName') as string
 
-  const { error } = await supabase.auth.signUp({
+  // PRO PROTOCOL: Double Registration
+  const { data: authData, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -64,6 +64,15 @@ export async function signup(formData: FormData) {
     return redirect(`/login?error=${encodeURIComponent(error.message)}`)
   }
 
+  // CRITICAL: Ensure profile exists so they aren't stuck on first login
+  if (authData.user) {
+    await supabase.from('profiles').insert({
+      id: authData.user.id,
+      full_name: fullName,
+      role: 'researcher'
+    })
+  }
+
   revalidatePath('/', 'layout')
   
   const next = formData.get('next') as string
@@ -71,6 +80,7 @@ export async function signup(formData: FormData) {
     redirect(next)
   }
 
+  // Send to home to complete verification check
   redirect('/')
 }
 
