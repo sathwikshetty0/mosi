@@ -1,9 +1,9 @@
 'use client'
 
-import React, { useState, useEffect, useMemo, Suspense } from 'react'
+import * as React from 'react'
 import {
   FileCheck, Globe, Clock, BarChart2,
-  ChevronDown, ChevronUp, Image as ImageIcon, Link as LinkIcon, File as FileIcon, Check, X,
+  ChevronDown, ChevronUp, Link as LinkIcon, File as FileIcon, Check, X,
   MapPin, Briefcase, Headphones, FileText, Share, Zap, Sparkles, ArrowLeft, Mail, ChevronRight
 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -25,25 +25,47 @@ function PreviewContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const sessionId = searchParams.get('id')
-  const [dataLoading, setDataLoading] = useState(true)
+  const [dataLoading, setDataLoading] = React.useState(true)
 
-  useEffect(() => {
-    async function load() {
+  // 🔑 CRITICAL: Actually fetch session data on mount
+  React.useEffect(() => {
+    let mounted = true
+    let retryCount = 0
+    const maxRetries = 4
+
+    async function loadData() {
       setDataLoading(true)
-      // 1. Fetch general sessions (if researcher)
+      
+      // First try fetching all sessions
       await fetchSessions()
-
-      // 2. If session missing from list, fetch it by ID directly (Guest mode)
-      const found = sessions.find(s => s.id === sessionId)
+      
+      // Check if we found the session
+      const currentSessions = useMosiStore.getState().sessions
+      const found = sessionId ? currentSessions.find(s => s.id === sessionId) : currentSessions[0]
+      
       if (!found && sessionId) {
+        // Try fetching this specific session directly
         await fetchSessionById(sessionId)
+        
+        // Still not found? retry with delay (DB sync might be in progress)
+        const updatedSessions = useMosiStore.getState().sessions
+        const stillNotFound = !updatedSessions.find(s => s.id === sessionId)
+        
+        if (stillNotFound && retryCount < maxRetries && mounted) {
+          retryCount++
+          setTimeout(loadData, 1500)
+          return
+        }
       }
-      setDataLoading(false)
+      
+      if (mounted) setDataLoading(false)
     }
-    load()
-  }, [sessionId, fetchSessions, fetchSessionById, sessions]) // Added sessions to dependencies to react to its changes
 
-  const session = useMemo(() => {
+    loadData()
+    return () => { mounted = false }
+  }, [sessionId, fetchSessions, fetchSessionById])
+
+  const session = React.useMemo(() => {
     if (sessionId) return sessions.find(s => s.id === sessionId)
     return sessions.find(s => s.status === 'Review' || s.status === 'Published') || sessions[0]
   }, [sessions, sessionId])
@@ -51,9 +73,9 @@ function PreviewContent() {
   const isGuest = !authLoading && !user
   const isLoading = authLoading || dataLoading
 
-  const [approved, setApproved] = useState(session?.status === 'Published')
-  const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [isCopied, setIsCopied] = useState(false)
+  const [approved, setApproved] = React.useState(session?.status === 'Published')
+  const [expandedId, setExpandedId] = React.useState<string | null>(null)
+  const [isCopied, setIsCopied] = React.useState(false)
 
   const handleShare = () => {
     const url = `${window.location.origin}/preview?id=${session?.id}`
@@ -66,19 +88,19 @@ function PreviewContent() {
     if (!session) return
     const url = `${window.location.origin}/preview?id=${session.id}`
     const subject = `Strategic Discovery Briefing: ${session.stakeholder.name} / ${session.stakeholder.company}`
-    const body = `Hi ${session.stakeholder.name},\n\nI've generated the strategic discovery briefing from our recent session. You can review the insights, highlights, and executive summary at the follow secure link:\n\n${url}\n\nBest regards,\n${profile?.full_name || 'MOSI Research Team'}`
-    
+    const body = `Hi ${session.stakeholder.name},\n\nI've generated the strategic discovery briefing from our recent session. You can review the insights, highlights, and executive summary at the following secure link:\n\n${url}\n\nBest regards,\n${profile?.full_name || 'MOSI Research Team'}`
+
     window.location.href = `mailto:${session.stakeholder.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (session) setApproved(session.status === 'Published')
   }, [session])
 
   if (isLoading) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in">
         <div className="w-10 h-10 border-4 border-slate-700 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Constructing Matrix View...</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Loading briefing...</p>
     </div>
   )
 
@@ -103,14 +125,14 @@ function PreviewContent() {
 
   const stakeholder = session?.stakeholder
   const opportunities = session?.opportunities || []
-  
+
   const handleStatusUpdate = (id: string, status: 'Approved' | 'Hidden' | 'Pending') => {
     updateOpportunityStatus(session.id, id, status)
   }
 
   return (
     <div className="max-w-4xl mx-auto pb-32 px-4 sm:px-6 animate-in fade-in duration-700">
-      
+
       {/* HEADER SECTION */}
       <header className="space-y-6 sm:space-y-8 pt-6 sm:pt-10 pb-8 sm:pb-10 border-b border-slate-100">
         <div className="flex flex-col gap-5 sm:gap-6">
@@ -120,7 +142,7 @@ function PreviewContent() {
                 "text-[10px] sm:text-xs font-bold px-3 py-1 border rounded-full uppercase tracking-widest transition-all shadow-sm",
                 isGuest ? "text-amber-600 bg-amber-50 border-amber-100" : "text-blue-600 bg-blue-50 border-blue-100"
               )}>
-                {isGuest ? '• GUEST EXPLORER' : '• RESEARCHER MANAGEMENT'}
+                {isGuest ? '• GUEST VIEW' : '• RESEARCHER VIEW'}
               </span>
               {approved && (
                 <span className="text-[10px] sm:text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 flex items-center gap-1.5 shadow-sm">
@@ -128,7 +150,7 @@ function PreviewContent() {
                 </span>
               )}
             </div>
-            
+
             <div className="flex items-center gap-2">
               {isGuest && (
                 <button 
@@ -146,7 +168,7 @@ function PreviewContent() {
               </button>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <h1 className="text-3xl sm:text-4xl font-bold text-slate-800 tracking-tighter uppercase italic leading-none">
               Strategic <br/><span className="text-blue-600">Briefing</span>
@@ -166,7 +188,7 @@ function PreviewContent() {
           </div>
 
           {!isGuest && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
                 {!approved ? (
                 <button 
                     onClick={handleApproveAll} 
@@ -175,7 +197,7 @@ function PreviewContent() {
                     Publish Report <Check className="w-4 h-4" />
                 </button>
                 ) : (
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                     <button 
                         onClick={handleShare}
                         className="h-11 px-6 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl flex items-center justify-center gap-2 text-sm font-bold hover:bg-slate-100 transition-all active:scale-95 shadow-sm"
@@ -209,7 +231,7 @@ function PreviewContent() {
              <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl animate-in slide-in-from-top-4 duration-500">
                 <div className="flex-1">
                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Public Briefing URL</p>
-                   <div className="text-xs font-bold text-emerald-800 truncate select-all">{window.location.origin}/preview?id={session.id}</div>
+                   <div className="text-xs font-bold text-emerald-800 truncate select-all">{typeof window !== 'undefined' ? window.location.origin : ''}/preview?id={session.id}</div>
                 </div>
                 <button 
                    onClick={handleShare}
@@ -225,7 +247,7 @@ function PreviewContent() {
 
       {/* BODY CONTENT */}
       <div className="py-8 sm:py-12 space-y-12 sm:space-y-16">
-        
+
         {/* EXECUTIVE SYNTHESIS SECTION */}
         {session.summary && (
           <section className="space-y-4 sm:space-y-6">
@@ -246,7 +268,7 @@ function PreviewContent() {
 
         {/* METADATA & AUDIO */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-start">
-          
+
           <div className="md:col-span-8 space-y-4 sm:space-y-6">
              <h3 className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2 px-1 sm:px-2">
                 <Globe className="w-4 h-4 text-slate-400" /> Market Context
@@ -302,7 +324,7 @@ function PreviewContent() {
               {opportunities.length} Highlights
             </span>
           </div>
-          
+
           <div className="space-y-3 sm:space-y-4">
             {opportunities.map((opp, index) => {
               const isExpanded = expandedId === opp.id;
@@ -316,7 +338,7 @@ function PreviewContent() {
                   opp.status === 'Hidden' && "opacity-40"
                 )}>
                   <div className="p-5 sm:p-8 flex flex-col gap-4 sm:gap-6">
-                    
+
                     <div className="flex-1 space-y-2 sm:space-y-3">
                       <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                         <span className="text-xs font-bold text-slate-300">#{(index + 1).toString().padStart(2, '0')}</span>
@@ -341,7 +363,7 @@ function PreviewContent() {
                           </button>
                         </div>
                       )}
-                      
+
                       <button 
                         onClick={() => setExpandedId(isExpanded ? null : opp.id)}
                         className="h-10 px-4 sm:px-6 bg-slate-50 rounded-xl text-[10px] sm:text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-2 transition-all border border-slate-100 shadow-sm"
@@ -355,7 +377,7 @@ function PreviewContent() {
                   {/* EXPANDED DETAILS */}
                   {isExpanded && (
                     <div className="px-5 sm:px-8 pb-8 sm:pb-10 space-y-6 sm:space-y-8 animate-in slide-in-from-top-2 duration-300">
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10 pt-6 sm:pt-8 border-t border-slate-100">
                         <div className="space-y-3 sm:space-y-4">
                           <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Detail Narrative</h5>

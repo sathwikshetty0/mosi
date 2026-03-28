@@ -265,7 +265,8 @@ export const useMosiStore = create<MosiStore>()(
     }
     
     let query = supabase.from('sessions').select('*, stakeholders(*), opportunities(*), evidence(*)')
-    query = query.eq('user_id', user.id) // STRICTURE ENFORCEMENT
+    // Include the user's sessions OR sessions that haven't been assigned yet (orphaned/guest sessions)
+    query = query.or(`user_id.eq.${user.id},user_id.is.null`)
 
     const { data: sessionsData, error } = await query.order('created_at', { ascending: false })
 
@@ -305,11 +306,12 @@ export const useMosiStore = create<MosiStore>()(
         }
       })
 
-      // 🚀 SMART MERGE: Keep local sessions (like newly generated ones) 
+      // 🚀 SMART MERGE: Keep ALL local sessions (like newly generated ones) 
       // until the DB sync is 100% complete and returned in the fetch.
       set((state) => {
         const dbIds = new Set(formattedSessions.map(s => s.id))
-        const localOnly = state.sessions.filter(s => !dbIds.has(s.id) && s.status === 'Review')
+        // Keep ALL local-only sessions regardless of status, not just 'Review' ones
+        const localOnly = state.sessions.filter(s => !dbIds.has(s.id))
         return { sessions: [...localOnly, ...formattedSessions] }
       })
     }
@@ -333,11 +335,12 @@ export const useMosiStore = create<MosiStore>()(
       const formatted = {
         ...sessionData,
         stakeholder: sessionData.stakeholders,
-        findings: sessionData.opportunities || [],
+        opportunities: sessionData.opportunities || [],
         evidence: sessionData.evidence || []
       }
       
       set((state) => {
+        const id = sessionData.id // Ensure we use the ID from the data
         const exists = state.sessions.find(s => s.id === id)
         if (exists) {
            return { sessions: state.sessions.map(s => s.id === id ? formatted : s) }
@@ -585,19 +588,33 @@ export const useMosiStore = create<MosiStore>()(
   }),
 
   publishSession: (id) => {
+    // 1. Immediately update local state
     set((s) => ({
       sessions: s.sessions.map(sess =>
         sess.id === id ? { ...sess, status: 'Published' } : sess
       )
     }))
+    // 2. Sync to Supabase with proper error handling
     if (supabase) {
-      supabase.from('sessions')
-        .update({ status: 'Published' })
-        .eq('id', id)
-        .then(() => {
+      ;(async () => {
+        try {
+          const { error } = await supabase.from('sessions')
+            .update({ status: 'Published' })
+            .eq('id', id)
+          
+          if (error) {
+            console.error('Publish session to Supabase failed:', error.message)
+            // Don't revert local state - user still sees it as published locally
+          } else {
+            console.log('Session published to Supabase successfully:', id)
+          }
+          
           // Re-fetch to ensure everything is synced and visible
-          get().fetchSessions()
-        })
+          await get().fetchSessions()
+        } catch (e) {
+          console.error('Publish session exception:', e)
+        }
+      })()
     }
   },
 

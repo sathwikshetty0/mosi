@@ -4,7 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { 
-  LayoutDashboard, Users, Calendar, Settings,
+  LayoutDashboard, Users, User, Calendar, Settings,
   FileText, CheckSquare, Mic,
   Eye, BarChart2, ChevronLeft, ChevronRight, Menu, X, PlusCircle, Sparkles,
   ShieldCheck, LogOut
@@ -16,6 +16,7 @@ import { useAuth } from '@/lib/auth-context'
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Repository', href: '/interviews', icon: FileText },
+  { name: 'My Profile', href: '/profile', icon: User },
   { name: 'Chronology', href: '/schedule', icon: Calendar },
 ]
 
@@ -237,22 +238,22 @@ export function Sidebar() {
         {/* ⚡ FOOTER ACTIONS */}
         <div className="p-4 sm:p-6 border-t-2 border-slate-50 space-y-4 safe-area-bottom">
            {/* Profile Card — always show on mobile, show on desktop if not collapsed */}
-           <div className={cn("flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100", isSidebarCollapsed && "hidden lg:flex justify-center p-2")}>
-              <div className="w-10 h-10 bg-slate-700 rounded-xl flex items-center justify-center text-white text-sm font-black shadow-lg shrink-0">
+           <Link href="/profile" className={cn("flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-blue-50/50 hover:border-blue-100 transition-all group", isSidebarCollapsed && "hidden lg:flex justify-center p-2")}>
+              <div className="w-10 h-10 bg-slate-700 rounded-xl flex items-center justify-center text-white text-sm font-black shadow-lg shrink-0 group-hover:bg-blue-600 transition-colors">
                 {profile?.full_name?.[0] || 'U'}
               </div>
               {!isSidebarCollapsed && (
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-slate-700 truncate">{profile?.full_name || 'User'}</p>
+                  <p className="text-sm font-bold text-slate-700 truncate group-hover:text-blue-600 transition-colors">{profile?.full_name || 'User'}</p>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate">{profile?.role || 'Researcher'}</p>
                 </div>
               )}
-              {/* Force visible on mobile even if collapsed state is true (shouldn't really happen on mobile but for safety) */}
+              {/* Force visible on mobile */}
               <div className="lg:hidden flex-1 min-w-0">
                   <p className="text-sm font-bold text-slate-700 truncate">{profile?.full_name || 'User'}</p>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate">{profile?.role || 'Researcher'}</p>
               </div>
-           </div>
+           </Link>
 
            {/* Only show New Stakeholder for non-admin OR admin not on /admin */}
            {(!isAdmin || pathname !== '/admin') && !isSidebarCollapsed && (

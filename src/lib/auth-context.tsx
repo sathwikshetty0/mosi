@@ -47,8 +47,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const { data: { subscription } } = supabase!.auth.onAuthStateChange(
       async (event: any, session: any) => {
-        const { setSessions } = useMosiStore.getState()
-        setSessions([]) // PURGE ON RE-AUTH OR LOGOUT
+        const { setSessions, fetchSessions } = useMosiStore.getState()
+        
+        // Only purge sessions on explicit sign-out, NOT on token refresh
+        if (event === 'SIGNED_OUT') {
+          setSessions([])
+        }
 
         setUser(session?.user ?? null)
         if (session?.user) {
@@ -58,6 +62,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             .eq('id', session.user.id)
             .single()
           setProfile(profile)
+          
+          // Re-fetch sessions on sign-in to ensure fresh data
+          if (event === 'SIGNED_IN') {
+            fetchSessions()
+          }
         } else {
           setProfile(null)
         }

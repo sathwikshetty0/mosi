@@ -11,9 +11,26 @@ import { cn } from '@/lib/utils'
 
 export default function Home() {
   const { sessions, fetchSessions, deleteSession } = useMosiStore()
+  const [isLoading, setIsLoading] = React.useState(true)
 
   React.useEffect(() => {
-    fetchSessions()
+    let mounted = true
+    const load = async () => {
+      setIsLoading(true)
+      await fetchSessions()
+      
+      // Retry once after a brief delay if no sessions are found
+      // (handles race condition with auth token refresh)
+      const currentSessions = useMosiStore.getState().sessions
+      if (currentSessions.length === 0 && mounted) {
+        await new Promise(r => setTimeout(r, 1500))
+        if (mounted) await fetchSessions()
+      }
+      
+      if (mounted) setIsLoading(false)
+    }
+    load()
+    return () => { mounted = false }
   }, [fetchSessions])
 
   const totalInterviews = sessions.length
@@ -27,6 +44,15 @@ export default function Home() {
     { title: 'Stakeholders', value: String(uniqueStakeholders), icon: Users },
     { title: 'In Review', value: String(pendingApprovals), icon: Activity }
   ]
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in">
+        <div className="w-10 h-10 border-4 border-slate-700 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Loading sessions...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8 sm:space-y-10 pb-16 animate-in fade-in duration-700 max-w-6xl mx-auto">

@@ -118,15 +118,30 @@ function ReviewContent() {
     }
   }
 
-  const toggleAudio = (timestamp?: number) => {
+  const toggleAudio = async (timestamp?: number) => {
     if (audioRef.current) {
-      if (timestamp !== undefined) {
-        audioRef.current.currentTime = timestamp
-        audioRef.current.play()
-        setIsPlaying(true)
-      } else {
-        if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); }
-        else { audioRef.current.play(); setIsPlaying(true); }
+      try {
+        if (timestamp !== undefined) {
+          audioRef.current.currentTime = timestamp
+          const playPromise = audioRef.current.play()
+          if (playPromise !== undefined) {
+             playPromise.catch(() => { /* handle abort silently */ })
+          }
+          setIsPlaying(true)
+        } else {
+          if (isPlaying) {
+            audioRef.current.pause()
+            setIsPlaying(false)
+          } else {
+            const playPromise = audioRef.current.play()
+            if (playPromise !== undefined) {
+               await playPromise.catch(() => {})
+            }
+            setIsPlaying(true)
+          }
+        }
+      } catch (e) {
+        console.warn('Audio playback interrupted or unavailable.')
       }
     }
   }
