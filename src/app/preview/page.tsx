@@ -4,13 +4,15 @@ import * as React from 'react'
 import {
   FileCheck, Globe, Clock, BarChart2,
   ChevronDown, ChevronUp, Link as LinkIcon, File as FileIcon, Check, X,
-  MapPin, Briefcase, Headphones, FileText, Share, Zap, Sparkles, ArrowLeft, Mail, ChevronRight, Edit
+  MapPin, Briefcase, Headphones, FileText, Share, Zap, Sparkles, ArrowLeft, Mail, ChevronRight, Edit,
+  Image as ImageIcon, Play
 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useMosiStore, CEEDTag } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const tagColors: Record<CEEDTag, { text: string; border: string; bg: string; icon: string }> = {
   Core: { text: 'text-blue-600', border: 'border-blue-100', bg: 'bg-blue-50/50', icon: 'text-blue-400' },
@@ -76,6 +78,7 @@ function PreviewContent() {
   const [approved, setApproved] = React.useState(session?.status === 'Published')
   const [expandedId, setExpandedId] = React.useState<string | null>(null)
   const [isCopied, setIsCopied] = React.useState(false)
+  const [selectedAsset, setSelectedAsset] = React.useState<any>(null)
 
   const handleShare = () => {
     const url = `${window.location.origin}/preview?id=${session?.id}`
@@ -429,7 +432,84 @@ function PreviewContent() {
           </div>
         </section>
 
+        {/* GLOBAL EVIDENCE GALLERY */}
+        {session.evidence.length > 0 && (
+          <section className="space-y-6 sm:space-y-8 animate-in slide-in-from-bottom-4 duration-700">
+            <h3 className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2 px-1 sm:px-2">
+              <ImageIcon className="w-4 h-4 text-blue-500" /> Session Artifacts & Evidence
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+              {session.evidence.map((ev, i) => (
+                <div 
+                  key={i} 
+                  onClick={() => (ev.type === 'image' || ev.type === 'video') ? setSelectedAsset(ev) : window.open(ev.url, '_blank')}
+                  className="group relative aspect-square bg-slate-50 rounded-2xl sm:rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl hover:border-blue-200 transition-all duration-500 cursor-pointer"
+                >
+                  {ev.type === 'image' ? (
+                    <img src={ev.url} alt={ev.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                  ) : ev.type === 'video' ? (
+                    <div className="relative w-full h-full">
+                       <video src={ev.url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                       <div className="absolute inset-0 flex items-center justify-center">
+                          <Play className="w-8 h-8 text-white/50 group-hover:text-white transition-colors" />
+                       </div>
+                    </div>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-3 p-6">
+                      <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
+                        {ev.type === 'link' ? <LinkIcon className="w-6 h-6 text-blue-500" /> : <FileIcon className="w-6 h-6 text-emerald-500" />}
+                      </div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center truncate w-full px-2">{ev.title || 'Asset'}</p>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center gap-2 backdrop-blur-[2px]">
+                     <span className="text-white text-[10px] font-black uppercase tracking-[0.2em] translate-y-2 group-hover:translate-y-0 transition-transform">View Archive</span>
+                     <div className="w-8 h-1 bg-blue-500 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
       </div>
+
+      {/* LIGHTBOX MODAL */}
+      <AnimatePresence>
+        {selectedAsset && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-10 bg-slate-900/95 backdrop-blur-xl"
+            onClick={() => setSelectedAsset(null)}
+          >
+            <button 
+              onClick={() => setSelectedAsset(null)}
+              className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-all z-10"
+            >
+              <X className="w-6 h-6 shadow-sm" />
+            </button>
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative max-w-5xl w-full max-h-full flex items-center justify-center"
+              onClick={e => e.stopPropagation()}
+            >
+              {selectedAsset.type === 'image' ? (
+                <img src={selectedAsset.url} className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl border border-white/10" alt="" />
+              ) : selectedAsset.type === 'video' ? (
+                <video src={selectedAsset.url} controls autoPlay className="max-w-full max-h-[80vh] rounded-2xl shadow-2xl border border-white/10" />
+              ) : null}
+              <div className="absolute -bottom-16 left-0 right-0 text-center animate-in fade-in slide-in-from-bottom-2 duration-500 delay-300">
+                 <p className="text-white text-sm font-bold uppercase tracking-[0.2em]">{selectedAsset.title || 'Session Artifact'}</p>
+                 <a href={selectedAsset.url} download className="text-blue-400 text-[10px] font-black uppercase tracking-widest hover:text-blue-300 mt-2 inline-block border-b border-blue-400/30 pb-0.5">Download High-Res Original</a>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   )

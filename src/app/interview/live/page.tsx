@@ -10,6 +10,7 @@ import {
 import { useMosiStore, CEEDTag, formatDuration } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const quadrants: { id: CEEDTag; questions: string[] }[] = [
   {
@@ -76,6 +77,7 @@ export default function LiveInterviewPage() {
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const [activeEvidenceType, setActiveEvidenceType] = React.useState<'image' | 'video' | 'link' | 'file' | null>(null)
   const [isUploading, setIsUploading] = React.useState(false)
+  const [isCaptured, setIsCaptured] = React.useState(false)
 
   React.useEffect(() => {
     async function setupMedia() {
@@ -144,6 +146,8 @@ export default function LiveInterviewPage() {
       score: { clarity: 1, awareness: 1, attempts: 1, intensity: 1 },
       notes: '', evidence: [], status: 'Pending'
     })
+    setIsCaptured(true)
+    setTimeout(() => setIsCaptured(false), 2000)
   }
 
   const handleStopInterview = () => {
@@ -159,12 +163,23 @@ export default function LiveInterviewPage() {
   }
 
   const handleCaptureEvidence = (type: 'image' | 'video' | 'link' | 'file') => {
+    if (!currentSession) {
+      alert('Please start a session first.')
+      setShowAssetMenu(false)
+      return
+    }
+
     if (type === 'link') {
       const url = prompt('Enter URL:', 'https://')
       if (url) addEvidence({ type, url, timestamp: recordingSeconds, title: 'Link' })
     } else {
       setActiveEvidenceType(type)
-      fileInputRef.current?.click()
+      setTimeout(() => {
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '' // Clear previous selection
+          fileInputRef.current.click()
+        }
+      }, 100)
     }
     setShowAssetMenu(false)
   }
@@ -213,7 +228,7 @@ export default function LiveInterviewPage() {
 
   return (
     <div className="max-w-2xl mx-auto flex flex-col min-h-[calc(100dvh-8rem)] relative animate-in fade-in duration-700 px-4 sm:px-6">
-      <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
+      <input type="file" ref={fileInputRef} className="absolute inset-0 w-0 h-0 opacity-0 pointer-events-none" onChange={handleFileChange} />
 
       {/* 2X2 CEED QUADRANT SELECTOR */}
       <header className="py-6 sm:py-10 space-y-4 sm:space-y-6 shrink-0 border-b-2 border-slate-50">
@@ -224,8 +239,13 @@ export default function LiveInterviewPage() {
           </div>
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="flex items-center gap-2">
-              <div className={cn("w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full", isRecording && !isPaused ? "bg-red-500 animate-pulse" : "bg-slate-300")} />
-              <span className="text-xs sm:text-sm font-mono font-black text-slate-800 tracking-wider bg-slate-50 border border-slate-100 px-3 sm:px-4 py-1.5 rounded-xl shadow-inner">{formatDuration(recordingSeconds)}</span>
+              {isRecording && !isPaused && (
+                <div className="flex items-center gap-1 bg-red-50 px-2 py-1 rounded-md border border-red-100 scale-90 sm:scale-100">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-[8px] font-black text-red-600 uppercase tracking-widest">Live REC</span>
+                </div>
+              )}
+              <span className="text-xs sm:text-sm font-mono font-black text-slate-800 tracking-wider bg-white border border-slate-200 px-3 sm:px-4 py-1.5 rounded-xl shadow-sm">{formatDuration(recordingSeconds)}</span>
             </div>
           </div>
         </div>
@@ -281,7 +301,7 @@ export default function LiveInterviewPage() {
           {questions.map((q, i) => i !== questionIndex && (
             <button 
               key={i}
-              onClick={() => setQuestionIndex(i)}
+              onClick={() => { setQuestionIndex(i); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               className={cn(
                 "w-full text-left px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border transition-all flex items-center justify-between group",
                 answeredQuestions.has(q) 
@@ -306,14 +326,31 @@ export default function LiveInterviewPage() {
 
       {/* BOTTOM CONTROLS */}
       <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-8 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent pointer-events-none z-20 safe-area-bottom">
-        <div className="max-w-2xl mx-auto flex flex-col gap-2 sm:gap-3 items-center pointer-events-auto">
+        
+        {/* CAPTURE TOAST */}
+        <AnimatePresence>
+          {isCaptured && (
+            <motion.div 
+               initial={{ opacity: 0, y: 20 }} 
+               animate={{ opacity: 1, y: 0 }} 
+               exit={{ opacity: 0, y: -20 }}
+               className="pointer-events-none mb-4 mx-auto w-fit"
+            >
+              <div className="bg-emerald-600 text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center gap-2">
+                 <CheckCircle2 className="w-3 h-3" /> Entry Captured
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="max-w-2xl mx-auto flex flex-col gap-3 sm:gap-4 items-center pointer-events-auto">
           
           {/* UTILITY ROW */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
             {isRecording && (
               <button 
                 onClick={handlePauseInterview} 
-                className="h-9 px-4 rounded-full border border-slate-200 bg-white text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-700 hover:border-slate-300 transition-all shadow-sm"
+                className="h-11 px-5 flex-1 sm:flex-none rounded-2xl border-2 border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500 active:scale-95 transition-all shadow-sm"
               >
                 {isPaused ? 'Resume' : 'Pause'}
               </button>
@@ -322,48 +359,47 @@ export default function LiveInterviewPage() {
               onClick={handleQuickCapture} 
               disabled={!isRecording || isUploading}
               className={cn(
-                "h-9 px-4 rounded-full border text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-sm flex items-center gap-2",
-                (isRecording && !isUploading) ? "border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100" : "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed"
+                "h-11 px-8 flex-[2] sm:flex-none rounded-2xl border-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-lg flex items-center justify-center gap-3 active:scale-90",
+                isCaptured ? "bg-emerald-600 border-emerald-600 text-white" :
+                (isRecording && !isUploading) ? "border-slate-800 bg-slate-800 text-white hover:bg-slate-700" : "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed"
               )}
             >
-              <Activity className="w-4 h-4" /> Capture Log
+              <Activity className={cn("w-4 h-4", isCaptured && "animate-bounce")} /> 
+              {isCaptured ? 'Captured ✓' : 'Capture Log'}
             </button>
-            {isUploading && (
-              <span className="text-[9px] font-black text-blue-500 animate-pulse uppercase tracking-widest">Uploading Media...</span>
-            )}
           </div>
 
           {/* MAIN RECORDER BAR */}
-          <div className="w-full h-14 sm:h-16 bg-white rounded-2xl sm:rounded-full border border-slate-200 shadow-2xl flex items-center px-3 sm:px-4 gap-3 sm:gap-4 overflow-hidden">
+          <div className="w-full h-18 bg-white/90 backdrop-blur-xl rounded-[2.5rem] sm:rounded-full border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex items-center px-4 gap-4 ring-1 ring-white/50 relative">
             
             {/* START / STOP ACTION */}
             {!isRecording ? (
               <button 
                 onClick={startRecording}
-                className="w-10 h-10 bg-slate-700 text-white rounded-full flex items-center justify-center hover:bg-slate-800 active:scale-90 transition-all shadow-lg"
+                className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 active:scale-90 transition-all shadow-xl shadow-blue-100 shrink-0"
               >
-                <Play className="w-5 h-5 fill-current" />
+                <Play className="w-6 h-6 fill-current ml-1" />
               </button>
             ) : (
               <button 
                 onClick={handleStopInterview}
-                className="w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 active:scale-90 transition-all shadow-lg animate-pulse"
+                className="w-12 h-12 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 active:scale-90 transition-all shadow-xl shadow-red-100 shrink-0"
               >
                 <Square className="w-5 h-5 fill-current" />
               </button>
             )}
 
             {/* STATUS & TIME */}
-            <div className="flex-1 flex flex-col justify-center">
+            <div className="flex-1 flex flex-col justify-center min-w-0">
               <div className="flex items-center gap-2">
-                <div className={cn("w-2 h-2 rounded-full", isRecording && !isPaused ? "bg-red-500 animate-pulse" : "bg-slate-200")} />
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                  {!isRecording ? 'Session Ready' : isPaused ? 'Paused' : 'Recording Live'}
+                <div className={cn("w-2 h-2 rounded-full", isRecording && !isPaused ? "bg-red-500 animate-pulse" : "bg-slate-300")} />
+                <span className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-800 truncate">
+                  {!isRecording ? 'Session Ready' : isPaused ? 'Paused' : 'Recording'}
                 </span>
               </div>
               {isRecording && (
-                <span className="text-xs font-mono font-bold text-slate-400 mt-0.5 tracking-tight">
-                  T-PLUS {formatDuration(recordingSeconds)}
+                <span className="text-[10px] font-mono font-black text-slate-400 mt-0.5 tracking-wider">
+                  ELAPSED: {formatDuration(recordingSeconds)}
                 </span>
               )}
             </div>
@@ -372,34 +408,53 @@ export default function LiveInterviewPage() {
             <div className="relative">
               <button 
                 onClick={() => setShowAssetMenu(!showAssetMenu)}
-                disabled={!isRecording}
                 className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center transition-all",
-                  showAssetMenu ? "bg-slate-700 text-white rotate-45" : 
-                  isRecording ? "bg-slate-100 text-slate-500 hover:bg-slate-200" : "bg-slate-50 text-slate-200 cursor-not-allowed"
+                  "w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-sm border-2 shrink-0",
+                  showAssetMenu ? "bg-slate-900 border-slate-900 text-white rotate-45" : 
+                  "bg-slate-50 border-slate-100 text-slate-600 hover:bg-slate-100"
                 )}
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-6 h-6" />
               </button>
-              {showAssetMenu && (
-                <div className="absolute bottom-16 right-0 bg-white border border-slate-200 p-2 rounded-2xl shadow-2xl w-48 animate-in slide-in-from-bottom-4">
-                  {[
-                    { id: 'image', icon: ImageIcon, label: 'Capture Image' },
-                    { id: 'video', icon: Video, label: 'Capture Video' },
-                    { id: 'link', icon: LinkIcon, label: 'Attach Link' },
-                    { id: 'file', icon: FileIcon, label: 'Attach File' },
-                  ].map(item => (
-                    <button 
-                      key={item.id}
-                      onClick={() => handleCaptureEvidence(item.id as any)}
-                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 text-left transition-all text-xs font-bold uppercase tracking-widest text-slate-600 hover:text-slate-700"
+
+              <AnimatePresence>
+                {showAssetMenu && (
+                  <>
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[25] pointer-events-auto sm:hidden"
+                      onClick={() => setShowAssetMenu(false)}
+                    />
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute bottom-16 right-0 bg-white border border-slate-100 p-2 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.2)] w-56 z-[30] pointer-events-auto overflow-hidden"
                     >
-                      <item.icon className="w-4 h-4 text-slate-400" />
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+                      <div className="px-3 py-2 border-b border-slate-50 mb-1">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Attach Insight Asset</p>
+                      </div>
+                      {[
+                        { id: 'image', icon: ImageIcon, label: 'Capture Image' },
+                        { id: 'video', icon: Video, label: 'Capture Video' },
+                        { id: 'link', icon: LinkIcon, label: 'Attach Link' },
+                        { id: 'file', icon: FileIcon, label: 'Attach File' },
+                      ].map(item => (
+                        <button 
+                          key={item.id}
+                          onClick={() => handleCaptureEvidence(item.id as any)}
+                          className="w-full flex items-center gap-3 px-4 py-4 sm:py-3 rounded-2xl hover:bg-blue-50 text-left transition-all text-xs font-bold uppercase tracking-widest text-slate-600 hover:text-blue-600 group"
+                        >
+                          <item.icon className="w-5 h-5 sm:w-4 sm:h-4 text-slate-400 group-hover:text-blue-500" />
+                          {item.label}
+                        </button>
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>

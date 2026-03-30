@@ -93,14 +93,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
+      // Clear local state first for instant UI feedback
+      setUser(null)
+      setProfile(null)
+
       if (supabase) {
         await supabase.auth.signOut()
       }
       
       // Call Server Action to securely wipe cookies and redirect
       await logout()
-    } catch (e) {
-      // If server action fails or throws (redirect), fall back to manual reload
+    } catch (e: any) {
+      // If it's a redirect error (standard for Next.js server actions), it's a success!
+      if (e?.digest?.startsWith('NEXT_REDIRECT')) return;
+      
+      console.error('Logout error:', e)
       window.location.href = '/login'
     }
   }

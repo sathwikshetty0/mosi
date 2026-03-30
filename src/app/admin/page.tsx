@@ -8,7 +8,7 @@ import {
   Zap, Activity, UserCheck, Inbox,
   BarChart3, Clock, TrendingUp, Globe, CheckCircle2, Trash2,
   ArrowLeft, ArrowRight, ChevronDown, ChevronUp, FileText, Briefcase, MapPin,
-  Headphones, Sparkles, Check, X, Share, ChevronRight, UserPlus, Fingerprint, Mail
+  Headphones, Sparkles, Check, X, Share, ChevronRight, UserPlus, Fingerprint, Mail, Image as ImageIcon, Link as LinkIcon, Play
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -62,6 +62,7 @@ function SessionDetailPanel({ session, profiles, onClose, onPublish, onDelete, o
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [isAssigning, setIsAssigning] = useState(false)
+  const [selectedAsset, setSelectedAsset] = useState<any>(null)
   
   const stakeholder = session.stakeholders
   const opportunities = session.opportunities || []
@@ -76,6 +77,43 @@ function SessionDetailPanel({ session, profiles, onClose, onPublish, onDelete, o
       exit={{ opacity: 0, x: 20 }}
       className="space-y-6 sm:space-y-8"
     >
+      {/* LIGHTBOX MODAL */}
+      <AnimatePresence>
+        {selectedAsset && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-10 bg-slate-900/95 backdrop-blur-xl"
+            onClick={() => setSelectedAsset(null)}
+          >
+            <button 
+              onClick={() => setSelectedAsset(null)}
+              className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-all z-10"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative max-w-5xl w-full max-h-full flex items-center justify-center"
+              onClick={e => e.stopPropagation()}
+            >
+              {selectedAsset.type === 'image' ? (
+                <img src={selectedAsset.url} className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl border border-white/10" alt="" />
+              ) : selectedAsset.type === 'video' ? (
+                <video src={selectedAsset.url} controls autoPlay className="max-w-full max-h-[80vh] rounded-2xl shadow-2xl border border-white/10" />
+              ) : null}
+              <div className="absolute -bottom-16 left-0 right-0 text-center animate-in fade-in slide-in-from-bottom-2 duration-500 delay-300">
+                 <p className="text-white text-sm font-bold uppercase tracking-[0.2em]">{selectedAsset.title || 'Session Artifact'}</p>
+                 <a href={selectedAsset.url} download className="text-blue-400 text-[10px] font-black uppercase tracking-widest hover:text-blue-300 mt-2 inline-block border-b border-blue-400/30 pb-0.5">Download High-Res Original</a>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Back + Header */}
       <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
         <button onClick={onClose} className="w-10 h-10 sm:w-11 sm:h-11 border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-white transition-all shrink-0 shadow-sm mt-1">
@@ -181,6 +219,41 @@ function SessionDetailPanel({ session, profiles, onClose, onPublish, onDelete, o
         </section>
       )}
 
+      {/* Evidence & Assets */}
+      {session.evidence && session.evidence.length > 0 && (
+        <section className="space-y-4">
+          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+            <ImageIcon className="w-4 h-4 text-emerald-500" /> Collected Evidence
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {session.evidence.map((ev, i) => (
+              <div 
+                key={i} 
+                onClick={() => (ev.type === 'image' || ev.type === 'video') ? setSelectedAsset(ev) : window.open(ev.url, '_blank')}
+                className="group relative aspect-square bg-slate-50 border border-slate-100 rounded-2xl overflow-hidden hover:border-blue-300 transition-all shadow-sm cursor-pointer"
+              >
+                {ev.type === 'image' ? (
+                  <img src={ev.url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
+                ) : ev.type === 'video' ? (
+                  <div className="w-full h-full relative">
+                    <video src={ev.url} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-slate-900/20"><Play className="w-8 h-8 text-white scale-75 group-hover:scale-100 transition-transform" /></div>
+                  </div>
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center p-4 gap-2">
+                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-slate-100">
+                        {ev.type === 'link' ? <LinkIcon className="w-5 h-5 text-blue-500" /> : <FileText className="w-5 h-5 text-emerald-500" />}
+                     </div>
+                     <span className="text-[8px] font-black text-slate-400 uppercase truncate w-full text-center px-1">{ev.title || 'Asset'}</span>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Opportunities / Insights */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
@@ -246,7 +319,9 @@ function AdminDashboardContent() {
   // Sync tab with URL param
   useEffect(() => {
     if (urlTab && ['overview', 'sessions', 'users', 'stakeholders'].includes(urlTab)) {
-      setTab(urlTab)
+      setTab(urlTab as Tab)
+    } else if (!urlTab) {
+      setTab('overview')
     }
   }, [urlTab])
 
