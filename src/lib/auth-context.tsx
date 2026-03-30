@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from './supabase'
 import { User } from '@supabase/supabase-js'
 import { useMosiStore } from './store'
+import { logout } from '@/app/login/actions'
 
 interface AuthContextType {
   user: User | null
@@ -95,17 +96,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (supabase) {
         await supabase.auth.signOut()
       }
-    } catch (e) {
-      console.error('Local signout error:', e)
-    }
-    
-    // Call Server Action to securely wipe cookies and redirect
-    const { logout } = await import('@/app/login/actions')
-    try {
+      
+      // Call Server Action to securely wipe cookies and redirect
       await logout()
     } catch (e) {
-      // Ignore: redirect() throws internally
-    } finally {
+      // If server action fails or throws (redirect), fall back to manual reload
       window.location.href = '/login'
     }
   }

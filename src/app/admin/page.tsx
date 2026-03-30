@@ -2,12 +2,13 @@
 
 import { useEffect, useState, useMemo, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { 
   Users, Video, Search, ShieldCheck, 
   Zap, Activity, UserCheck, Inbox,
   BarChart3, Clock, TrendingUp, Globe, CheckCircle2, Trash2,
   ArrowLeft, ArrowRight, ChevronDown, ChevronUp, FileText, Briefcase, MapPin,
-  Headphones, Sparkles, Check, X, Share, ChevronRight, UserPlus, Fingerprint
+  Headphones, Sparkles, Check, X, Share, ChevronRight, UserPlus, Fingerprint, Mail
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -20,6 +21,7 @@ interface SessionData {
   summary?: string
   user_id?: string
   recording_url?: string
+  recordingUrl?: string // Add both just in case
   stakeholders: { id?: string; name: string; role: string; company: string; sector: string; employees?: string; geography?: string; domain?: string; email?: string } | null
   opportunities: { id: string; tag: string; title: string; description?: string; paid?: boolean; duration?: string; skills?: string; toolset?: string; engagementType?: string; status?: string }[]
   evidence: { id: string; type?: string; url?: string; title?: string; opportunity_id?: string }[]
@@ -65,7 +67,7 @@ function SessionDetailPanel({ session, profiles, onClose, onPublish, onDelete, o
   const opportunities = session.opportunities || []
   const cfg = statusConfig[session.status] || statusConfig.Review
   const isPublished = session.status === 'Published'
-  const currentResearcher = profiles.find(p => p.id === session.user_id)
+  const currentUser = profiles.find(p => p.id === session.user_id)
 
   return (
     <motion.div 
@@ -85,12 +87,12 @@ function SessionDetailPanel({ session, profiles, onClose, onPublish, onDelete, o
               {cfg.label}
             </span>
             <span className="text-[11px] text-slate-400 font-medium">{session.date}</span>
-            {currentResearcher && (
+            {currentUser && (
               <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100 uppercase tracking-widest flex items-center gap-1.5">
-                <UserCheck className="w-3 h-3" /> {currentResearcher.full_name}
+                <UserCheck className="w-3 h-3" /> {currentUser.full_name}
               </span>
             )}
-            {!currentResearcher && (
+            {!currentUser && (
               <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-100 uppercase tracking-widest">Unassigned</span>
             )}
           </div>
@@ -119,7 +121,7 @@ function SessionDetailPanel({ session, profiles, onClose, onPublish, onDelete, o
       )}
 
       {/* Action Buttons */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap items-center">
         {!isPublished && (
           <button 
             onClick={() => onPublish(session.id)}
@@ -133,6 +135,18 @@ function SessionDetailPanel({ session, profiles, onClose, onPublish, onDelete, o
             <CheckCircle2 className="w-4 h-4" /> Published
           </div>
         )}
+        
+        <button 
+          onClick={() => {
+            const url = `${window.location.origin}/preview?id=${session.id}`
+            navigator.clipboard.writeText(url)
+            alert('Share link copied to clipboard!')
+          }}
+          className="h-11 px-6 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all flex items-center gap-2"
+        >
+          <Share className="w-4 h-4" /> Share
+        </button>
+
         <button 
           onClick={() => { if (confirm('Delete this session permanently?')) onDelete(session.id) }}
           className="h-11 px-5 bg-white border border-slate-200 text-slate-500 rounded-xl text-sm font-bold hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition-all flex items-center gap-2"
@@ -140,6 +154,18 @@ function SessionDetailPanel({ session, profiles, onClose, onPublish, onDelete, o
           <Trash2 className="w-4 h-4" /> Delete
         </button>
       </div>
+
+      {/* Recording Player */}
+      {(session.recording_url || session.recordingUrl) && (
+        <section className="space-y-4">
+          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+            <Headphones className="w-4 h-4 text-blue-500" /> Session Recording
+          </h3>
+          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6">
+             <audio src={session.recording_url || session.recordingUrl} controls className="w-full" />
+          </div>
+        </section>
+      )}
 
       {/* Executive Summary */}
       {session.summary && (
@@ -333,7 +359,7 @@ function AdminDashboardContent() {
   }
 
   const tabs: { id: Tab; label: string; shortLabel: string }[] = [
-    { id: 'overview', label: 'Overview', shortLabel: 'Overview' },
+    { id: 'overview', label: 'Dashboard', shortLabel: 'Dashboard' },
     { id: 'sessions', label: 'All Sessions', shortLabel: 'Sessions' },
     { id: 'stakeholders', label: 'Stakeholders', shortLabel: 'People' },
     { id: 'users', label: 'Users', shortLabel: 'Users' },
@@ -399,9 +425,9 @@ function AdminDashboardContent() {
       <div className="bg-white border-b border-slate-100 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 sticky top-0 z-10">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">
+            <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
               {selectedSession ? `Session: ${selectedSession.stakeholders?.name || 'Detail'}` :
-               tab === 'overview' && 'Platform Overview'}
+               tab === 'overview' && 'Admin Dashboard'}
               {!selectedSession && tab === 'sessions' && 'All Sessions'}
             </h1>
             <p className="text-[10px] sm:text-[11px] text-slate-400 font-semibold uppercase tracking-[0.15em] mt-0.5">
@@ -411,19 +437,8 @@ function AdminDashboardContent() {
           </div>
 
           {!selectedSession && (
-            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto no-scrollbar -mx-1 sm:mx-0">
-              {tabs.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => { setTab(t.id); setSelectedSessionId(null); setSelectedIds([]) }}
-                  className={cn(
-                    'px-3 sm:px-5 py-2 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-widest transition-all whitespace-nowrap shrink-0',
-                    tab === t.id ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-700'
-                  )}
-                >
-                  {t.shortLabel}
-                </button>
-              ))}
+            <div className="flex items-center gap-1 -mx-1 sm:mx-0">
+              {/* Tabs moved to sidebar */}
             </div>
           )}
         </div>
@@ -449,57 +464,114 @@ function AdminDashboardContent() {
 
             {/* ─── OVERVIEW ─── */}
             {tab === 'overview' && (
-              <motion.div key="overview" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6 sm:space-y-8">
+              <motion.div key="overview" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6 sm:space-y-10">
+                
+                {/* 📊 KPI GRID */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
                   {kpis.map(k => (
-                    <div key={k.label} className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-6 hover:shadow-sm hover:border-slate-200 transition-all group">
-                      <div className={cn('w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center mb-3 sm:mb-4 border', k.bg, k.border)}>
-                        <k.icon className={cn('w-3.5 h-3.5 sm:w-4 sm:h-4', k.color)} />
+                    <div key={k.label} className="bg-white border border-slate-100 rounded-3xl p-4 sm:p-6 hover:shadow-xl hover:border-blue-100 transition-all group overflow-hidden relative">
+                      <div className={cn('w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center mb-4 border transition-transform group-hover:scale-110', k.bg, k.border)}>
+                        <k.icon className={cn('w-4 h-4 sm:w-5 sm:h-5', k.color)} />
                       </div>
-                      <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{k.label}</p>
-                      <h3 className="text-xl sm:text-2xl font-black text-slate-800">{k.val}</h3>
+                      <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{k.label}</p>
+                      <h3 className="text-2xl sm:text-3xl font-black text-slate-900">{k.val}</h3>
+                      <div className={cn("absolute -right-4 -bottom-4 w-24 h-24 opacity-[0.03] group-hover:scale-125 transition-transform", k.color.replace('text-', 'bg-'))} />
                     </div>
                   ))}
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                   {/* Unassigned Summary */}
-                   {sessions.filter(s => !s.user_id).length > 0 && (
-                    <div className="bg-white border border-rose-100 bg-rose-50/20 rounded-2xl p-6 sm:p-10 space-y-6">
-                        <div className="space-y-2">
-                           <p className="text-[10px] font-bold text-rose-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                              <Fingerprint className="w-4 h-4" /> Data Integrity
-                           </p>
-                           <h2 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-                              {sessions.filter(s => !s.user_id).length} <span className="text-slate-400">/ {sessions.length}</span>
-                           </h2>
-                           <p className="text-sm text-slate-500 font-medium">Unassigned sessions detected. Link them to researchers to populate their individual dashboards.</p>
-                        </div>
-                        <button onClick={() => { setTab('sessions'); setStatusFilter('all'); setSearch('') }} className="h-11 px-8 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all shadow-lg active:scale-95 flex items-center gap-2">
-                           Fix Unassigned Data <ArrowRight className="w-4 h-4 text-blue-400" />
-                        </button>
-                    </div>
-                   )}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
+                   
+                   {/* 🛡️ DATA STATUS (4 cols) */}
+                   <div className="lg:col-span-5 space-y-6 sm:space-y-8">
+                     {sessions.filter(s => !s.user_id).length > 0 && (
+                      <div className="bg-white border border-rose-100 bg-rose-50/20 rounded-[2rem] p-6 sm:p-10 space-y-6 relative overflow-hidden group">
+                          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+                             <Fingerprint className="w-20 h-20 text-rose-500" />
+                          </div>
+                          <div className="space-y-2 relative">
+                             <p className="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                                <Activity className="w-4 h-4" /> Data Integrity
+                             </p>
+                             <h2 className="text-3xl font-black text-slate-900 flex items-center gap-3">
+                                {sessions.filter(s => !s.user_id).length} <span className="text-slate-300 font-medium">/ {sessions.length}</span>
+                             </h2>
+                             <p className="text-sm text-slate-500 font-semibold leading-relaxed max-w-[240px]">Unassigned sessions detected. Link them to users for visibility.</p>
+                          </div>
+                          <button onClick={() => { setTab('sessions'); setStatusFilter('all'); setSearch('') }} className="h-12 px-8 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all shadow-xl active:scale-95 flex items-center gap-2">
+                             Review & Assign <ArrowRight className="w-4 h-4 text-blue-400" />
+                          </button>
+                      </div>
+                     )}
 
-                  {/* Top Researchers */}
-                  <div className="bg-white border border-slate-100 rounded-2xl p-5 sm:p-8 space-y-6">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2">
-                        <UserCheck className="w-4 h-4 text-blue-500" /> Professional Load
-                      </h2>
+                     <div className="bg-white border border-slate-100 rounded-[2rem] p-6 sm:p-10 space-y-8">
+                        <div className="flex items-center justify-between">
+                           <h2 className="text-base font-black text-slate-900 flex items-center gap-2 uppercase tracking-tight">
+                             <BarChart3 className="w-5 h-5 text-blue-600" /> Platform Flow
+                           </h2>
+                        </div>
+                        <div className="space-y-6">
+                           {[
+                             { label: 'Published Ratio', val: stats.publishRate, color: 'bg-emerald-500', bg: 'bg-emerald-50' },
+                             { label: 'Review Velocity', val: Math.round((stats.inReview / Math.max(stats.total, 1)) * 100), color: 'bg-amber-500', bg: 'bg-amber-50' },
+                             { label: 'Session Saturation', val: Math.round((stats.total / 100) * 100), color: 'bg-blue-600', bg: 'bg-blue-50' },
+                           ].map(item => (
+                             <div key={item.label} className="space-y-2">
+                               <div className="flex justify-between items-center px-1">
+                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</span>
+                                 <span className="text-xs font-black text-slate-700">{item.val}%</span>
+                               </div>
+                               <div className={cn("h-3 rounded-full overflow-hidden p-0.5", item.bg)}>
+                                  <motion.div initial={{ width: 0 }} animate={{ width: `${item.val}%` }} className={cn("h-full rounded-full shadow-sm", item.color)} />
+                               </div>
+                             </div>
+                           ))}
+                        </div>
+                     </div>
+                   </div>
+
+                  {/* 👥 USER ACTIVITY (7 cols) */}
+                  <div className="lg:col-span-7 bg-white border border-slate-100 rounded-[2rem] p-6 sm:p-10 space-y-10">
+                    <div className="flex items-center justify-between border-b border-slate-50 pb-6">
+                      <div className="space-y-1">
+                        <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                          <UserCheck className="w-5 h-5 text-blue-600" /> Team Utilization
+                        </h2>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Active User Load & Output</p>
+                      </div>
+                      <Link href="/admin?tab=users" className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline">Manage All Users →</Link>
                     </div>
-                    <div className="space-y-4">
-                      {userStats.slice(0, 5).map((u, i) => (
-                        <div key={u.id}>
-                           <div className="flex items-center justify-between mb-2">
-                             <p className="text-xs font-bold text-slate-700">{u.full_name}</p>
-                             <p className="text-xs font-bold text-slate-500">{u.sessionCount} Sessions</p>
+                    <div className="space-y-8">
+                      {userStats.slice(0, 6).map((u, i) => (
+                        <div key={u.id} className="group cursor-default">
+                           <div className="flex items-center justify-between mb-3 px-1">
+                              <div className="flex items-center gap-3">
+                                 <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-[10px] font-black text-slate-400 border border-slate-100 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                    {u.full_name[0]}
+                                 </div>
+                                 <div>
+                                    <p className="text-xs font-black text-slate-800">{u.full_name}</p>
+                                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Platform User</p>
+                                 </div>
+                              </div>
+                              <div className="text-right">
+                                 <p className="text-xs font-black text-slate-900">{u.sessionCount} <span className="text-slate-300 font-medium text-[10px]">sessions</span></p>
+                                 <p className="text-[9px] text-blue-600 font-bold uppercase">{u.insightCount} Insights</p>
+                              </div>
                            </div>
-                           <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-blue-500 rounded-full" style={{ width: `${(u.sessionCount / Math.max(...userStats.map(x => x.sessionCount), 1)) * 100}%` }} />
+                           <div className="h-2 bg-slate-50 rounded-full overflow-hidden mx-1">
+                              <motion.div initial={{ width: 0 }} animate={{ width: `${(u.sessionCount / Math.max(...userStats.map(x => x.sessionCount), 1)) * 100}%` }} className="h-full bg-slate-900 rounded-full relative overflow-hidden">
+                                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-80" />
+                              </motion.div>
                            </div>
                         </div>
                       ))}
+                      {userStats.length === 0 && (
+                        <div className="py-20 text-center space-y-4">
+                           <Users className="w-12 h-12 text-slate-100 mx-auto" />
+                           <p className="text-slate-300 font-bold uppercase tracking-[0.2em] text-[10px]">No users registered</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -537,7 +609,7 @@ function AdminDashboardContent() {
                         </th>
                         <th className="px-6 py-5">Stakeholder</th>
                         <th className="px-6 py-5">Status</th>
-                        <th className="px-6 py-5">Researcher</th>
+                        <th className="px-6 py-5">User</th>
                         <th className="px-6 py-5 text-right">Action</th>
                       </tr>
                     </thead>
@@ -545,7 +617,7 @@ function AdminDashboardContent() {
                       {filteredSessions.map(s => {
                         const cfg = statusConfig[s.status] || statusConfig.Review
                         const isSelected = selectedIds.includes(s.id)
-                        const researcher = profiles.find(p => p.id === s.user_id)
+                        const user = profiles.find(p => p.id === s.user_id)
                         
                         return (
                           <tr key={s.id} className={cn('hover:bg-slate-50/50 transition-all group', isSelected && 'bg-blue-50/50')}>
@@ -569,18 +641,29 @@ function AdminDashboardContent() {
                                </span>
                             </td>
                             <td className="px-6 py-5">
-                               {researcher ? (
+                               {user ? (
                                  <div className="flex items-center gap-2">
                                      <div className="w-6 h-6 bg-blue-100 border border-blue-200 text-blue-600 rounded-md flex items-center justify-center text-[8px] font-black">
-                                        {researcher.full_name[0]}
+                                        {user.full_name[0]}
                                      </div>
-                                     <span className="text-xs font-bold text-slate-600">{researcher.full_name}</span>
+                                     <span className="text-xs font-bold text-slate-600">{user.full_name}</span>
                                  </div>
                                ) : (
                                  <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100 uppercase tracking-widest">Unassigned</span>
                                )}
                             </td>
-                            <td className="px-6 py-5 text-right">
+                            <td className="px-6 py-5 text-right space-x-2">
+                               <button 
+                                 onClick={() => {
+                                   const shareUrl = `${window.location.origin}/preview?id=${s.id}`
+                                   navigator.clipboard.writeText(shareUrl)
+                                   alert('Briefing link copied!')
+                                 }}
+                                 className="text-slate-400 hover:text-blue-600 transition-colors"
+                                 title="Share Briefing"
+                               >
+                                  <Share className="w-4 h-4" />
+                               </button>
                                <button onClick={() => setSelectedSessionId(s.id)} className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors px-4 py-2 bg-slate-100/50 border border-slate-200 rounded-xl hover:bg-white">
                                   Review Detail →
                                </button>
@@ -602,19 +685,26 @@ function AdminDashboardContent() {
 
             {/* ─── STAKEHOLDERS ─── */}
             {tab === 'stakeholders' && (
-              <motion.div key="stakeholders" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <motion.div key="stakeholders" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {allStakeholdersList.map((sh, i) => (
-                  <div key={i} className="bg-white border border-slate-100 rounded-3xl p-6 space-y-6 hover:shadow-xl hover:border-blue-100 transition-all group">
-                     <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-xl font-black text-slate-300 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-all">
-                           {sh.name[0]}
+                  <div key={i} className="bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 space-y-6 hover:shadow-xl hover:border-blue-100 transition-all group relative overflow-hidden">
+                     <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-4">
+                           <div className="w-16 h-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-2xl font-black text-slate-300 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-all shrink-0">
+                              {sh.name[0]}
+                           </div>
+                           <div>
+                              <h3 className="text-xl font-bold text-slate-800 tracking-tight">{sh.name}</h3>
+                              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{sh.company} · {sh.sector || 'N/A'}</p>
+                           </div>
                         </div>
-                        <div>
-                           <h3 className="text-base font-bold text-slate-800">{sh.name}</h3>
-                           <p className="text-xs text-slate-400 font-medium uppercase tracking-widest">{sh.company}</p>
+                        <div className="text-right">
+                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Role</p>
+                           <p className="text-sm font-bold text-slate-700">{sh.role || 'N/A'}</p>
                         </div>
                      </div>
-                     <div className="grid grid-cols-2 gap-4">
+
+                     <div className="grid grid-cols-3 gap-4">
                         <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
                            <p className="text-lg font-black text-slate-800">{sh.sessionCount}</p>
                            <p className="text-[9px] text-slate-400 font-bold uppercase">Sessions</p>
@@ -623,7 +713,43 @@ function AdminDashboardContent() {
                            <p className="text-lg font-black text-blue-600">{sh.sessions.reduce((a: any, s: any) => a + (s.opportunities?.length || 0), 0)}</p>
                            <p className="text-[9px] text-slate-400 font-bold uppercase">Insights</p>
                         </div>
+                        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                           <p className="text-xs font-bold text-slate-700 truncate">{sh.geography || 'N/A'}</p>
+                           <p className="text-[9px] text-slate-400 font-bold uppercase">Location</p>
+                        </div>
                      </div>
+
+                     <div className="space-y-3">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Linked Sessions</p>
+                        <div className="space-y-2">
+                           {sh.sessions.map((s: any) => (
+                              <button 
+                                 key={s.id} 
+                                 onClick={() => setSelectedSessionId(s.id)}
+                                 className="w-full flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl hover:border-blue-200 hover:bg-blue-50/30 transition-all text-left"
+                              >
+                                 <div className="flex items-center gap-3">
+                                    <Video className="w-3.5 h-3.5 text-slate-400" />
+                                    <div>
+                                       <p className="text-xs font-bold text-slate-700">{s.date}</p>
+                                       <p className="text-[10px] text-slate-400 font-medium">Status: {s.status}</p>
+                                    </div>
+                                 </div>
+                                 <ChevronRight className="w-4 h-4 text-slate-300" />
+                              </button>
+                           ))}
+                           {sh.sessionCount === 0 && (
+                              <p className="text-xs text-slate-400 italic px-1">No sessions recorded yet.</p>
+                           )}
+                        </div>
+                     </div>
+
+                     {sh.email && (
+                        <div className="pt-4 border-t border-slate-100 flex items-center gap-2 text-slate-400 hover:text-blue-600 transition-colors">
+                           <Mail className="w-4 h-4" />
+                           <span className="text-xs font-medium">{sh.email}</span>
+                        </div>
+                     )}
                   </div>
                 ))}
               </motion.div>
@@ -640,7 +766,7 @@ function AdminDashboardContent() {
                         </div>
                         <div>
                            <h3 className="text-lg font-bold text-slate-800">{u.full_name}</h3>
-                           <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 uppercase tracking-widest">{u.role}</span>
+                           <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 uppercase tracking-widest">Platform User</span>
                         </div>
                      </div>
                      <div className="space-y-3">
