@@ -557,20 +557,30 @@ function AdminDashboardContent() {
       {/* ⚡️ BULK ACTIONS BAR */}
       <AnimatePresence>
         {selectedIds.length > 0 && !selectedSession && (
-          <motion.div initial={{ y: -100 }} animate={{ y: 0 }} exit={{ y: -100 }} className="fixed top-0 left-0 right-0 z-[60] p-4 bg-slate-900 shadow-2xl flex flex-col sm:flex-row items-center justify-center gap-4 border-b border-white/10">
-            <p className="text-white text-sm font-bold flex items-center gap-2">
-               <Fingerprint className="w-5 h-5 text-blue-400" />
-               <span className="text-blue-400">{selectedIds.length}</span> Sessions Selected
+          <motion.div 
+            initial={{ y: -100 }} 
+            animate={{ y: 0 }} 
+            exit={{ y: -100 }} 
+            className="fixed top-0 left-0 right-0 z-[60] p-4 bg-white/80 backdrop-blur-md shadow-2xl flex flex-col sm:flex-row items-center justify-center gap-4 border-b border-slate-100"
+          >
+            <p className="text-slate-800 text-sm font-black flex items-center gap-3">
+               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-200">
+                  <Fingerprint className="w-4 h-4 text-white" />
+               </div>
+               <span className="text-blue-600">{selectedIds.length}</span> Sessions Selected
             </p>
             <div className="flex items-center gap-2">
                <div className="relative">
-                  <button onClick={() => setIsBulkAssignOpen(!isBulkAssignOpen)} className="h-10 px-6 bg-white rounded-xl text-xs font-black uppercase text-slate-800 flex items-center gap-2 hover:bg-blue-50 transition-all">
-                    Assign To <ChevronDown className="w-4 h-4" />
+                  <button onClick={() => setIsBulkAssignOpen(!isBulkAssignOpen)} className="h-11 px-8 bg-slate-900 text-white rounded-xl text-xs font-black uppercase flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl active:scale-95">
+                    Assign To <ChevronDown className="w-4 h-4 text-blue-400" />
                   </button>
                   {isBulkAssignOpen && (
-                    <div className="absolute top-12 left-0 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 space-y-1 z-[70] animate-in slide-in-from-top-2">
+                    <div className="absolute top-14 left-0 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 space-y-1 z-[70] animate-in slide-in-from-top-2">
+                       <div className="px-4 py-3 border-b border-slate-50 mb-1">
+                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none">Select Agent</p>
+                       </div>
                        {profiles.map(p => (
-                         <button key={p.id} onClick={() => handleBulkAssign(p.id)} className="w-full text-left px-4 py-3 text-[10px] font-bold text-slate-600 uppercase tracking-widest hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all border border-transparent hover:border-blue-100">
+                         <button key={p.id} onClick={() => handleBulkAssign(p.id)} className="w-full text-left px-4 py-3 text-[10px] font-bold text-slate-600 uppercase tracking-widest hover:bg-blue-600 hover:text-white rounded-xl transition-all border border-transparent shadow-sm hover:shadow-lg hover:shadow-blue-200 group/u">
                             {p.full_name}
                          </button>
                        ))}
@@ -581,7 +591,7 @@ function AdminDashboardContent() {
                     </div>
                   )}
                </div>
-               <button onClick={() => setSelectedIds([])} className="h-10 px-6 bg-white/10 text-white/50 rounded-xl text-xs font-bold uppercase hover:bg-white/20 hover:text-white transition-all">
+               <button onClick={() => setSelectedIds([])} className="h-11 px-6 bg-slate-100 text-slate-400 rounded-xl text-xs font-bold uppercase hover:bg-white hover:text-slate-800 border border-transparent hover:border-slate-200 transition-all">
                   Cancel
                </button>
             </div>
@@ -861,18 +871,26 @@ function AdminDashboardContent() {
                       key={sh.id || i} 
                       onClick={() => setExpandedShId(isShExpanded ? null : sh.id || i.toString())}
                       className={cn(
-                        "bg-white border transition-all rounded-3xl p-6 sm:p-8 group relative overflow-hidden cursor-pointer",
-                        isShExpanded ? "col-span-full border-blue-300 shadow-2xl space-y-10" : "border-slate-100 hover:shadow-xl hover:border-blue-100 space-y-6"
+                        "bg-white border rounded-[2rem] p-6 sm:p-10 group relative overflow-hidden cursor-pointer transition-colors duration-500",
+                        isShExpanded 
+                          ? "col-span-full border-blue-200 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] space-y-12" 
+                          : "border-slate-100 hover:border-blue-100 hover:shadow-[0_16px_32px_-12px_rgba(0,0,0,0.04)] space-y-8"
                       )}
+                      transition={{ type: 'spring', stiffness: 220, damping: 28 }}
                     >
                       <div className="flex items-start justify-between">
-                         <div className="flex items-center gap-4">
-                            <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black transition-all shrink-0", isShExpanded ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "bg-slate-50 border border-slate-100 text-slate-300 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900")}>
+                         <div className="flex items-center gap-6">
+                            <div className={cn(
+                               "w-20 h-20 rounded-[1.5rem] flex items-center justify-center text-3xl font-black transition-all duration-500 shrink-0", 
+                               isShExpanded 
+                                  ? "bg-blue-500 text-white shadow-2xl shadow-blue-200 scale-110" 
+                                  : "bg-slate-50 border border-slate-100 text-slate-200 group-hover:bg-blue-50 group-hover:text-blue-500 group-hover:border-blue-100"
+                            )}>
                                {sh.name[0]}
                             </div>
                             <div>
-                               <h3 className="text-xl font-bold text-slate-800 tracking-tight">{sh.name}</h3>
-                               <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{sh.company} · {sh.sector || 'N/A'}</p>
+                               <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{sh.name}</h3>
+                               <p className="text-sm text-slate-400 font-bold uppercase tracking-[0.1em]">{sh.company} · <span className="text-blue-500/80">{sh.sector || 'Strategic Partner'}</span></p>
                             </div>
                          </div>
                          <div className="text-right flex flex-col items-end gap-2">
@@ -943,21 +961,21 @@ function AdminDashboardContent() {
 
                             <div className="space-y-4">
                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Identity & Firmographics</p>
-                               <div className="space-y-4 bg-slate-900 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-2xl">
-                                  <div className="absolute top-0 right-0 p-8 opacity-10"><Fingerprint className="w-20 h-20" /></div>
+                               <div className="space-y-4 bg-slate-50/50 rounded-3xl p-6 sm:p-8 border border-slate-100 relative overflow-hidden group/id">
+                                  <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover/id:scale-110 transition-transform"><Fingerprint className="w-20 h-20 text-slate-900" /></div>
                                   <div className="flex justify-between items-center relative">
                                      <span className="text-[10px] font-bold text-slate-400 uppercase">Domain</span>
-                                     <span className="text-xs font-black text-blue-400">{sh.domain || 'N/A'}</span>
+                                     <span className="text-xs font-black text-blue-600">{sh.domain || 'N/A'}</span>
                                   </div>
                                   <div className="flex justify-between items-start gap-4 relative">
                                      <span className="text-[10px] font-bold text-slate-400 uppercase pt-0.5">Primary Office</span>
-                                     <span className="text-xs font-black text-right leading-relaxed text-slate-200">
+                                     <span className="text-xs font-black text-right leading-relaxed text-slate-700">
                                         {sh.address ? `${sh.address}${sh.pincode ? `, ${sh.pincode}` : ''}` : 'N/A'}
                                      </span>
                                   </div>
-                                  <div className="flex justify-between items-center relative border-t border-white/10 pt-4">
-                                     <span className="text-[10px] font-bold text-slate-500 uppercase">Onboarding</span>
-                                     <span className="text-xs font-black text-slate-400">{new Date(sh.created_at).toLocaleDateString()}</span>
+                                  <div className="flex justify-between items-center relative border-t border-slate-200/50 pt-4">
+                                     <span className="text-[10px] font-bold text-slate-400 uppercase">Registered</span>
+                                     <span className="text-xs font-black text-slate-500">{new Date(sh.created_at).toLocaleDateString()}</span>
                                   </div>
                                </div>
                             </div>
