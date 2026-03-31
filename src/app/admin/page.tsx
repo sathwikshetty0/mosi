@@ -8,7 +8,8 @@ import {
   Zap, Activity, UserCheck, Inbox,
   BarChart3, Clock, TrendingUp, Globe, CheckCircle2, Trash2,
   ArrowLeft, ArrowRight, ChevronDown, ChevronUp, FileText, Briefcase, MapPin,
-  Headphones, Sparkles, Check, X, Share, ChevronRight, UserPlus, Fingerprint, Mail, Image as ImageIcon, Link as LinkIcon, Play
+  Headphones, Sparkles, Check, X, Share, ChevronRight, UserPlus, Fingerprint, Mail, Image as ImageIcon, Link as LinkIcon, Play,
+  Linkedin, Phone
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -22,7 +23,23 @@ interface SessionData {
   user_id?: string
   recording_url?: string
   recordingUrl?: string // Add both just in case
-  stakeholders: { id?: string; name: string; role: string; company: string; sector: string; employees?: string; geography?: string; domain?: string; email?: string } | null
+  stakeholders: { 
+    id?: string; 
+    name: string; 
+    role: string; 
+    company: string; 
+    sector: string; 
+    employees?: string; 
+    revenue?: string;
+    geography?: string; 
+    domain?: string; 
+    email?: string; 
+    phone?: string;
+    linkedin?: string;
+    address?: string;
+    pincode?: string;
+    created_at?: string;
+  } | null
   opportunities: { id: string; tag: string; title: string; description?: string; paid?: boolean; duration?: string; skills?: string; toolset?: string; engagementType?: string; status?: string }[]
   evidence: { id: string; type?: string; url?: string; title?: string; opportunity_id?: string }[]
 }
@@ -295,6 +312,80 @@ function SessionDetailPanel({ session, profiles, onClose, onPublish, onDelete, o
           })}
         </div>
       </section>
+
+      {/* Stakeholder Dossier */}
+      <section className="space-y-4 pt-10 border-t border-slate-100">
+        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2 px-1">
+          <ShieldCheck className="w-4 h-4 text-blue-500" /> Executive Stakeholder Dossier
+        </h3>
+        <div className="bg-slate-50/50 border border-slate-100 rounded-[2rem] p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12">
+           
+           <div className="lg:col-span-6 space-y-8">
+              <div className="flex items-center gap-5">
+                 <div className="w-16 h-16 bg-white border border-slate-200 rounded-2xl flex items-center justify-center text-2xl font-black text-slate-300 shadow-sm relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-blue-600 opacity-0 group-hover:opacity-10 transition-opacity" />
+                    {stakeholder?.name?.[0]}
+                 </div>
+                 <div>
+                    <h4 className="text-xl font-bold text-slate-900 tracking-tight">{stakeholder?.name}</h4>
+                    <p className="text-xs text-slate-500 font-bold uppercase tracking-[0.1em]">{stakeholder?.role} · <span className="text-blue-600">{stakeholder?.company}</span></p>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                 {[
+                   { label: 'Industry', val: stakeholder?.sector, icon: Briefcase },
+                   { label: 'Scale', val: stakeholder?.employees, icon: BarChart3 },
+                   { label: 'Revenue', val: stakeholder?.revenue, icon: TrendingUp },
+                   { label: 'Location', val: stakeholder?.geography, icon: MapPin },
+                 ].map(i => (
+                    <div key={i.label} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:border-blue-200 transition-all">
+                       <div className="flex items-center gap-2 mb-2">
+                          <i.icon className="w-3 h-3 text-slate-300" />
+                          <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">{i.label}</p>
+                       </div>
+                       <p className="text-sm font-black text-slate-800 truncate">{i.val || '—'}</p>
+                    </div>
+                 ))}
+              </div>
+           </div>
+
+           <div className="lg:col-span-6 flex flex-col gap-6">
+              <div className="bg-white rounded-[1.5rem] border border-slate-100 p-6 sm:p-8 space-y-6 shadow-sm">
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-50 pb-3">Security & Contact Matrix</p>
+                 <div className="space-y-4">
+                    {[
+                      { label: 'Verified Email', val: stakeholder?.email, icon: Mail },
+                      { label: 'Direct Phone', val: stakeholder?.phone, icon: Phone },
+                      { label: 'LinkedIn', val: stakeholder?.linkedin, icon: Linkedin },
+                      { label: 'Corporate Domain', val: stakeholder?.domain, icon: Globe },
+                    ].map(i => i.val ? (
+                       <div key={i.label} className="flex items-center justify-between group/dossier">
+                          <div className="flex items-center gap-3">
+                             <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100 group-hover/dossier:bg-blue-50 transition-colors">
+                                <i.icon className="w-3.5 h-3.5 text-slate-400 group-hover/dossier:text-blue-500 transition-colors" />
+                             </div>
+                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{i.label}</span>
+                          </div>
+                          <span className="text-xs font-bold text-slate-700 max-w-[200px] truncate">{i.val}</span>
+                       </div>
+                    ) : null)}
+                 </div>
+                 
+                 <div className="pt-4 border-t border-slate-50">
+                    <p className="text-[10px] font-black text-slate-300 uppercase mb-2 tracking-widest">Office Address</p>
+                    <div className="flex items-start gap-3">
+                       <MapPin className="w-3.5 h-3.5 text-slate-300 mt-0.5" />
+                       <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                          {stakeholder?.address || 'No address data provided'}{stakeholder?.pincode ? `, ${stakeholder?.pincode}` : ''} <br/>
+                          <span className="text-[9px] text-slate-300 font-bold uppercase tracking-widest mt-1 inline-block">Captured: {stakeholder?.created_at ? new Date(stakeholder.created_at).toLocaleDateString() : 'N/A'}</span>
+                       </p>
+                    </div>
+                 </div>
+              </div>
+           </div>
+        </div>
+      </section>
     </motion.div>
   )
 }
@@ -311,6 +402,7 @@ function AdminDashboardContent() {
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
+  const [expandedShId, setExpandedShId] = useState<string | null>(null)
   
   // ⚡️ MULTI-SELECT STATE
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -749,7 +841,7 @@ function AdminDashboardContent() {
                     </tbody>
                   </table>
                   {filteredSessions.length === 0 && (
-                    <div className="py-24 text-center space-y-4">
+<div className="py-24 text-center space-y-4">
                        <Inbox className="w-12 h-12 text-slate-200 mx-auto" />
                        <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">No matches in repository</p>
                     </div>
@@ -761,72 +853,161 @@ function AdminDashboardContent() {
             {/* ─── STAKEHOLDERS ─── */}
             {tab === 'stakeholders' && (
               <motion.div key="stakeholders" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {allStakeholdersList.map((sh, i) => (
-                  <div key={i} className="bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 space-y-6 hover:shadow-xl hover:border-blue-100 transition-all group relative overflow-hidden">
-                     <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-4">
-                           <div className="w-16 h-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-2xl font-black text-slate-300 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-all shrink-0">
-                              {sh.name[0]}
-                           </div>
-                           <div>
-                              <h3 className="text-xl font-bold text-slate-800 tracking-tight">{sh.name}</h3>
-                              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{sh.company} · {sh.sector || 'N/A'}</p>
-                           </div>
-                        </div>
-                        <div className="text-right">
-                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Role</p>
-                           <p className="text-sm font-bold text-slate-700">{sh.role || 'N/A'}</p>
-                        </div>
-                     </div>
+                {allStakeholdersList.map((sh, i) => {
+                  const isShExpanded = expandedShId === sh.id
+                  return (
+                    <motion.div 
+                      layout
+                      key={sh.id || i} 
+                      onClick={() => setExpandedShId(isShExpanded ? null : sh.id || i.toString())}
+                      className={cn(
+                        "bg-white border transition-all rounded-3xl p-6 sm:p-8 group relative overflow-hidden cursor-pointer",
+                        isShExpanded ? "col-span-full border-blue-300 shadow-2xl space-y-10" : "border-slate-100 hover:shadow-xl hover:border-blue-100 space-y-6"
+                      )}
+                    >
+                      <div className="flex items-start justify-between">
+                         <div className="flex items-center gap-4">
+                            <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black transition-all shrink-0", isShExpanded ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "bg-slate-50 border border-slate-100 text-slate-300 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900")}>
+                               {sh.name[0]}
+                            </div>
+                            <div>
+                               <h3 className="text-xl font-bold text-slate-800 tracking-tight">{sh.name}</h3>
+                               <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{sh.company} · {sh.sector || 'N/A'}</p>
+                            </div>
+                         </div>
+                         <div className="text-right flex flex-col items-end gap-2">
+                            <div className="text-right">
+                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Role</p>
+                               <p className="text-sm font-bold text-slate-700">{sh.role || 'N/A'}</p>
+                            </div>
+                            {!isShExpanded && (
+                               <div className="bg-blue-50 px-3 py-1 rounded-full border border-blue-100 flex items-center gap-2">
+                                  <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{sh.sessionCount} Sessions</span>
+                               </div>
+                            )}
+                         </div>
+                      </div>
 
-                     <div className="grid grid-cols-3 gap-4">
-                        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                           <p className="text-lg font-black text-slate-800">{sh.sessionCount}</p>
-                           <p className="text-[9px] text-slate-400 font-bold uppercase">Sessions</p>
-                        </div>
-                        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                           <p className="text-lg font-black text-blue-600">{sh.sessions.reduce((a: any, s: any) => a + (s.opportunities?.length || 0), 0)}</p>
-                           <p className="text-[9px] text-slate-400 font-bold uppercase">Insights</p>
-                        </div>
-                        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                           <p className="text-xs font-bold text-slate-700 truncate">{sh.geography || 'N/A'}</p>
-                           <p className="text-[9px] text-slate-400 font-bold uppercase">Location</p>
-                        </div>
-                     </div>
+                      {isShExpanded && (
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                            <div className="p-3 bg-white rounded-2xl border border-slate-100 flex flex-col justify-center relative overflow-hidden shadow-sm">
+                               <p className="text-lg font-black text-slate-800">{sh.sessionCount}</p>
+                               <p className="text-[9px] text-slate-400 font-bold uppercase">Sessions</p>
+                               <Video className="absolute -right-2 -bottom-2 w-10 h-10 text-slate-100" />
+                            </div>
+                            <div className="p-3 bg-white rounded-2xl border border-slate-100 flex flex-col justify-center shadow-sm">
+                               <p className="text-sm font-black text-blue-600 truncate">{sh.employees || '—'}</p>
+                               <p className="text-[10px] sm:text-[9px] text-slate-400 font-bold uppercase">Scale</p>
+                            </div>
+                            <div className="p-3 bg-white rounded-2xl border border-slate-100 flex flex-col justify-center shadow-sm">
+                               <p className="text-sm font-black text-emerald-600 truncate">{sh.revenue || '—'}</p>
+                               <p className="text-[10px] sm:text-[9px] text-slate-400 font-bold uppercase">Revenue</p>
+                            </div>
+                            <div className="p-3 bg-white rounded-2xl border border-slate-100 flex flex-col justify-center shadow-sm">
+                               <p className="text-sm font-black text-slate-700 truncate">{sh.geography || '—'}</p>
+                               <p className="text-[10px] sm:text-[9px] text-slate-400 font-bold uppercase">Location</p>
+                            </div>
+                          </div>
 
-                     <div className="space-y-3">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Linked Sessions</p>
-                        <div className="space-y-2">
-                           {sh.sessions.map((s: any) => (
-                              <button 
-                                 key={s.id} 
-                                 onClick={() => setSelectedSessionId(s.id)}
-                                 className="w-full flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl hover:border-blue-200 hover:bg-blue-50/30 transition-all text-left"
-                              >
-                                 <div className="flex items-center gap-3">
-                                    <Video className="w-3.5 h-3.5 text-slate-400" />
-                                    <div>
-                                       <p className="text-xs font-bold text-slate-700">{s.date}</p>
-                                       <p className="text-[10px] text-slate-400 font-medium">Status: {s.status}</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-100">
+                            <div className="space-y-4">
+                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Contact Matrix</p>
+                               <div className="space-y-3">
+                                  {sh.email && (
+                                    <div className="flex items-center gap-3 text-slate-500 hover:text-blue-600 transition-colors group/item">
+                                       <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 group-hover/item:bg-blue-50 transition-colors shadow-sm">
+                                          <Mail className="w-4 h-4" />
+                                       </div>
+                                       <span className="text-sm font-bold truncate">{sh.email}</span>
                                     </div>
-                                 </div>
-                                 <ChevronRight className="w-4 h-4 text-slate-300" />
-                              </button>
-                           ))}
-                           {sh.sessionCount === 0 && (
-                              <p className="text-xs text-slate-400 italic px-1">No sessions recorded yet.</p>
-                           )}
-                        </div>
-                     </div>
+                                  )}
+                                  {sh.phone && (
+                                    <div className="flex items-center gap-3 text-slate-500 hover:text-blue-600 transition-colors group/item">
+                                       <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 group-hover/item:bg-blue-50 transition-colors shadow-sm">
+                                          <Phone className="w-4 h-4" />
+                                       </div>
+                                       <span className="text-sm font-bold truncate">{sh.phone}</span>
+                                    </div>
+                                  )}
+                                  {sh.linkedin && (
+                                    <a href={sh.linkedin.startsWith('http') ? sh.linkedin : `https://${sh.linkedin}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-slate-500 hover:text-blue-600 transition-colors group/item" onClick={e => e.stopPropagation()}>
+                                       <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 group-hover/item:bg-blue-50 transition-colors shadow-sm">
+                                          <Linkedin className="w-4 h-4" />
+                                       </div>
+                                       <span className="text-sm font-bold truncate underline decoration-blue-200">Linkedin Profile</span>
+                                    </a>
+                                  )}
+                               </div>
+                            </div>
 
-                     {sh.email && (
-                        <div className="pt-4 border-t border-slate-100 flex items-center gap-2 text-slate-400 hover:text-blue-600 transition-colors">
-                           <Mail className="w-4 h-4" />
-                           <span className="text-xs font-medium">{sh.email}</span>
+                            <div className="space-y-4">
+                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Identity & Firmographics</p>
+                               <div className="space-y-4 bg-slate-900 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-2xl">
+                                  <div className="absolute top-0 right-0 p-8 opacity-10"><Fingerprint className="w-20 h-20" /></div>
+                                  <div className="flex justify-between items-center relative">
+                                     <span className="text-[10px] font-bold text-slate-400 uppercase">Domain</span>
+                                     <span className="text-xs font-black text-blue-400">{sh.domain || 'N/A'}</span>
+                                  </div>
+                                  <div className="flex justify-between items-start gap-4 relative">
+                                     <span className="text-[10px] font-bold text-slate-400 uppercase pt-0.5">Primary Office</span>
+                                     <span className="text-xs font-black text-right leading-relaxed text-slate-200">
+                                        {sh.address ? `${sh.address}${sh.pincode ? `, ${sh.pincode}` : ''}` : 'N/A'}
+                                     </span>
+                                  </div>
+                                  <div className="flex justify-between items-center relative border-t border-white/10 pt-4">
+                                     <span className="text-[10px] font-bold text-slate-500 uppercase">Onboarding</span>
+                                     <span className="text-xs font-black text-slate-400">{new Date(sh.created_at).toLocaleDateString()}</span>
+                                  </div>
+                               </div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between px-1">
+                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Engagement History</p>
+                               <span className="text-[10px] font-bold text-blue-600 bg-blue-50/50 px-3 py-1 rounded-full border border-blue-100">{sh.sessionCount} Sessions</span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                               {sh.sessions.map((s: any) => (
+                                  <button 
+                                     key={s.id} 
+                                     onClick={(e) => { e.stopPropagation(); setSelectedSessionId(s.id) }}
+                                     className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:border-blue-400 hover:shadow-lg transition-all text-left shadow-sm group/session"
+                                  >
+                                     <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-slate-50 flex items-center justify-center rounded-xl border border-slate-100 group-hover/session:bg-blue-600 group-hover/session:border-blue-600 transition-all shadow-sm">
+                                           <Video className="w-4 h-4 text-slate-400 group-hover/session:text-white" />
+                                        </div>
+                                        <div className="min-w-0">
+                                           <p className="text-xs font-black text-slate-800 truncate">{s.date}</p>
+                                           <p className="text-[9px] text-slate-400 font-black uppercase">{s.status}</p>
+                                        </div>
+                                     </div>
+                                     <ChevronRight className="w-4 h-4 text-slate-300 group-hover/session:text-blue-600 transition-colors shrink-0" />
+                                  </button>
+                               ))}
+                               {sh.sessionCount === 0 && (
+                                  <div className="col-span-full py-12 bg-white border border-dashed border-slate-200 rounded-3xl text-center">
+                                     <Inbox className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+                                     <p className="text-xs text-slate-400 font-bold uppercase italic px-1">No sessions recorded yet.</p>
+                                  </div>
+                               )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {!isShExpanded && (
+                        <div className="absolute bottom-2 right-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                           <div className="bg-slate-900 text-white p-1 rounded-lg">
+                              <ChevronDown className="w-4 h-4" />
+                           </div>
                         </div>
-                     )}
-                  </div>
-                ))}
+                      )}
+                    </motion.div>
+                  )
+                })}
               </motion.div>
             )}
 
