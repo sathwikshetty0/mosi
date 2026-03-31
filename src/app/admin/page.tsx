@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { 
   Users, Video, Search, ShieldCheck, 
   Zap, Activity, UserCheck, Inbox,
-  BarChart3, Clock, TrendingUp, Globe, CheckCircle2, Trash2,
+  BarChart3, Clock, TrendingUp, Globe, CheckCircle2, Trash2, Shield, Command,
   ArrowLeft, ArrowRight, ChevronDown, ChevronUp, FileText, Briefcase, MapPin,
   Headphones, Sparkles, Check, X, Share, ChevronRight, UserPlus, Fingerprint, Mail, Image as ImageIcon, Link as LinkIcon, Play,
   Linkedin, Phone
@@ -50,6 +50,15 @@ interface ProfileData {
   role: string
   avatar_url?: string
   updated_at: string
+  role_title?: string
+  department?: string
+  specialization?: string
+  office_location?: string
+  place?: string
+  phone?: string
+  linkedin?: string
+  bio?: string
+  public_email?: string
 }
 
 const statusConfig: Record<string, { pill: string; label: string }> = {
@@ -403,6 +412,7 @@ function AdminDashboardContent() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [expandedShId, setExpandedShId] = useState<string | null>(null)
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null)
   
   // ⚡️ MULTI-SELECT STATE
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -535,13 +545,15 @@ function AdminDashboardContent() {
   const allStakeholdersList = useMemo(() => {
     return stakeholders.map(sh => {
       const shSessions = sessions.filter(s => (s.stakeholders?.name === sh.name && s.stakeholders?.company === sh.company) || s.stakeholders?.id === sh.id)
+      const introducer = profiles.find(p => p.id === sh.user_id)
       return { 
         ...sh, 
         sessionCount: shSessions.length, 
-        sessions: shSessions 
+        sessions: shSessions,
+        introducer: introducer?.full_name || 'Legacy / System'
       }
     }).sort((a, b) => b.sessionCount - a.sessionCount)
-  }, [stakeholders, sessions])
+  }, [stakeholders, sessions, profiles])
 
   const kpis = [
     { label: 'Total Sessions', val: stats.total, icon: Video, color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100' },
@@ -723,8 +735,12 @@ function AdminDashboardContent() {
                         <div key={u.id} className="group cursor-default">
                            <div className="flex items-center justify-between mb-3 px-1">
                               <div className="flex items-center gap-3">
-                                 <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-[10px] font-black text-slate-400 border border-slate-100 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                    {u.full_name[0]}
+                                 <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-black relative overflow-hidden group-hover:scale-105 group-hover:border-blue-100 group-hover:bg-blue-50 transition-all duration-500 shadow-sm">
+                                    {u.avatar_url ? (
+                                       <img src={u.avatar_url} alt={u.full_name} className="w-full h-full object-cover" />
+                                    ) : (
+                                       u.full_name[0]
+                                    )}
                                  </div>
                                  <div>
                                     <p className="text-xs font-black text-slate-800">{u.full_name}</p>
@@ -820,8 +836,10 @@ function AdminDashboardContent() {
                             <td className="px-6 py-5">
                                {user ? (
                                  <div className="flex items-center gap-2">
-                                     <div className="w-6 h-6 bg-blue-100 border border-blue-200 text-blue-600 rounded-md flex items-center justify-center text-[8px] font-black">
-                                        {user.full_name[0]}
+                                     <div className="w-8 h-8 bg-blue-50 border border-blue-100 text-blue-600 rounded-lg flex items-center justify-center text-[10px] font-black relative overflow-hidden shadow-sm transition-all group-hover:scale-110">
+                                        {user.avatar_url ? (
+                                           <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
+                                        ) : user.full_name[0]}
                                      </div>
                                      <span className="text-xs font-bold text-slate-600">{user.full_name}</span>
                                  </div>
@@ -964,8 +982,12 @@ function AdminDashboardContent() {
                                <div className="space-y-4 bg-slate-50/50 rounded-3xl p-6 sm:p-8 border border-slate-100 relative overflow-hidden group/id">
                                   <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover/id:scale-110 transition-transform"><Fingerprint className="w-20 h-20 text-slate-900" /></div>
                                   <div className="flex justify-between items-center relative">
+                                     <span className="text-[10px] font-bold text-slate-400 uppercase">Introduced By</span>
+                                     <span className="text-xs font-black text-blue-600">{sh.introducer}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center relative border-t border-slate-200/50 pt-4">
                                      <span className="text-[10px] font-bold text-slate-400 uppercase">Domain</span>
-                                     <span className="text-xs font-black text-blue-600">{sh.domain || 'N/A'}</span>
+                                     <span className="text-xs font-black text-slate-800">{sh.domain || 'N/A'}</span>
                                   </div>
                                   <div className="flex justify-between items-start gap-4 relative">
                                      <span className="text-[10px] font-bold text-slate-400 uppercase pt-0.5">Primary Office</span>
@@ -1031,29 +1053,150 @@ function AdminDashboardContent() {
 
             {/* ─── USERS ─── */}
             {tab === 'users' && (
-              <motion.div key="users" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {userStats.map((u, i) => (
-                  <div key={u.id} className="bg-white border border-slate-100 rounded-3xl p-8 space-y-6 hover:shadow-xl transition-all">
-                     <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-2xl font-black text-slate-400">
-                           {u.full_name[0]}
+              <motion.div key="users" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                {userStats.map((u, i) => {
+                  const isUserExpanded = expandedUserId === u.id
+                  return (
+                    <motion.div 
+                      key={u.id} 
+                      layout
+                      onClick={() => setExpandedUserId(isUserExpanded ? null : u.id)}
+                      className={cn(
+                        "bg-white border border-slate-100 rounded-3xl shadow-sm hover:shadow-xl transition-all cursor-pointer overflow-hidden group/user",
+                        isUserExpanded ? "col-span-full border-blue-200" : "p-8 space-y-6"
+                      )}
+                    >
+                      {isUserExpanded ? (
+                        <div className="divide-y divide-slate-100/50">
+                           <div className="p-8 sm:p-10 bg-white flex items-center justify-between relative">
+                              <div className="flex items-center gap-6">
+                                 <div className="w-24 h-24 bg-white border-2 border-slate-100 rounded-[2rem] flex items-center justify-center text-4xl font-black text-slate-800 shadow-xl relative group-hover/user:scale-105 transition-transform overflow-hidden">
+                                    {u.avatar_url ? (
+                                       <img src={u.avatar_url} alt={u.full_name} className="w-full h-full object-cover" />
+                                    ) : (
+                                       <div className="w-full h-full bg-gradient-to-br from-slate-800 to-black flex items-center justify-center text-white">
+                                          {u.full_name[0]}
+                                       </div>
+                                    )}
+                                 </div>
+                                 <div className="space-y-1.5">
+                                    <h3 className="text-2xl font-black text-slate-800 tracking-tight">{u.full_name}</h3>
+                                    <div className="flex items-center gap-2">
+                                       <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200/50 uppercase tracking-[0.2em]">Principal Strategist</span>
+                                       <span className="text-[9px] font-black text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/50 uppercase tracking-[0.2em]">Verified</span>
+                                    </div>
+                                 </div>
+                              </div>
+                              <button onClick={(e) => { e.stopPropagation(); setExpandedUserId(null) }} className="w-12 h-12 bg-slate-50 text-slate-400 border border-slate-100 rounded-2xl flex items-center justify-center hover:bg-white hover:text-slate-800 hover:border-slate-200 shadow-sm transition-all active:scale-90">
+                                 <ChevronDown className="w-5 h-5 rotate-180" />
+                              </button>
+                           </div>
+
+                           <div className="p-8 sm:p-10 grid grid-cols-1 md:grid-cols-12 gap-10 bg-white">
+                              <div className="md:col-span-4 space-y-8">
+                                 <div className="space-y-5">
+                                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] pl-1">Professional DNA</p>
+                                    <div className="space-y-4">
+                                       {[
+                                          { label: 'Strategic Role', val: u.role_title || 'Principal Strategic Researcher', icon: Shield },
+                                          { label: 'Institutional Unit', val: u.department || 'Enterprise Intelligence', icon: Command },
+                                          { label: 'Geographic Sync', val: u.place || u.office_location || 'Global Digital HQ', icon: Globe },
+                                          { label: 'Institutional Email', val: u.public_email || 'No public email', icon: Mail },
+                                          { label: 'Contact Number', val: u.phone || 'No direct number', icon: Phone },
+                                          { label: 'Access ID', val: `STK-${u.id.substring(0, 8).toUpperCase()}`, icon: Fingerprint }
+                                       ].map(detail => (
+                                          <div key={detail.label} className="flex items-center gap-4 group/item">
+                                             <div className="w-10 h-10 bg-slate-50/50 border border-slate-100/50 rounded-xl flex items-center justify-center text-slate-300 group-hover/item:bg-blue-50 group-hover/item:text-blue-500 transition-all duration-300">
+                                                <detail.icon className="w-4 h-4" />
+                                             </div>
+                                             <div>
+                                                <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1.5">{detail.label}</p>
+                                                <p className="text-sm font-bold text-slate-700 truncate max-w-[240px]">{detail.val}</p>
+                                             </div>
+                                          </div>
+                                       ))}
+                                       {u.linkedin && (
+                                          <a href={u.linkedin.startsWith('http') ? u.linkedin : `https://${u.linkedin}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 group/item border-t border-slate-50 pt-4 mt-2">
+                                             <div className="w-10 h-10 bg-slate-50/50 border border-slate-100/50 rounded-xl flex items-center justify-center text-slate-300 group-hover/item:bg-blue-600 group-hover/item:text-white transition-all duration-300 shadow-sm">
+                                                <Linkedin className="w-4 h-4" />
+                                             </div>
+                                             <div>
+                                                <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1.5">Social Hub</p>
+                                                <p className="text-sm font-bold text-blue-600 underline decoration-blue-200">LinkedIn Profile</p>
+                                             </div>
+                                          </a>
+                                       )}
+                                    </div>
+
+                                    {u.bio && (
+                                       <div className="pt-6 border-t border-slate-100">
+                                          <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none mb-3">Professional Bio</p>
+                                          <p className="text-xs text-slate-500 leading-relaxed italic">{u.bio}</p>
+                                       </div>
+                                    )}
+                                 </div>
+                              </div>
+
+                              <div className="md:col-span-8 space-y-10">
+                                 <div className="space-y-5">
+                                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] pl-1">Operational Performance</p>
+                                    <div className="grid grid-cols-3 gap-5">
+                                       {[
+                                          { label: 'Sessions', val: u.sessionCount, color: 'text-slate-800', bg: 'bg-slate-50' },
+                                          { label: 'Insights', val: u.insightCount, color: 'text-blue-600', bg: 'bg-blue-50/50' },
+                                          { label: 'Briefs', val: u.publishedCount, color: 'text-emerald-600', bg: 'bg-emerald-50/50' },
+                                       ].map(stat => (
+                                          <div key={stat.label} className={cn("p-6 rounded-[2rem] border border-slate-100/50 text-center space-y-1.5 shadow-sm hover:shadow-lg transition-all duration-500", stat.bg)}>
+                                             <p className={cn("text-3xl font-black tracking-tight", stat.color)}>{stat.val}</p>
+                                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{stat.label}</p>
+                                          </div>
+                                       ))}
+                                    </div>
+                                 </div>
+
+                                 <div className="space-y-5">
+                                    <div className="flex items-center justify-between px-1">
+                                       <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Workload Balanced Sync</p>
+                                       <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">{u.sessionCount ? Math.round(u.insightCount / u.sessionCount) : 0} Insights Density</span>
+                                    </div>
+                                    <div className="h-1.5 bg-slate-50 border border-slate-100 rounded-full overflow-hidden p-0.5">
+                                       <div className="h-full bg-blue-600 rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(37,99,235,0.4)]" style={{ width: `${Math.min((u.insightCount / 20) * 100, 100)}%` }} />
+                                    </div>
+                                 </div>
+                              </div>
+                           </div>
                         </div>
-                        <div>
-                           <h3 className="text-lg font-bold text-slate-800">{u.full_name}</h3>
-                           <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 uppercase tracking-widest">Platform User</span>
-                        </div>
-                     </div>
-                     <div className="space-y-3">
-                        <div className="flex justify-between items-center text-xs">
-                           <span className="text-slate-400 font-medium">Session Load</span>
-                           <span className="text-slate-800 font-black">{u.sessionCount}</span>
-                        </div>
-                        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                           <div className="h-full bg-blue-600 rounded-full" style={{ width: `${(u.sessionCount / Math.max(...userStats.map(x => x.sessionCount), 1)) * 100}%` }} />
-                        </div>
-                     </div>
-                  </div>
-                ))}
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-5">
+                            <div className="w-16 h-16 bg-white border border-slate-100 rounded-[1.25rem] flex items-center justify-center text-xl font-black text-slate-800 shadow-sm relative overflow-hidden group-hover/user:scale-110 group-hover/user:shadow-xl transition-all duration-500">
+                               {u.avatar_url ? (
+                                  <img src={u.avatar_url} alt={u.full_name} className="w-full h-full object-cover" />
+                               ) : (
+                                  <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-300">
+                                    {u.full_name[0]}
+                                  </div>
+                               )}
+                            </div>
+                            <div>
+                               <h3 className="text-lg font-bold text-slate-800 group-hover/user:text-blue-600 transition-colors">{u.full_name}</h3>
+                               <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 uppercase tracking-widest">Platform User</span>
+                            </div>
+                          </div>
+                          <div className="space-y-3">
+                             <div className="flex justify-between items-center text-xs">
+                                <span className="text-slate-400 font-medium">Session Load</span>
+                                <span className="text-slate-800 font-black">{u.sessionCount}</span>
+                             </div>
+                             <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-600 rounded-full transition-all duration-1000" style={{ width: `${(u.sessionCount / Math.max(...userStats.map(x => x.sessionCount), 1)) * 100}%` }} />
+                             </div>
+                          </div>
+                        </>
+                      )}
+                    </motion.div>
+                  )
+                })}
               </motion.div>
             )}
 
