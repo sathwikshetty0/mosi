@@ -335,11 +335,31 @@ export const useMosiStore = create<MosiStore>()(
     }
 
     if (sessionData) {
-      const formatted = {
-        ...sessionData,
-        stakeholder: sessionData.stakeholders,
-        opportunities: sessionData.opportunities || [],
-        evidence: sessionData.evidence || []
+      const fallbackStakeholder: StakeholderProfile = {
+        name: 'Untitled Stakeholder', role: 'N/A', phone: '', email: '', linkedin: '',
+        company: 'N/A', sector: '', products: '', employees: '', revenue: '',
+        yearsInBusiness: '', geography: ''
+      }
+      
+      const sessionEvidence = sessionData.evidence || []
+      const sessionOpps = (sessionData.opportunities || []).map((o: any) => ({
+        ...o,
+        evidence: sessionEvidence.filter((e: any) => e.opportunity_id === o.id)
+      }))
+      const rootEvidence = sessionEvidence.filter((e: any) => !e.opportunity_id)
+
+      const formatted: InterviewSession = {
+        id: sessionData.id,
+        stakeholder: sessionData.stakeholders || fallbackStakeholder,
+        status: sessionData.status,
+        date: sessionData.date,
+        duration: sessionData.duration,
+        opportunities: sessionOpps,
+        settings: sessionData.audio_settings || { audio: true, video: true },
+        evidence: rootEvidence,
+        recordingUrl: sessionData.recording_url,
+        summary: sessionData.summary || '',
+        user_id: sessionData.user_id
       }
       
       set((state) => {
