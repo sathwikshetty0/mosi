@@ -125,6 +125,8 @@ interface MosiStore {
   fetchSessionById: (id: string) => Promise<void>
   updateStakeholder: (id: string, updates: Partial<StakeholderProfile>) => void
   deleteStakeholder: (id: string) => void
+  stakeholdersList: StakeholderProfile[]
+  fetchStakeholdersList: () => Promise<void>
 }
 
 
@@ -142,6 +144,7 @@ export const useMosiStore = create<MosiStore>()(
   recordingSeconds: 0,
   activeQuadrant: 'Core',
   selectedOpportunityId: null,
+  stakeholdersList: [],
 
   setCurrentSession: (session) => set((s) => ({
     currentSession: { ...s.currentSession, ...session }
@@ -689,6 +692,30 @@ export const useMosiStore = create<MosiStore>()(
     }))
     if (supabase) {
       supabase.from('stakeholders').delete().eq('id', id).then()
+    }
+  },
+
+  fetchStakeholdersList: async () => {
+    if (!supabase) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      set({ stakeholdersList: [] })
+      return
+    }
+    
+    const { data, error } = await supabase
+      .from('stakeholders')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('name', { ascending: true })
+
+    if (error) {
+       console.error('Fetch stakeholders failed:', error.message)
+       return
+    }
+
+    if (data) {
+       set({ stakeholdersList: data })
     }
   },
 

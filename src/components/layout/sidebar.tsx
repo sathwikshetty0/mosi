@@ -20,12 +20,7 @@ const navigation = [
   { name: 'Chronology', href: '/schedule', icon: Calendar },
 ]
 
-const interviewFlow = [
-  { name: 'New Stakeholder', href: '/setup', icon: CheckSquare },
-  { name: 'Live Discovery', href: '/interview/live', icon: Mic },
-  { name: 'Synthesis', href: '/review', icon: BarChart2 },
-  { name: 'Executive', href: '/preview', icon: Eye },
-]
+
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -151,88 +146,25 @@ export function Sidebar() {
               </div>
             </div>
           )}
-
-          {/* Hide Discovery Hub for admins on the admin page */}
-          {!isAdmin && (
-            <div className="space-y-4">
-              {!isSidebarCollapsed && (
-                <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] px-4 mb-2">Discovery Hub</p>
-              )}
-              <div className="space-y-1">
-                {interviewFlow.map((item) => {
-                  const isActive = pathname.startsWith(item.href)
-                  const hasBadge = item.href === '/review' && pendingReviews > 0
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={cn(
-                        'nav-item group relative',
-                        isActive ? 'nav-item-active' : 'nav-item-inactive',
-                        isSidebarCollapsed && 'justify-center px-0'
-                      )}
-                      title={isSidebarCollapsed ? item.name : ''}
-                    >
-                      <div className="flex items-center gap-4">
-                        <item.icon className={cn('h-4 w-4 shrink-0 transition-transform duration-300', !isActive && 'group-hover:scale-110')} />
-                        {!isSidebarCollapsed && <span className="uppercase tracking-tighter">{item.name}</span>}
-                      </div>
-                      {!isSidebarCollapsed && hasBadge && (
-                        <span className="bg-rose-500 text-white text-[8px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg shadow-rose-200 animate-pulse">
-                          {pendingReviews}
-                        </span>
-                      )}
-                      {isActive && (
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-2/3 bg-blue-500 rounded-r-full shadow-lg shadow-blue-500/50" />
-                      )}
-                    </Link>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Admin gets discovery hub too if not on /admin */}
-          {isAdmin && pathname !== '/admin' && (
-            <div className="space-y-4">
-              {!isSidebarCollapsed && (
-                <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] px-4 mb-2">Discovery Hub</p>
-              )}
-              <div className="space-y-1">
-                {interviewFlow.map((item) => {
-                  const isActive = pathname.startsWith(item.href)
-                  const hasBadge = item.href === '/review' && pendingReviews > 0
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={cn(
-                        'nav-item group relative',
-                        isActive ? 'nav-item-active' : 'nav-item-inactive',
-                        isSidebarCollapsed && 'justify-center px-0'
-                      )}
-                      title={isSidebarCollapsed ? item.name : ''}
-                    >
-                      <div className="flex items-center gap-4">
-                        <item.icon className={cn('h-4 w-4 shrink-0 transition-transform duration-300', !isActive && 'group-hover:scale-110')} />
-                        {!isSidebarCollapsed && <span className="uppercase tracking-tighter">{item.name}</span>}
-                      </div>
-                      {!isSidebarCollapsed && hasBadge && (
-                        <span className="bg-rose-500 text-white text-[8px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg shadow-rose-200 animate-pulse">
-                          {pendingReviews}
-                        </span>
-                      )}
-                      {isActive && (
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-2/3 bg-blue-500 rounded-r-full shadow-lg shadow-blue-500/50" />
-                      )}
-                    </Link>
-                  )
-                })}
-              </div>
-            </div>
-          )}
+          
+          {/* 🚀 ACTION CENTER — Simplified for focus */}
+          <div className="px-4 py-6 space-y-4">
+             {/* Only show New Session for non-admin OR admin not on /admin */}
+             {(!isAdmin || pathname !== '/admin') && (
+                <Link
+                  href="/setup"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={cn(
+                    "group w-full h-16 bg-slate-900 border border-slate-800 text-white rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[10px] transition-all shadow-2xl shadow-slate-200 flex items-center justify-center gap-3 overflow-hidden relative active:scale-95",
+                    isSidebarCollapsed && "h-16 w-16 p-0"
+                  )}
+                >
+                  <PlusCircle className="w-5 h-5 relative z-10 text-blue-400" />
+                  {!isSidebarCollapsed && <span className="relative z-10">New Session</span>}
+                  {isSidebarCollapsed && <span className="sr-only">New Session</span>}
+                </Link>
+             )}
+          </div>
         </div>
 
         {/* ⚡ FOOTER ACTIONS */}
@@ -254,37 +186,6 @@ export function Sidebar() {
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate">{profile?.role || 'Researcher'}</p>
               </div>
            </Link>
-
-           {/* Only show New Stakeholder for non-admin OR admin not on /admin */}
-           {(!isAdmin || pathname !== '/admin') && !isSidebarCollapsed && (
-              <Link
-                href="/setup"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="group w-full h-14 bg-slate-700 hover:bg-blue-600 text-white rounded-2xl font-bold uppercase tracking-[0.2em] text-[10px] transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2 overflow-hidden relative active:scale-95"
-              >
-                <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                <PlusCircle className="w-4 h-4 relative z-10" />
-                <span className="relative z-10 font-bold">New Stakeholder</span>
-              </Link>
-           )}
-           {(!isAdmin || pathname !== '/admin') && isSidebarCollapsed && (
-              <Link href="/setup" className="w-12 h-12 bg-slate-700 hover:bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto shadow-2xl shadow-slate-300 transition-all active:scale-90 lg:flex hidden">
-                <PlusCircle className="w-6 h-6" />
-              </Link>
-           )}
-           {/* On mobile, ALWAYS show the full button if the sidebar is open */}
-           <div className="lg:hidden">
-            {(!isAdmin || pathname !== '/admin') && (
-                <Link
-                  href="/setup"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="group w-full h-14 bg-slate-700 hover:bg-blue-600 text-white rounded-2xl font-bold uppercase tracking-[0.2em] text-[10px] transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2 overflow-hidden relative active:scale-95"
-                >
-                  <PlusCircle className="w-4 h-4 relative z-10" />
-                  <span className="relative z-10 font-bold">New Stakeholder</span>
-                </Link>
-            )}
-           </div>
            
           <div className="flex flex-col gap-1">
             <Link

@@ -6,7 +6,7 @@ import { useMosiStore } from '@/lib/store'
 import { 
   User, Building2, Globe, Mic, Video, Type,
   Calendar, MapPin, ChevronRight, CheckCircle,
-  Sparkles, Activity, Zap, AlertCircle, ChevronLeft
+  Sparkles, Activity, Zap, AlertCircle, ChevronLeft, Search, Users
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -15,11 +15,14 @@ const REQUIRED_STEP2 = ['company', 'sector'] as const
 
 export default function SetupPage() {
   const router = useRouter()
-  const { setCurrentSession, scheduleSession } = useMosiStore()
+  const { setCurrentSession, scheduleSession, stakeholdersList, fetchStakeholdersList } = useMosiStore()
 
   const [step, setStep] = React.useState(1)
   const [touched, setTouched] = React.useState<Record<string, boolean>>({})
   const [showErrors, setShowErrors] = React.useState(false)
+  const [searchTerm, setSearchTerm] = React.useState('')
+  const [showStakeholderPicker, setShowStakeholderPicker] = React.useState(false)
+  
   const [form, setForm] = React.useState({
     name: '', role: '', phone: '', email: '', linkedin: '', domain: '',
     company: '', sector: '', products: '', employees: '', revenue: '',
@@ -27,6 +30,39 @@ export default function SetupPage() {
     audio: true, video: true, transcript: true, translate: false,
     scheduleDate: '', scheduleTime: '', location: ''
   })
+
+  React.useEffect(() => {
+    fetchStakeholdersList()
+  }, [])
+
+  const filteredStakeholders = React.useMemo(() => {
+    if (!searchTerm) return stakeholdersList
+    return stakeholdersList.filter(s => 
+      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.company.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  }, [searchTerm, stakeholdersList])
+
+  const selectExisting = (sh: any) => {
+    setForm(f => ({
+      ...f,
+      name: sh.name || '',
+      role: sh.role || '',
+      phone: sh.phone || '',
+      email: sh.email || '',
+      linkedin: sh.linkedin || '',
+      domain: sh.domain || '',
+      company: sh.company || '',
+      sector: sh.sector || '',
+      employees: sh.employees || '',
+      revenue: sh.revenue || '',
+      geography: sh.geography || '',
+      address: sh.address || '',
+      pincode: sh.pincode || '',
+    }))
+    setShowStakeholderPicker(false)
+    setTouched({})
+  }
 
   const update = (key: string, value: string | boolean) => {
     setForm(f => ({ ...f, [key]: value }))
@@ -121,10 +157,10 @@ export default function SetupPage() {
           <Sparkles className="w-3 h-3" /> Setup Wizard
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800">
-          New Stakeholder Setup
+          New Session Setup
         </h1>
         <p className="text-xs sm:text-sm text-slate-400 font-medium px-2">
-          Provide the stakeholder and company context before starting.
+          Sync stakeholder context and corporate DNA to begin discovery.
         </p>
       </div>
 
@@ -171,29 +207,96 @@ export default function SetupPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <label className={labelClass}>Stakeholder Name <RequiredDot /></label>
-              <input 
-                className={inputClass('name', true)} 
-                placeholder="e.g. Jane Doe" 
-                value={form.name} 
-                onChange={e => update('name', e.target.value)} 
-                onBlur={() => markTouched('name')}
-              />
-              <FieldError field="name" />
+          {/* SELECTION MODE TOGGLE */}
+          <div className="flex gap-2.5 p-1 bg-slate-100/50 rounded-2xl border border-slate-200/50">
+            <button 
+              onClick={() => setShowStakeholderPicker(false)}
+              className={cn(
+                "flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2",
+                !showStakeholderPicker ? "bg-white text-slate-800 shadow-sm border border-slate-200" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              <Type className="w-3.5 h-3.5" /> Manual Entry
+            </button>
+            <button 
+              onClick={() => setShowStakeholderPicker(true)}
+              className={cn(
+                "flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2",
+                showStakeholderPicker ? "bg-white text-slate-800 shadow-sm border border-slate-200" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              <Users className="w-3.5 h-3.5" /> CRM Repository
+            </button>
+          </div>
+
+          {showStakeholderPicker ? (
+            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+               <div className="relative group">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                  <input 
+                    className="w-full h-12 pl-11 pr-4 bg-white border-2 border-slate-200 rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm font-semibold text-slate-800"
+                    placeholder="Search by name, company or domain..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                  />
+               </div>
+               
+               <div className="grid grid-cols-1 gap-2.5 max-h-[400px] overflow-y-auto pr-1 customize-scrollbar">
+                  {filteredStakeholders.map(sh => (
+                    <button
+                      key={sh.id}
+                      onClick={() => selectExisting(sh)}
+                      className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/5 transition-all group text-left"
+                    >
+                       <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-lg font-black text-slate-300 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-all">
+                             {sh.name[0]}
+                          </div>
+                          <div>
+                             <p className="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{sh.name}</p>
+                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.05em]">{sh.role} · <span className="text-slate-600">{sh.company}</span></p>
+                          </div>
+                       </div>
+                       <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-md group-hover:bg-blue-50 group-hover:text-blue-500 transition-all">Select</span>
+                          <ChevronRight className="w-4 h-4 text-slate-200 group-hover:text-blue-500 transition-all" />
+                       </div>
+                    </button>
+                  ))}
+                  
+                  {filteredStakeholders.length === 0 && (
+                    <div className="py-20 text-center bg-slate-50/50 rounded-3xl border border-dashed border-slate-200 space-y-3">
+                       <Users className="w-8 h-8 text-slate-200 mx-auto" />
+                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-1">No matching stakeholders found in CRM</p>
+                       <button onClick={() => setShowStakeholderPicker(false)} className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline"> Create New Instead →</button>
+                    </div>
+                  )}
+               </div>
             </div>
-            <div>
-              <label className={labelClass}>Job Title / Role <RequiredDot /></label>
-              <input 
-                className={inputClass('role', true)} 
-                placeholder="e.g. Product Lead" 
-                value={form.role} 
-                onChange={e => update('role', e.target.value)}
-                onBlur={() => markTouched('role')}
-              />
-              <FieldError field="role" />
-            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-in fade-in zoom-in-95 duration-300">
+              <div>
+                <label className={labelClass}>Stakeholder Name <RequiredDot /></label>
+                <input 
+                  className={inputClass('name', true)} 
+                  placeholder="e.g. Jane Doe" 
+                  value={form.name} 
+                  onChange={e => update('name', e.target.value)} 
+                  onBlur={() => markTouched('name')}
+                />
+                <FieldError field="name" />
+              </div>
+              <div>
+                <label className={labelClass}>Job Title / Role <RequiredDot /></label>
+                <input 
+                  className={inputClass('role', true)} 
+                  placeholder="e.g. Product Lead" 
+                  value={form.role} 
+                  onChange={e => update('role', e.target.value)}
+                  onBlur={() => markTouched('role')}
+                />
+                <FieldError field="role" />
+              </div>
             <div>
               <label className={labelClass}>Contact Number <RequiredDot /></label>
               <input 
@@ -237,8 +340,9 @@ export default function SetupPage() {
               />
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+    )}
 
       {/* STEP 2 — Company */}
       {step === 2 && (

@@ -11,14 +11,13 @@ import { cn } from '@/lib/utils'
 
 export default function Home() {
   const { sessions, fetchSessions, deleteSession } = useMosiStore()
-  const [isLoading, setIsLoading] = React.useState(true)
+  const [isLoading, setIsLoading] = React.useState(sessions.length === 0)
 
   React.useEffect(() => {
     let mounted = true
     const load = async () => {
-      setIsLoading(true)
+      // Background revalidation: If we have cached sessions, don't show the full-page spinner
       await fetchSessions()
-      
       if (mounted) setIsLoading(false)
     }
     load()
@@ -62,7 +61,7 @@ export default function Home() {
         <Link href="/setup">
           <button className="h-11 px-5 sm:px-6 bg-slate-100 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all active:scale-95 flex items-center gap-2 border border-slate-200 w-full sm:w-auto justify-center">
             <Plus className="w-4 h-4" />
-            New Stakeholder
+            New Session
           </button>
         </Link>
       </section>

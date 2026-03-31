@@ -563,12 +563,12 @@ function AdminDashboardContent() {
             exit={{ y: -100 }} 
             className="fixed top-0 left-0 right-0 z-[60] p-4 bg-white/80 backdrop-blur-md shadow-2xl flex flex-col sm:flex-row items-center justify-center gap-4 border-b border-slate-100"
           >
-            <p className="text-slate-800 text-sm font-black flex items-center gap-3">
+            <div className="text-slate-800 text-sm font-black flex items-center gap-3">
                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-200">
                   <Fingerprint className="w-4 h-4 text-white" />
                </div>
-               <span className="text-blue-600">{selectedIds.length}</span> Sessions Selected
-            </p>
+               <span><span className="text-blue-600">{selectedIds.length}</span> Sessions Selected</span>
+            </div>
             <div className="flex items-center gap-2">
                <div className="relative">
                   <button onClick={() => setIsBulkAssignOpen(!isBulkAssignOpen)} className="h-11 px-8 bg-slate-900 text-white rounded-xl text-xs font-black uppercase flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl active:scale-95">
