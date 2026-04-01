@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { 
   LayoutDashboard, Users, Database,
   LogOut, ShieldCheck, Video, BarChart3,
-  Menu, X, Globe
+  Menu, X, Globe, Briefcase
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
@@ -15,6 +15,7 @@ const adminNav = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, query: null },
   { label: 'All Sessions', href: '/admin?tab=sessions', icon: Video, query: 'sessions' },
   { label: 'All Stakeholders', href: '/admin?tab=stakeholders', icon: Globe, query: 'stakeholders' },
+  { label: 'Accounts', href: '/admin?tab=companies', icon: Briefcase, query: 'companies' },
   { label: 'Users', href: '/admin?tab=users', icon: Users, query: 'users' },
 ]
 

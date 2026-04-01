@@ -15,13 +15,18 @@ const REQUIRED_STEP2 = ['company', 'sector'] as const
 
 export default function SetupPage() {
   const router = useRouter()
-  const { setCurrentSession, scheduleSession, stakeholdersList, fetchStakeholdersList } = useMosiStore()
+  const { 
+    sessions, fetchSessions, fetchStakeholdersList, stakeholdersList, 
+    setCurrentSession, scheduleSession,
+    globalCompanies, fetchGlobalCompanies
+  } = useMosiStore()
 
   const [step, setStep] = React.useState(1)
   const [touched, setTouched] = React.useState<Record<string, boolean>>({})
   const [showErrors, setShowErrors] = React.useState(false)
   const [searchTerm, setSearchTerm] = React.useState('')
   const [showStakeholderPicker, setShowStakeholderPicker] = React.useState(false)
+  const [pickerTab, setPickerTab] = React.useState<'people' | 'companies'>('people')
   
   const [form, setForm] = React.useState({
     name: '', role: '', phone: '', email: '', linkedin: '', domain: '',
@@ -33,6 +38,8 @@ export default function SetupPage() {
 
   React.useEffect(() => {
     fetchStakeholdersList()
+    fetchGlobalCompanies()
+    fetchSessions()
   }, [])
 
   const filteredStakeholders = React.useMemo(() => {
@@ -42,6 +49,85 @@ export default function SetupPage() {
       s.company.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [searchTerm, stakeholdersList])
+
+  const uniqueStakeholders = React.useMemo(() => {
+    const map = new Map<string, any>()
+    stakeholdersList.forEach(s => {
+      if (!s.name) return
+      if (!map.has(s.name.toLowerCase())) {
+        map.set(s.name.toLowerCase(), s)
+      }
+    })
+    return Array.from(map.values())
+  }, [stakeholdersList])
+
+  const [showNameSuggestions, setShowNameSuggestions] = React.useState(false)
+  const nameSuggestions = React.useMemo(() => {
+    if (!showNameSuggestions) return []
+    if (!form.name) return uniqueStakeholders
+    return uniqueStakeholders.filter(s => 
+      s.name.toLowerCase().includes(form.name.toLowerCase())
+    )
+  }, [form.name, uniqueStakeholders, showNameSuggestions])
+
+  const uniqueCompanies = React.useMemo(() => {
+    const map = new Map<string, any>()
+    
+    // 1. From Stakeholders Table
+    stakeholdersList.forEach(s => {
+      if (!s.company || s.company === 'N/A') return
+      if (!map.has(s.company.toLowerCase())) {
+        map.set(s.company.toLowerCase(), {
+          name: s.company,
+          sector: s.sector,
+          employees: s.employees,
+          revenue: s.revenue,
+          geography: s.geography,
+          address: s.address,
+          pincode: s.pincode,
+          domain: s.domain
+        })
+      }
+    })
+
+    // 2. From recent sessions (Safety fallback)
+    sessions.forEach(sess => {
+      const s = sess.stakeholder
+      if (!s || !s.company || s.company === 'N/A') return
+      if (!map.has(s.company.toLowerCase())) {
+        map.set(s.company.toLowerCase(), {
+          name: s.company,
+          sector: s.sector,
+          employees: s.employees,
+          revenue: s.revenue,
+          geography: s.geography,
+          address: s.address,
+          pincode: s.pincode,
+          domain: s.domain
+        })
+      }
+    })
+
+    // 3. Merge with Global companies
+    globalCompanies.forEach(co => {
+      const key = co.name?.toLowerCase().trim() || co.company?.toLowerCase().trim()
+      if (!key) return
+      if (!map.has(key)) {
+        map.set(key, { ...co, name: co.name || co.company })
+      }
+    })
+
+    return Array.from(map.values())
+  }, [stakeholdersList, sessions, globalCompanies])
+
+  const [showCompanySuggestions, setShowCompanySuggestions] = React.useState(false)
+  const companySuggestions = React.useMemo(() => {
+    if (!showCompanySuggestions) return []
+    if (!form.company) return uniqueCompanies
+    return uniqueCompanies.filter(c => 
+      c.name.toLowerCase().includes(form.company.toLowerCase())
+    )
+  }, [form.company, uniqueCompanies, showCompanySuggestions])
 
   const selectExisting = (sh: any) => {
     setForm(f => ({
@@ -62,6 +148,22 @@ export default function SetupPage() {
     }))
     setShowStakeholderPicker(false)
     setTouched({})
+  }
+
+  const selectCompany = (co: any) => {
+    setForm(f => ({
+      ...f,
+      company: co.name || co.company,
+      sector: co.sector || f.sector,
+      employees: co.employees || f.employees,
+      revenue: co.revenue || f.revenue,
+      geography: co.geography || f.geography,
+      address: co.address || f.address,
+      pincode: co.pincode || f.pincode,
+      domain: co.domain || f.domain
+    }))
+    setShowCompanySuggestions(false)
+    if (showStakeholderPicker) setShowStakeholderPicker(false)
   }
 
   const update = (key: string, value: string | boolean) => {
@@ -231,43 +333,86 @@ export default function SetupPage() {
 
           {showStakeholderPicker ? (
             <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+               <div className="flex gap-2 p-1 bg-slate-100 rounded-xl border border-slate-200 w-fit">
+                  <button 
+                    onClick={() => setPickerTab('people')}
+                    className={cn(
+                      "px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
+                      pickerTab === 'people' ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                    )}
+                  > People </button>
+                  <button 
+                    onClick={() => setPickerTab('companies')}
+                    className={cn(
+                      "px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
+                      pickerTab === 'companies' ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                    )}
+                  > Companies </button>
+               </div>
+
                <div className="relative group">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                   <input 
                     className="w-full h-12 pl-11 pr-4 bg-white border-2 border-slate-200 rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm font-semibold text-slate-800"
-                    placeholder="Search by name, company or domain..."
+                    placeholder={pickerTab === 'people' ? "Search for stakeholders..." : "Search for companies..."}
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
                   />
                </div>
                
                <div className="grid grid-cols-1 gap-2.5 max-h-[400px] overflow-y-auto pr-1 customize-scrollbar">
-                  {filteredStakeholders.map(sh => (
-                    <button
-                      key={sh.id}
-                      onClick={() => selectExisting(sh)}
-                      className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/5 transition-all group text-left"
-                    >
-                       <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-lg font-black text-slate-300 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-all">
-                             {sh.name[0]}
-                          </div>
-                          <div>
-                             <p className="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{sh.name}</p>
-                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.05em]">{sh.role} · <span className="text-slate-600">{sh.company}</span></p>
-                          </div>
-                       </div>
-                       <div className="flex items-center gap-2">
-                          <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-md group-hover:bg-blue-50 group-hover:text-blue-500 transition-all">Select</span>
-                          <ChevronRight className="w-4 h-4 text-slate-200 group-hover:text-blue-500 transition-all" />
-                       </div>
-                    </button>
-                  ))}
+                  {pickerTab === 'people' ? (
+                    filteredStakeholders.map(sh => (
+                      <button
+                        key={sh.id}
+                        onClick={() => selectExisting(sh)}
+                        className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/5 transition-all group text-left"
+                      >
+                         <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-lg font-black text-slate-300 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-all">
+                               {sh.name[0]}
+                            </div>
+                            <div>
+                               <p className="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{sh.name}</p>
+                               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.05em]">{sh.role} · <span className="text-slate-600">{sh.company}</span></p>
+                            </div>
+                         </div>
+                         <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-md group-hover:bg-blue-50 group-hover:text-blue-500 transition-all">Select</span>
+                            <ChevronRight className="w-4 h-4 text-slate-200 group-hover:text-blue-500 transition-all" />
+                         </div>
+                      </button>
+                    ))
+                  ) : (
+                    uniqueCompanies
+                      .filter(c => !searchTerm || c.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                      .map(co => (
+                        <button
+                          key={co.name}
+                          onClick={() => selectCompany(co)}
+                          className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/5 transition-all group text-left"
+                        >
+                           <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-lg font-black text-slate-300 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-all">
+                                 {co.name[0]}
+                              </div>
+                              <div>
+                                 <p className="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{co.name}</p>
+                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.05em]">{co.sector || 'N/A'}</p>
+                              </div>
+                           </div>
+                           <div className="flex items-center gap-2">
+                              <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-md group-hover:bg-blue-50 group-hover:text-blue-500 transition-all">Select</span>
+                              <ChevronRight className="w-4 h-4 text-slate-200 group-hover:text-blue-500 transition-all" />
+                           </div>
+                        </button>
+                      ))
+                  )}
                   
-                  {filteredStakeholders.length === 0 && (
+                  {((pickerTab === 'people' && filteredStakeholders.length === 0) || (pickerTab === 'companies' && uniqueCompanies.filter(c => !searchTerm || c.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0)) && (
                     <div className="py-20 text-center bg-slate-50/50 rounded-3xl border border-dashed border-slate-200 space-y-3">
                        <Users className="w-8 h-8 text-slate-200 mx-auto" />
-                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-1">No matching stakeholders found in CRM</p>
+                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-1">No matching records found in CRM</p>
                        <button onClick={() => setShowStakeholderPicker(false)} className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline"> Create New Instead →</button>
                     </div>
                   )}
@@ -275,15 +420,49 @@ export default function SetupPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-in fade-in zoom-in-95 duration-300">
-              <div>
+              <div className="relative">
                 <label className={labelClass}>Stakeholder Name <RequiredDot /></label>
                 <input 
                   className={inputClass('name', true)} 
                   placeholder="e.g. Jane Doe" 
                   value={form.name} 
-                  onChange={e => update('name', e.target.value)} 
-                  onBlur={() => markTouched('name')}
+                  onChange={e => {
+                    update('name', e.target.value)
+                    setShowNameSuggestions(true)
+                  }} 
+                  onBlur={() => {
+                    markTouched('name')
+                    setTimeout(() => setShowNameSuggestions(false), 200)
+                  }}
+                  onFocus={() => setShowNameSuggestions(true)}
                 />
+                {nameSuggestions.length > 0 && (
+                  <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-4 py-2 bg-slate-50 border-b border-slate-100">Existing Stakeholders</p>
+                    {nameSuggestions.slice(0, 5).map(sh => (
+                      <button
+                        key={sh.id || sh.name}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault()
+                          selectExisting(sh)
+                        }}
+                        className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors flex items-center justify-between group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-xs font-black text-slate-300 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                            {sh.name[0]}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-700">{sh.name}</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase">{sh.role} · {sh.company}</p>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-200 group-hover:text-blue-500" />
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <FieldError field="name" />
               </div>
               <div>
@@ -354,15 +533,53 @@ export default function SetupPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
+            <div className="relative">
               <label className={labelClass}>Company Name <RequiredDot /></label>
               <input 
                 className={inputClass('company', true)} 
                 placeholder="e.g. Acme International" 
                 value={form.company} 
-                onChange={e => update('company', e.target.value)}
-                onBlur={() => markTouched('company')}
+                onChange={e => {
+                  update('company', e.target.value)
+                  setShowCompanySuggestions(true)
+                }}
+                onBlur={() => {
+                  markTouched('company')
+                  // Delay closing to allow clicking suggestions
+                  setTimeout(() => setShowCompanySuggestions(false), 200)
+                }}
+                onFocus={() => {
+                  setShowCompanySuggestions(true)
+                  fetchGlobalCompanies()
+                }}
               />
+              {companySuggestions.length > 0 && (
+                <div className="absolute z-50 left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-4 py-2 bg-slate-50 border-b border-slate-100">Existing Records</p>
+                  {companySuggestions.slice(0, 5).map(co => (
+                    <button
+                      key={co.name}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault() // Prevent onBlur from firing before selection
+                        selectCompany(co)
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors flex items-center justify-between group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-xs font-black text-slate-300 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                          {co.name[0]}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-700">{co.name}</p>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">{co.sector || 'N/A'}</p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-200 group-hover:text-blue-500" />
+                    </button>
+                  ))}
+                </div>
+              )}
               <FieldError field="company" />
             </div>
             <div>

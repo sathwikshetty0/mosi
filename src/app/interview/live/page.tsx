@@ -10,6 +10,7 @@ import {
 import { useMosiStore, CEEDTag, formatDuration } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
+import { WaveformVisualizer } from '@/components/WaveformVisualizer'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const quadrants: { id: CEEDTag; questions: string[] }[] = [
@@ -245,7 +246,18 @@ export default function LiveInterviewPage() {
                   <span className="text-[8px] font-black text-red-600 uppercase tracking-widest">Live REC</span>
                 </div>
               )}
-              <span className="text-xs sm:text-sm font-mono font-black text-slate-800 tracking-wider bg-white border border-slate-200 px-3 sm:px-4 py-1.5 rounded-xl shadow-sm">{formatDuration(recordingSeconds)}</span>
+              <div className="flex items-center gap-3">
+                {isRecording && !isPaused && (
+                  <WaveformVisualizer 
+                    stream={stream} 
+                    isActive={true} 
+                    width={80} 
+                    height={24}
+                    color="#f43f5e" // rose-500
+                  />
+                )}
+                <span className="text-xs sm:text-sm font-mono font-black text-slate-800 tracking-wider bg-white border border-slate-200 px-3 sm:px-4 py-1.5 rounded-xl shadow-sm">{formatDuration(recordingSeconds)}</span>
+              </div>
             </div>
           </div>
         </div>

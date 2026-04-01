@@ -127,6 +127,8 @@ interface MosiStore {
   deleteStakeholder: (id: string) => void
   stakeholdersList: StakeholderProfile[]
   fetchStakeholdersList: () => Promise<void>
+  globalCompanies: any[]
+  fetchGlobalCompanies: () => Promise<void>
 }
 
 
@@ -145,6 +147,7 @@ export const useMosiStore = create<MosiStore>()(
   activeQuadrant: 'Core',
   selectedOpportunityId: null,
   stakeholdersList: [],
+  globalCompanies: [],
 
   setCurrentSession: (session) => set((s) => ({
     currentSession: { ...s.currentSession, ...session }
@@ -726,7 +729,7 @@ export const useMosiStore = create<MosiStore>()(
     const { data, error } = await supabase
       .from('stakeholders')
       .select('*')
-      .eq('user_id', user.id)
+      .or(`user_id.eq.${user.id},user_id.is.null`)
       .order('name', { ascending: true })
 
     if (error) {
@@ -736,6 +739,38 @@ export const useMosiStore = create<MosiStore>()(
 
     if (data) {
        set({ stakeholdersList: data })
+    }
+  },
+
+  fetchGlobalCompanies: async () => {
+    if (!supabase) return
+    
+    // We fetch just the company details for recommendations
+    // This allows researchers to see all companies in the DB even if they haven't worked with them
+    const { data, error } = await supabase
+      .from('stakeholders')
+      .select('company, sector, employees, revenue, geography, address, pincode, domain')
+      .not('company', 'is', null)
+      .not('company', 'eq', 'N/A')
+
+    if (error) {
+      console.error('Fetch global companies failed:', error.message)
+      return
+    }
+
+    if (data) {
+      // De-duplicate by company name
+      const map = new Map()
+      data.forEach(item => {
+        const key = item.company.toLowerCase().trim()
+        if (!map.has(key)) {
+          map.set(key, {
+            name: item.company,
+            ...item
+          })
+        }
+      })
+      set({ globalCompanies: Array.from(map.values()) })
     }
   },
 

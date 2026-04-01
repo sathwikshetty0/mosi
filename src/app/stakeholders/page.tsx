@@ -23,8 +23,54 @@ function EditModal({ sh, onOpenChange, onSave }: { sh: any, onOpenChange: (open:
     return !required.some(f => isFieldEmpty(f))
   }
 
-  const { sessions, fetchSessions, updateStakeholder, deleteStakeholder, deleteSession } = useMosiStore()
+  const { 
+    sessions, fetchSessions, updateStakeholder, deleteStakeholder, 
+    deleteSession, stakeholdersList, globalCompanies, fetchGlobalCompanies 
+  } = useMosiStore()
   const shSessions = React.useMemo(() => sessions.filter(s => s.stakeholder?.id === sh.id), [sessions, sh.id])
+
+  const uniqueCompanies = React.useMemo(() => {
+    const map = new Map<string, any>()
+    stakeholdersList.forEach(s => {
+      if (!s.company || s.company === 'N/A') return
+      if (!map.has(s.company.toLowerCase().trim())) {
+        map.set(s.company.toLowerCase().trim(), s)
+      }
+    })
+
+    // Add Global Companies
+    globalCompanies.forEach(co => {
+      const key = (co.name || co.company || '').toLowerCase().trim()
+      if (!key) return
+      if (!map.has(key)) {
+        map.set(key, { ...co, company: co.name || co.company })
+      }
+    })
+
+    return Array.from(map.values())
+  }, [stakeholdersList, globalCompanies])
+
+  const [showSuggestions, setShowSuggestions] = React.useState(false)
+  const suggestions = React.useMemo(() => {
+    if (!showSuggestions) return []
+    if (!form.company) return uniqueCompanies
+    return uniqueCompanies.filter(c => 
+      c.company.toLowerCase().includes(form.company.toLowerCase())
+    )
+  }, [form.company, uniqueCompanies, showSuggestions])
+
+  const selectCompany = (co: any) => {
+    setForm(prev => ({
+      ...prev,
+      company: co.company,
+      sector: co.sector || prev.sector,
+      employees: co.employees || prev.employees,
+      revenue: co.revenue || prev.revenue,
+      geography: co.geography || prev.geography,
+      yearsInBusiness: co.yearsInBusiness || prev.yearsInBusiness
+    }))
+    setShowSuggestions(false)
+  }
 
   const handleSave = async () => {
     if (!validate()) {
@@ -115,9 +161,42 @@ function EditModal({ sh, onOpenChange, onSave }: { sh: any, onOpenChange: (open:
             <div className="space-y-6">
               <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em] pb-2 border-b border-slate-50">Company Profile</h3>
               <div className="space-y-4">
-                <div>
+                <div className="relative">
                   <label className={labelClass}>Company <RequiredDot /></label>
-                  <input className={inputClass('company', true)} value={form.company} onChange={e => update('company', e.target.value)} placeholder="Company name" />
+                  <input 
+                    className={inputClass('company', true)} 
+                    value={form.company} 
+                    onChange={e => {
+                      update('company', e.target.value)
+                      setShowSuggestions(true)
+                    }} 
+                    onFocus={() => {
+                      setShowSuggestions(true)
+                      fetchGlobalCompanies()
+                    }}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                    placeholder="Company name" 
+                  />
+                  {suggestions.length > 0 && (
+                    <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-slate-100 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1">
+                      {suggestions.slice(0, 5).map(co => (
+                        <button
+                          key={co.id}
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            selectCompany(co)
+                          }}
+                          className="w-full px-4 py-3 text-left hover:bg-slate-50 flex items-center justify-between group transition-colors"
+                        >
+                          <div>
+                            <p className="text-xs font-bold text-slate-700">{co.company}</p>
+                            <p className="text-[10px] text-slate-400 font-medium">{co.sector || 'N/A'}</p>
+                          </div>
+                          <ChevronRight className="w-3 h-3 text-slate-200 group-hover:text-blue-500" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   {showErrors && isFieldEmpty('company') && <p className="mt-1 text-[10px] font-semibold text-red-400 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Required</p>}
                 </div>
                 <div>

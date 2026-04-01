@@ -75,7 +75,7 @@ const tagColors: Record<string, { text: string; border: string; bg: string }> = 
   Disrupt: { text: 'text-rose-600', border: 'border-rose-100', bg: 'bg-rose-50/50' },
 }
 
-type Tab = 'overview' | 'sessions' | 'users' | 'stakeholders'
+type Tab = 'overview' | 'sessions' | 'users' | 'stakeholders' | 'companies'
 
 // ─── INLINE SESSION DETAIL PANEL ───
 function SessionDetailPanel({ session, profiles, onClose, onPublish, onDelete, onAssign }: { 
@@ -413,6 +413,7 @@ function AdminDashboardContent() {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [expandedShId, setExpandedShId] = useState<string | null>(null)
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null)
+  const [expandedCompany, setExpandedCompany] = useState<string | null>(null)
   
   // ⚡️ MULTI-SELECT STATE
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -420,7 +421,7 @@ function AdminDashboardContent() {
 
   // Sync tab with URL param
   useEffect(() => {
-    if (urlTab && ['overview', 'sessions', 'users', 'stakeholders'].includes(urlTab)) {
+    if (urlTab && ['overview', 'sessions', 'users', 'stakeholders', 'companies'].includes(urlTab)) {
       setTab(urlTab as Tab)
     } else if (!urlTab) {
       setTab('overview')
@@ -539,6 +540,7 @@ function AdminDashboardContent() {
     { id: 'overview', label: 'Dashboard', shortLabel: 'Dashboard' },
     { id: 'sessions', label: 'All Sessions', shortLabel: 'Sessions' },
     { id: 'stakeholders', label: 'Stakeholders', shortLabel: 'People' },
+    { id: 'companies', label: 'Companies', shortLabel: 'Accounts' },
     { id: 'users', label: 'Users', shortLabel: 'Users' },
   ]
 
@@ -554,6 +556,28 @@ function AdminDashboardContent() {
       }
     }).sort((a, b) => b.sessionCount - a.sessionCount)
   }, [stakeholders, sessions, profiles])
+
+  const allCompaniesList = useMemo(() => {
+    const companiesMap: Record<string, any> = {}
+    
+    sessions.forEach(s => {
+      const companyName = s.stakeholders?.company || 'Unknown'
+      if (!companiesMap[companyName]) {
+        companiesMap[companyName] = { 
+          name: companyName, 
+          sessions: [], 
+          stakeholders: new Set(),
+          insightCount: 0,
+          sector: s.stakeholders?.sector || 'N/A'
+        }
+      }
+      companiesMap[companyName].sessions.push(s)
+      if (s.stakeholders?.name) companiesMap[companyName].stakeholders.add(s.stakeholders.name)
+      companiesMap[companyName].insightCount += (s.opportunities?.length || 0)
+    })
+
+    return Object.values(companiesMap).sort((a, b) => (b as any).sessions.length - (a as any).sessions.length)
+  }, [sessions])
 
   const kpis = [
     { label: 'Total Sessions', val: stats.total, icon: Video, color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100' },
@@ -1044,6 +1068,104 @@ function AdminDashboardContent() {
                               <ChevronDown className="w-4 h-4" />
                            </div>
                         </div>
+                      )}
+                    </motion.div>
+                  )
+                })}
+              </motion.div>
+            )}
+
+            {/* ─── COMPANIES ─── */}
+            {tab === 'companies' && (
+              <motion.div key="companies" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4 sm:space-y-6">
+                {allCompaniesList.map((co: any) => {
+                  const isCoExpanded = expandedCompany === co.name
+                  return (
+                    <motion.div 
+                      key={co.name} 
+                      layout
+                      onClick={() => setExpandedCompany(isCoExpanded ? null : co.name)}
+                      className={cn(
+                        "bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl transition-all cursor-pointer overflow-hidden group",
+                        isCoExpanded ? "p-8 sm:p-12 space-y-10 border-blue-200" : "p-6 sm:p-8 flex items-center justify-between"
+                      )}
+                    >
+                      <div className="flex items-center gap-6">
+                        <div className="w-14 h-14 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-300 group-hover:bg-blue-600 group-hover:border-blue-600 group-hover:text-white transition-all shadow-sm">
+                           <Briefcase className="w-6 h-6" />
+                        </div>
+                        <div>
+                           <h3 className="text-lg font-black text-slate-800 tracking-tight group-hover:text-blue-600 transition-colors uppercase">{co.name}</h3>
+                           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{co.sector} · {co.stakeholders.size} Stakeholders</p>
+                        </div>
+                      </div>
+                      
+                      {!isCoExpanded ? (
+                        <div className="flex items-center gap-8">
+                           <div className="text-right hidden sm:block">
+                              <p className="text-xl font-black text-slate-900">{co.sessions.length}</p>
+                              <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Sessions</p>
+                           </div>
+                           <div className="text-right hidden sm:block">
+                              <p className="text-xl font-black text-blue-600">{co.insightCount}</p>
+                              <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Insights</p>
+                           </div>
+                           <ArrowRight className="w-5 h-5 text-slate-200 group-hover:text-blue-600 transition-all" />
+                        </div>
+                      ) : (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
+                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              {[
+                                { label: 'Total Engagement', val: co.sessions.length, icon: Video, color: 'text-slate-800', bg: 'bg-slate-50' },
+                                { label: 'Strategic Insights', val: co.insightCount, icon: Zap, color: 'text-blue-600', bg: 'bg-blue-50/50' },
+                                { label: 'Active Stakeholders', val: co.stakeholders.size, icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50/50' },
+                              ].map(s => (
+                                <div key={s.label} className={cn("p-8 rounded-[2rem] border border-slate-100/50 text-center space-y-2 shadow-sm", s.bg)}>
+                                   <p className={cn("text-4xl font-black tracking-tighter", s.color)}>{s.val}</p>
+                                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{s.label}</p>
+                                </div>
+                              ))}
+                           </div>
+
+                           <div className="space-y-6">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Network & Personnel</p>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                 {Array.from(co.stakeholders).map((name: any) => (
+                                   <div key={name} className="flex items-center gap-4 p-5 bg-slate-50/50 border border-slate-100 rounded-2xl">
+                                      <div className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center font-black text-slate-300">{name[0]}</div>
+                                      <div>
+                                         <p className="text-xs font-black text-slate-800">{name}</p>
+                                         <p className="text-[9px] text-slate-400 font-bold uppercase">Stakeholder</p>
+                                      </div>
+                                   </div>
+                                 ))}
+                              </div>
+                           </div>
+
+                           <div className="space-y-6">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Institutional Sessions</p>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                 {co.sessions.map((s: any) => (
+                                   <button 
+                                      key={s.id} 
+                                      onClick={(e) => { e.stopPropagation(); setSelectedSessionId(s.id) }}
+                                      className="flex items-center justify-between p-5 bg-white border border-slate-100 rounded-2xl hover:border-blue-400 hover:shadow-xl transition-all text-left shadow-sm group/co-sess"
+                                   >
+                                      <div className="flex items-center gap-4">
+                                         <div className="w-12 h-12 bg-slate-50 flex items-center justify-center rounded-xl border border-slate-100 group-hover/co-sess:bg-blue-600 transition-all">
+                                            <Video className="w-5 h-5 text-slate-400 group-hover/co-sess:text-white" />
+                                         </div>
+                                         <div>
+                                            <p className="text-sm font-black text-slate-800">{s.date}</p>
+                                            <p className="text-[10px] text-slate-400 font-black uppercase">{s.status} · {s.opportunities?.length || 0} Insights</p>
+                                         </div>
+                                      </div>
+                                      <ChevronRight className="w-5 h-5 text-slate-300 group-hover/co-sess:text-blue-600 transition-all" />
+                                   </button>
+                                 ))}
+                              </div>
+                           </div>
+                        </motion.div>
                       )}
                     </motion.div>
                   )
