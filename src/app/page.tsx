@@ -52,10 +52,10 @@ export default function Home() {
       <section className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 pt-2 sm:pt-4">
         <div className="space-y-1 sm:space-y-2">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800">
-            Good Morning 👋
+            Dashboard
           </h1>
           <p className="text-sm text-slate-500 font-medium">
-            Review your discovery sessions and insights.
+            Your discovery sessions and insights at a glance.
           </p>
         </div>
         <Link href="/setup">
