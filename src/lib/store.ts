@@ -2,6 +2,10 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from './supabase'
 
+const devLog = (...args: unknown[]) => {
+  if (process.env.NODE_ENV === 'development') devLog(...args)
+}
+
 export type CEEDTag = 'Core' | 'Efficiency' | 'Expansion' | 'Disrupt'
 
 export interface TranscriptParagraph {
@@ -282,7 +286,7 @@ export const useMosiStore = create<MosiStore>()(
     }
 
     if (sessionsData) {
-      console.log(`Fetched ${sessionsData.length} sessions from Supabase`)
+      devLog(`Fetched ${sessionsData.length} sessions from Supabase`)
       const fallbackStakeholder: StakeholderProfile = {
         name: 'Untitled Stakeholder', role: 'N/A', phone: '', email: '', linkedin: '',
         company: 'N/A', sector: '', products: '', employees: '', revenue: '',
@@ -410,14 +414,14 @@ export const useMosiStore = create<MosiStore>()(
     if (supabase) {
       ;(async () => {
         try {
-          console.log('Starting Supabase sync for session:', newId)
+          devLog('Starting Supabase sync for session:', newId)
 
           // 0. GET CURRENT USER ID
           let currentUserId: string | null = null
           try {
             const { data: { user } } = await supabase.auth.getUser()
             currentUserId = user?.id || null
-            console.log('Current user ID:', currentUserId)
+            devLog('Current user ID:', currentUserId)
             
             // Auto-assign this session locally so the UI updates immediately
             if (currentUserId) {
@@ -455,7 +459,7 @@ export const useMosiStore = create<MosiStore>()(
             }
 
             // First, try to find an existing stakeholder by name to avoid duplicates
-            console.log('Checking for existing stakeholder:', dbStakeholder.name)
+            devLog('Checking for existing stakeholder:', dbStakeholder.name)
             const { data: existingSH } = await supabase
               .from('stakeholders')
               .select('id')
@@ -464,18 +468,18 @@ export const useMosiStore = create<MosiStore>()(
 
             if (existingSH) {
               stakeholderId = existingSH.id
-              console.log('Found existing stakeholder, linking to ID:', stakeholderId)
+              devLog('Found existing stakeholder, linking to ID:', stakeholderId)
               
               // Update their details while we are at it
               await supabase.from('stakeholders').update(dbStakeholder).eq('id', stakeholderId)
             } else {
-              console.log('Creating new stakeholder:', dbStakeholder.name)
+              devLog('Creating new stakeholder:', dbStakeholder.name)
               const { data: sData, error: sErr } = await supabase.from('stakeholders').insert(dbStakeholder).select().single()
               if (sErr || !sData) {
                 console.error('Stakeholder sync failed:', sErr?.message || sErr)
               } else {
                 stakeholderId = sData.id
-                console.log('Stakeholder created successfully, ID:', stakeholderId)
+                devLog('Stakeholder created successfully, ID:', stakeholderId)
               }
             }
           } catch (e) {
@@ -498,12 +502,12 @@ export const useMosiStore = create<MosiStore>()(
             if (currentUserId) {
               sessionInsert.user_id = currentUserId
             }
-            console.log('Inserting session row:', sessionInsert)
+            devLog('Inserting session row:', sessionInsert)
             const { error: sessErr } = await supabase.from('sessions').insert(sessionInsert)
             if (sessErr) {
                console.error('Session sync failed:', sessErr, 'Message:', sessErr?.message, 'Code:', sessErr?.code)
             } else {
-               console.log('Session row inserted successfully')
+               devLog('Session row inserted successfully')
             }
           } catch (e) {
             console.error('Session sync exception:', e)
@@ -560,27 +564,27 @@ export const useMosiStore = create<MosiStore>()(
           // This is often the most important but also the most fragile step
           try {
             if (recordingUrl && recordingUrl.startsWith('blob:')) {
-              console.log('Fetching audio blob for upload...')
+              devLog('Fetching audio blob for upload...')
               const response = await fetch(recordingUrl)
               const blob = await response.blob()
               const fileName = `${newId}.webm`
               
-              console.log('Uploading audio to Supabase Storage...')
+              devLog('Uploading audio to Supabase Storage...')
               const { data: uploadData, error: uploadErr } = await supabase.storage.from('recordings').upload(fileName, blob)
               
               if (uploadErr) {
                 console.error('Audio upload failed:', uploadErr)
               } else if (uploadData) {
-                console.log('Audio uploaded successfully, retrieving public URL...')
+                devLog('Audio uploaded successfully, retrieving public URL...')
                 const { data: { publicUrl } } = supabase.storage.from('recordings').getPublicUrl(fileName)
                 
-                console.log('Updating session with recording URL...')
+                devLog('Updating session with recording URL...')
                 const { error: updateErr } = await supabase.from('sessions').update({ recording_url: publicUrl }).eq('id', newId)
                 
                 if (updateErr) {
                   console.error('Failed to update session with recording URL:', updateErr)
                 } else {
-                  console.log('Recording URL sync complete.')
+                  devLog('Recording URL sync complete.')
                   get().setRecordingUrl(newId, publicUrl)
                 }
               }
@@ -592,9 +596,15 @@ export const useMosiStore = create<MosiStore>()(
             console.error('Audio sync exception:', e)
           }
 
-          console.log('Supabase background sync finished for session:', newId)
+          devLog('Supabase background sync finished for session:', newId)
         } catch (globalErr) {
           console.error('Global Supabase sync error:', globalErr)
+        } finally {
+          set((s) => ({
+            sessions: s.sessions.map(sess =>
+              sess.id === newId ? { ...sess, isPendingSync: false } : sess
+            )
+          }))
         }
       })()
     }
@@ -640,9 +650,13 @@ export const useMosiStore = create<MosiStore>()(
           
           if (error) {
             console.error('Publish session to Supabase failed:', error.message)
-            // Don't revert local state - user still sees it as published locally
+            set((s) => ({
+              sessions: s.sessions.map(sess =>
+                sess.id === id ? { ...sess, status: 'Review' } : sess
+              )
+            }))
           } else {
-            console.log('Session published to Supabase successfully:', id)
+            devLog('Session published to Supabase successfully:', id)
           }
           
           // Re-fetch to ensure everything is synced and visible
@@ -668,21 +682,33 @@ export const useMosiStore = create<MosiStore>()(
     } : sess)
   })),
 
-  deleteSession: (id) => {
-    set((s) => ({
-      sessions: s.sessions.filter(sess => sess.id !== id)
-    }))
+  deleteSession: async (id) => {
+    const snapshot = get().sessions
+    set((s) => ({ sessions: s.sessions.filter(sess => sess.id !== id) }))
     if (supabase) {
-      supabase.from('sessions').delete().eq('id', id).then()
+      const { error } = await supabase.from('sessions').delete().eq('id', id)
+      if (error) {
+        console.error('Delete session failed:', error.message)
+        set({ sessions: snapshot })
+      }
     }
   },
 
   updateSessionSummary: (id, summary) => {
+    const prevSummary = get().sessions.find(s => s.id === id)?.summary ?? ''
     set((s) => ({
       sessions: s.sessions.map(sess => sess.id === id ? { ...sess, summary } : sess)
     }))
     if (supabase) {
-      supabase.from('sessions').update({ summary }).eq('id', id).then()
+      ;(async () => {
+        const { error } = await supabase.from('sessions').update({ summary }).eq('id', id)
+        if (error) {
+          console.error('Summary update failed:', error.message)
+          set((s) => ({
+            sessions: s.sessions.map(sess => sess.id === id ? { ...sess, summary: prevSummary } : sess)
+          }))
+        }
+      })()
     }
   },
 
