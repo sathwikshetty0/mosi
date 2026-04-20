@@ -3,10 +3,41 @@ import { persist } from 'zustand/middleware'
 import { supabase } from './supabase'
 
 const devLog = (...args: unknown[]) => {
-  if (process.env.NODE_ENV === 'development') devLog(...args)
+  if (process.env.NODE_ENV === 'development') console.log('[MOSI]', ...args)
 }
 
 export type CEEDTag = 'Core' | 'Efficiency' | 'Expansion' | 'Disrupt'
+
+export interface CEEDQuestion {
+  id: string
+  text: string
+  quadrant: CEEDTag
+}
+
+export const DEFAULT_CEED_QUESTIONS: CEEDQuestion[] = [
+  // Core
+  { id: 'c1', text: 'Walk me through your core product or service.', quadrant: 'Core' },
+  { id: 'c2', text: 'What are the top 2–3 challenges your team faces right now?', quadrant: 'Core' },
+  { id: 'c3', text: 'What features or aspects do customers love most?', quadrant: 'Core' },
+  { id: 'c4', text: 'How do you currently differentiate from competitors?', quadrant: 'Core' },
+  { id: 'c5', text: 'What does your typical customer journey look like?', quadrant: 'Core' },
+  // Efficiency
+  { id: 'e1', text: 'Which department or process consumes the most time each week?', quadrant: 'Efficiency' },
+  { id: 'e2', text: 'How does your team currently generate and qualify leads?', quadrant: 'Efficiency' },
+  { id: 'e3', text: 'What processes are still manual that frustrate your team?', quadrant: 'Efficiency' },
+  { id: 'e4', text: 'Where do you feel you\'re leaving money on the table?', quadrant: 'Efficiency' },
+  { id: 'e5', text: 'What tools or tech do you wish you had?', quadrant: 'Efficiency' },
+  // Expansion
+  { id: 'x1', text: 'Do customers frequently ask for services or features you don\'t offer?', quadrant: 'Expansion' },
+  { id: 'x2', text: 'Are there adjacent markets you want to enter in the next 12–24 months?', quadrant: 'Expansion' },
+  { id: 'x3', text: 'What partnerships or channels have you not fully explored?', quadrant: 'Expansion' },
+  { id: 'x4', text: 'Which customer segment do you think is underserved?', quadrant: 'Expansion' },
+  // Disrupt
+  { id: 'd1', text: 'If you were to restart this company today, what would you do completely differently?', quadrant: 'Disrupt' },
+  { id: 'd2', text: 'What technology do you think will disrupt your industry in 3–5 years?', quadrant: 'Disrupt' },
+  { id: 'd3', text: 'What assumptions about your business model could turn out to be wrong?', quadrant: 'Disrupt' },
+  { id: 'd4', text: 'What would a competitor with 10x your budget do to beat you?', quadrant: 'Disrupt' },
+]
 
 export interface TranscriptParagraph {
   id: string
@@ -84,6 +115,7 @@ export interface InterviewSession {
   transcript?: TranscriptParagraph[]
   summary?: string
   user_id?: string
+  ceedQuestions?: CEEDQuestion[]
 }
 
 
@@ -312,7 +344,8 @@ export const useMosiStore = create<MosiStore>()(
           evidence: rootEvidence,
           recordingUrl: s.recording_url,
           summary: s.summary || '',
-          user_id: s.user_id
+          user_id: s.user_id,
+          ceedQuestions: s.ceed_questions || undefined
         }
       })
 
@@ -366,7 +399,8 @@ export const useMosiStore = create<MosiStore>()(
         evidence: rootEvidence,
         recordingUrl: sessionData.recording_url,
         summary: sessionData.summary || '',
-        user_id: sessionData.user_id
+        user_id: sessionData.user_id,
+        ceedQuestions: sessionData.ceed_questions || undefined
       }
       
       set((state) => {
@@ -400,6 +434,7 @@ export const useMosiStore = create<MosiStore>()(
       recordingUrl,
       transcript: [],
       summary: '',
+      ceedQuestions: state.currentSession.ceedQuestions || DEFAULT_CEED_QUESTIONS,
       isPendingSync: true
     } as any
 
@@ -496,7 +531,8 @@ export const useMosiStore = create<MosiStore>()(
               duration: session.duration,
               audio_settings: session.settings,
               summary: session.summary || '',
-              transcript: session.transcript || []
+              transcript: session.transcript || [],
+              ceed_questions: session.ceedQuestions || []
             }
             // Only include user_id if we have one
             if (currentUserId) {
@@ -623,7 +659,8 @@ export const useMosiStore = create<MosiStore>()(
       opportunities: [],
       settings: s.currentSession.settings || { audio: true, video: true },
       evidence: [],
-      location: s.currentSession.location
+      location: s.currentSession.location,
+      ceedQuestions: s.currentSession.ceedQuestions || DEFAULT_CEED_QUESTIONS
     }
     return {
       sessions: [session, ...s.sessions],
