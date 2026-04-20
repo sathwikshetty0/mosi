@@ -2,11 +2,12 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { useMosiStore } from '@/lib/store'
+import { useMosiStore, DEFAULT_CEED_QUESTIONS, CEEDQuestion, CEEDTag } from '@/lib/store'
 import { 
   User, Building2, Globe, Mic, Video, Type,
   Calendar, MapPin, ChevronRight, CheckCircle,
-  Sparkles, Activity, Zap, AlertCircle, ChevronLeft, Search, Users
+  Sparkles, Activity, Zap, AlertCircle, ChevronLeft, Search, Users,
+  Plus, Trash2, Edit3, MessageSquarePlus, GripVertical
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -35,6 +36,40 @@ export default function SetupPage() {
     audio: true, video: true, transcript: true, translate: false,
     scheduleDate: '', scheduleTime: '', location: ''
   })
+
+  // CEED Questions state
+  const [ceedQuestions, setCeedQuestions] = React.useState<CEEDQuestion[]>(
+    () => DEFAULT_CEED_QUESTIONS.map(q => ({ ...q }))
+  )
+  const [activeQTab, setActiveQTab] = React.useState<CEEDTag>('Core')
+  const [editingQuestionId, setEditingQuestionId] = React.useState<string | null>(null)
+  const [newQuestionText, setNewQuestionText] = React.useState('')
+
+  const filteredQuestions = ceedQuestions.filter(q => q.quadrant === activeQTab)
+
+  const handleUpdateQuestion = (id: string, newText: string) => {
+    setCeedQuestions(prev => prev.map(q => q.id === id ? { ...q, text: newText } : q))
+    setEditingQuestionId(null)
+  }
+
+  const handleDeleteQuestion = (id: string) => {
+    setCeedQuestions(prev => prev.filter(q => q.id !== id))
+  }
+
+  const handleAddQuestion = () => {
+    if (!newQuestionText.trim()) return
+    const newQ: CEEDQuestion = {
+      id: `custom_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      text: newQuestionText.trim(),
+      quadrant: activeQTab
+    }
+    setCeedQuestions(prev => [...prev, newQ])
+    setNewQuestionText('')
+  }
+
+  const handleResetQuestions = () => {
+    setCeedQuestions(DEFAULT_CEED_QUESTIONS.map(q => ({ ...q })))
+  }
 
   React.useEffect(() => {
     fetchStakeholdersList()
@@ -214,7 +249,8 @@ export default function SetupPage() {
       settings: { audio: form.audio, video: form.video },
       opportunities: [],
       location: form.location,
-      status: 'Recording'
+      status: 'Recording',
+      ceedQuestions
     })
     router.push('/interview/live')
   }
@@ -636,7 +672,7 @@ export default function SetupPage() {
         <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-400">
           <div className="p-4 bg-gradient-to-r from-emerald-50/80 to-teal-50/50 border border-emerald-100/60 rounded-2xl">
             <p className="text-xs text-emerald-700/80 font-medium leading-relaxed">
-              <span className="font-bold text-emerald-800">Step 3 of 3:</span> Configure capture settings and optional meeting logistics.
+              <span className="font-bold text-emerald-800">Step 3 of 3:</span> Configure capture settings, interview questions, and meeting logistics.
             </p>
           </div>
 
@@ -670,6 +706,157 @@ export default function SetupPage() {
               ))}
             </div>
           </div>
+
+          {/* ============ CEED QUESTION EDITOR ============ */}
+          <div className="space-y-5">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <MessageSquarePlus className="w-4 h-4" /> CEED Framework Questions
+              </h3>
+              <button 
+                onClick={handleResetQuestions}
+                className="text-[10px] font-bold text-slate-400 hover:text-blue-600 uppercase tracking-widest transition-colors"
+              >
+                Reset to Defaults
+              </button>
+            </div>
+
+            <p className="text-[11px] text-slate-400 font-medium px-1 -mt-2">
+              Customize the interview questions for each CEED quadrant. Edit existing questions, add new ones, or remove ones you don&apos;t need.
+            </p>
+
+            {/* Quadrant Tabs */}
+            <div className="flex gap-1.5 p-1 bg-slate-100/60 rounded-xl border border-slate-200/50">
+              {(['Core', 'Efficiency', 'Expansion', 'Disrupt'] as CEEDTag[]).map(tab => {
+                const count = ceedQuestions.filter(q => q.quadrant === tab).length
+                return (
+                  <button 
+                    key={tab}
+                    onClick={() => { setActiveQTab(tab); setEditingQuestionId(null) }}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all text-center relative",
+                      activeQTab === tab 
+                        ? "bg-white text-slate-800 shadow-sm border border-slate-200" 
+                        : "text-slate-400 hover:text-slate-600"
+                    )}
+                  >
+                    {tab}
+                    <span className={cn(
+                      "ml-1.5 text-[8px] px-1.5 py-0.5 rounded-full font-black",
+                      activeQTab === tab ? "bg-blue-50 text-blue-600" : "bg-slate-50 text-slate-300"
+                    )}>{count}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Questions List */}
+            <div className="space-y-2">
+              {filteredQuestions.length > 0 ? filteredQuestions.map((q, idx) => (
+                <div key={q.id} className="group bg-white border border-slate-100 rounded-2xl p-4 hover:border-slate-200 transition-all">
+                  {editingQuestionId === q.id ? (
+                    <div className="space-y-3">
+                      <textarea
+                        autoFocus
+                        rows={2}
+                        defaultValue={q.text}
+                        className="w-full px-3 py-2.5 border-2 border-blue-200 rounded-xl text-sm font-medium text-slate-800 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 resize-none bg-blue-50/30"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault()
+                            handleUpdateQuestion(q.id, (e.target as HTMLTextAreaElement).value)
+                          }
+                          if (e.key === 'Escape') setEditingQuestionId(null)
+                        }}
+                      />
+                      <div className="flex items-center gap-2 justify-end">
+                        <button 
+                          onClick={() => setEditingQuestionId(null)}
+                          className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            const textarea = (e.target as HTMLElement).closest('.space-y-3')?.querySelector('textarea')
+                            if (textarea) handleUpdateQuestion(q.id, textarea.value)
+                          }}
+                          className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-blue-700 transition-colors"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-3">
+                      <span className="text-[10px] font-black text-slate-300 mt-0.5 min-w-[20px]">{idx + 1}.</span>
+                      <p className="text-sm font-medium text-slate-700 flex-1 leading-relaxed">{q.text}</p>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        <button 
+                          onClick={() => setEditingQuestionId(q.id)}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-all"
+                          title="Edit question"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteQuestion(q.id)}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all"
+                          title="Remove question"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )) : (
+                <div className="py-10 text-center bg-slate-50/50 border-2 border-dashed border-slate-100 rounded-2xl space-y-2">
+                  <MessageSquarePlus className="w-6 h-6 text-slate-200 mx-auto" />
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">No questions in this quadrant</p>
+                </div>
+              )}
+            </div>
+
+            {/* Add New Question */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newQuestionText}
+                onChange={e => setNewQuestionText(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleAddQuestion() }}
+                placeholder={`Add a new ${activeQTab} question...`}
+                className="flex-1 h-12 px-4 rounded-xl border-2 border-slate-200 outline-none transition-all text-sm font-medium text-slate-800 placeholder:text-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 bg-white hover:border-slate-300"
+              />
+              <button 
+                onClick={handleAddQuestion}
+                disabled={!newQuestionText.trim()}
+                className={cn(
+                  "h-12 px-5 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-all shrink-0",
+                  newQuestionText.trim()
+                    ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200"
+                    : "bg-slate-50 text-slate-300 border border-slate-100 cursor-not-allowed"
+                )}
+              >
+                <Plus className="w-4 h-4" /> Add
+              </button>
+            </div>
+
+            {/* Summary */}
+            <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-xl border border-slate-100">
+              <div className="flex gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                {(['Core', 'Efficiency', 'Expansion', 'Disrupt'] as CEEDTag[]).map(tab => (
+                  <span key={tab} className={cn(activeQTab === tab && "text-blue-600")}>
+                    {tab[0]}: {ceedQuestions.filter(q => q.quadrant === tab).length}
+                  </span>
+                ))}
+              </div>
+              <span className="text-[10px] font-black text-slate-300 ml-auto uppercase tracking-widest">
+                Total: {ceedQuestions.length}
+              </span>
+            </div>
+          </div>
+          {/* ============ END CEED QUESTION EDITOR ============ */}
 
           <div className="space-y-5">
             <h3 className="text-xs font-bold text-slate-500 px-1 uppercase tracking-widest">Logistics <span className="text-slate-300 font-medium normal-case">(Optional)</span></h3>
