@@ -88,15 +88,6 @@ export default function LiveInterviewPage() {
     return () => clearInterval(timer)
   }, [isRecording, isPaused, tick])
 
-  const toggleQuestionDone = (q: string) => {
-    setAnsweredQuestions(prev => {
-      const next = new Set(prev)
-      if (next.has(q)) next.delete(q)
-      else next.add(q)
-      return next
-    })
-  }
-
   // Build questions from session or defaults
   const sessionQuestions = currentSession?.ceedQuestions ?? DEFAULT_CEED_QUESTIONS
   const questions = React.useMemo(() => {
@@ -104,6 +95,25 @@ export default function LiveInterviewPage() {
       .filter(q => q.quadrant === activeQuadrant)
       .map(q => q.text)
   }, [sessionQuestions, activeQuadrant])
+
+  const toggleQuestionDone = (q: string) => {
+    const isNowAnswered = !answeredQuestions.has(q)
+    
+    setAnsweredQuestions(prev => {
+      const next = new Set(prev)
+      if (next.has(q)) next.delete(q)
+      else next.add(q)
+      return next
+    })
+
+    // Auto-advance if it was marked as answered and there's a next question
+    if (isNowAnswered && questionIndex < questions.length - 1) {
+      setTimeout(() => {
+        setQuestionIndex(prev => prev + 1)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }, 400)
+    }
+  }
 
   const handleQuickCapture = () => {
     const logNumber = (currentSession?.opportunities?.length || 0) + 1
