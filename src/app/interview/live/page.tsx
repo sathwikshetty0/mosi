@@ -7,52 +7,13 @@ import {
   File as FileIcon, Sparkles, Activity, Layers, Globe, ArrowUp, X,
   CheckCircle2, ArrowRight
 } from 'lucide-react'
-import { useMosiStore, CEEDTag, formatDuration } from '@/lib/store'
+import { useMosiStore, CEEDTag, formatDuration, DEFAULT_CEED_QUESTIONS } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import { WaveformVisualizer } from '@/components/WaveformVisualizer'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const quadrants: { id: CEEDTag; questions: string[] }[] = [
-  {
-    id: 'Core',
-    questions: [
-      'Walk me through your core product or service.',
-      'What are the top 2–3 challenges your team faces right now?',
-      'What features or aspects do customers love most?',
-      'How do you currently differentiate from competitors?',
-      'What does your typical customer journey look like?'
-    ]
-  },
-  {
-    id: 'Efficiency',
-    questions: [
-      'Which department or process consumes the most time each week?',
-      'How does your team currently generate and qualify leads?',
-      'What processes are still manual that frustrate your team?',
-      'Where do you feel you\'re leaving money on the table?',
-      'What tools or tech do you wish you had?'
-    ]
-  },
-  {
-    id: 'Expansion',
-    questions: [
-      'Do customers frequently ask for services or features you don\'t offer?',
-      'Are there adjacent markets you want to enter in the next 12–24 months?',
-      'What partnerships or channels have you not fully explored?',
-      'Which customer segment do you think is underserved?'
-    ]
-  },
-  {
-    id: 'Disrupt',
-    questions: [
-      'If you were to restart this company today, what would you do completely differently?',
-      'What technology do you think will disrupt your industry in 3–5 years?',
-      'What assumptions about your business model could turn out to be wrong?',
-      'What would a competitor with 10x your budget do to beat you?'
-    ]
-  }
-]
+const QUADRANT_IDS: CEEDTag[] = ['Core', 'Efficiency', 'Expansion', 'Disrupt']
 
 export default function LiveInterviewPage() {
   const router = useRouter()
@@ -136,8 +97,13 @@ export default function LiveInterviewPage() {
     })
   }
 
-  const currentQ = quadrants.find(q => q.id === activeQuadrant)!
-  const questions = currentQ.questions
+  // Build questions from session or defaults
+  const sessionQuestions = currentSession?.ceedQuestions ?? DEFAULT_CEED_QUESTIONS
+  const questions = React.useMemo(() => {
+    return sessionQuestions
+      .filter(q => q.quadrant === activeQuadrant)
+      .map(q => q.text)
+  }, [sessionQuestions, activeQuadrant])
 
   const handleQuickCapture = () => {
     const logNumber = (currentSession?.opportunities?.length || 0) + 1
@@ -263,18 +229,18 @@ export default function LiveInterviewPage() {
         </div>
         
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-          {quadrants.map(q => (
+          {QUADRANT_IDS.map(qId => (
             <button 
-              key={q.id}
-              onClick={() => { setActiveQuadrant(q.id); setQuestionIndex(0) }}
+              key={qId}
+              onClick={() => { setActiveQuadrant(qId); setQuestionIndex(0) }}
               className={cn(
                 "h-11 sm:h-14 rounded-xl sm:rounded-2xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest sm:tracking-[0.2em] transition-all border-2 text-center flex items-center justify-center gap-2 px-1",
-                activeQuadrant === q.id 
+                activeQuadrant === qId 
                   ? 'bg-slate-800 text-white border-slate-800 shadow-xl sm:shadow-2xl shadow-slate-200' 
                   : 'bg-white text-slate-400 border-slate-100 hover:border-slate-300 hover:text-slate-600'
               )}
             >
-              {q.id}
+              {qId}
             </button>
           ))}
         </div>
@@ -282,28 +248,30 @@ export default function LiveInterviewPage() {
 
       {/* MAIN QUESTION */}
       <div className="flex-1 flex flex-col justify-center pb-40 sm:pb-48 space-y-8 sm:space-y-10 py-8 sm:py-0">
+        {questions.length > 0 ? (
+        <>
         <div className="space-y-3 sm:space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-[10px] sm:text-xs font-bold text-blue-500 uppercase tracking-widest">{activeQuadrant} Focus</p>
-            {answeredQuestions.has(questions[questionIndex]) && (
+            {answeredQuestions.has(questions[Math.min(questionIndex, questions.length - 1)]) && (
               <span className="bg-emerald-50 text-emerald-600 text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border border-emerald-100 flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3" /> Answered
               </span>
             )}
           </div>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-700 leading-tight">
-            {questions[questionIndex]}
+            {questions[Math.min(questionIndex, questions.length - 1)]}
           </h1>
           <button 
-            onClick={() => toggleQuestionDone(questions[questionIndex])}
+            onClick={() => toggleQuestionDone(questions[Math.min(questionIndex, questions.length - 1)])}
             className={cn(
               "text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-xl transition-all border",
-              answeredQuestions.has(questions[questionIndex])
+              answeredQuestions.has(questions[Math.min(questionIndex, questions.length - 1)])
                 ? "bg-slate-50 text-slate-400 border-slate-100"
                 : "bg-white text-emerald-600 border-emerald-100 hover:bg-emerald-50"
             )}
           >
-            {answeredQuestions.has(questions[questionIndex]) ? "Done" : "Mark Answered"}
+            {answeredQuestions.has(questions[Math.min(questionIndex, questions.length - 1)]) ? "Done" : "Mark Answered"}
           </button>
         </div>
 
@@ -334,6 +302,16 @@ export default function LiveInterviewPage() {
             </button>
           ))}
         </div>
+        </>
+        ) : (
+          <div className="py-16 text-center space-y-4">
+            <div className="w-16 h-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mx-auto">
+              <Activity className="w-8 h-8 text-slate-200" />
+            </div>
+            <p className="text-sm font-bold text-slate-500">No questions configured for {activeQuadrant}</p>
+            <p className="text-xs text-slate-400">Add questions in the setup wizard for this quadrant.</p>
+          </div>
+        )}
       </div>
 
       {/* BOTTOM CONTROLS */}
