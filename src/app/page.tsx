@@ -11,17 +11,27 @@ import { cn } from '@/lib/utils'
 
 export default function Home() {
   const { sessions, fetchSessions, deleteSession } = useMosiStore()
-  const [isLoading, setIsLoading] = React.useState(sessions.length === 0)
+  const [isLoading, setIsLoading] = React.useState(true)
 
   React.useEffect(() => {
     let mounted = true
-    const load = async () => {
-      // Background revalidation: If we have cached sessions, don't show the full-page spinner
-      await fetchSessions()
+    // Safety timeout: never show spinner for more than 8 seconds
+    const timeout = setTimeout(() => {
       if (mounted) setIsLoading(false)
+    }, 8000)
+
+    const load = async () => {
+      try {
+        await fetchSessions()
+      } catch (e) {
+        console.error('Failed to fetch sessions:', e)
+      } finally {
+        if (mounted) setIsLoading(false)
+        clearTimeout(timeout)
+      }
     }
     load()
-    return () => { mounted = false }
+    return () => { mounted = false; clearTimeout(timeout) }
   }, [fetchSessions])
 
   const totalInterviews = sessions.length
