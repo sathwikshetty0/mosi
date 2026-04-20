@@ -36,8 +36,15 @@ function ReviewContent() {
   const { sessions, updateOpportunity, deleteSession, updateSessionSummary } = useMosiStore()
   
   const session = React.useMemo(() => {
-    if (sessionId) return sessions.find(s => s.id === sessionId)
-    return sessions.find(s => s.status === 'Review') || sessions[0]
+    let sess = sessionId ? sessions.find(s => s.id === sessionId) : (sessions.find(s => s.status === 'Review') || sessions[0])
+    if (sess) {
+      // Ensure opportunities are sorted chronologically
+      return {
+        ...sess,
+        opportunities: [...sess.opportunities].sort((a, b) => a.timestamp - b.timestamp)
+      }
+    }
+    return null
   }, [sessions, sessionId])
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
@@ -223,14 +230,94 @@ function ReviewContent() {
 
       <audio ref={audioRef} src={session.recordingUrl} onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} onTimeUpdate={handleTimeUpdate} className="hidden" />
 
+      {/* 🟢 COMPACT LIGHT-THEME AUDIO PLAYER */}
+      <section className="bg-white border border-slate-100 rounded-3xl p-5 sm:p-7 text-slate-800 shadow-md shadow-slate-200/20 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none group-hover:opacity-[0.04] transition-opacity text-slate-900">
+          <Headphones className="w-32 h-32 -mr-8 -mt-8" />
+        </div>
+        
+        <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
+          <div className="flex-1 w-full space-y-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                 <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center border border-blue-100/50">
+                    <Headphones className="w-5 h-5 text-blue-500" />
+                 </div>
+                 <div>
+                    <h3 className="text-sm font-black uppercase tracking-tight text-slate-800 line-clamp-1">{session.stakeholder?.name || 'Unspecified Stakeholder'}</h3>
+                    <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest leading-none mt-0.5">Interview Audio • {session.recordingUrl?.startsWith('blob') ? 'Local' : 'Synchronized'}</p>
+                 </div>
+              </div>
+              <div className="text-right">
+                <span className="text-xl font-black font-mono text-slate-800 tracking-tighter">{currentTimeFormatted}</span>
+                <span className="text-xs font-bold text-slate-200 mx-1.5">/</span>
+                <span className="text-xs font-black font-mono text-slate-400">{formatDuration(session.duration)}</span>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden w-full cursor-pointer relative group/seek" onClick={handleSeek}>
+                <div 
+                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-100 ease-linear" 
+                  style={{ width: `${audioProgress}%` }} 
+                />
+              </div>
+
+              <div className="flex items-center justify-center gap-6">
+                <button 
+                  onClick={() => skipAudio(-10)} 
+                  className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-all"
+                >
+                  <Rewind className="w-5 h-5" />
+                </button>
+                
+                <button 
+                  onClick={() => toggleAudio()} 
+                  className="w-14 h-14 bg-slate-900 text-white rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg shadow-slate-300"
+                >
+                  {isPlaying ? <Pause className="w-7 h-7 fill-current" /> : <Play className="w-7 h-7 fill-current ml-1" />}
+                </button>
+
+                <button 
+                  onClick={() => skipAudio(10)} 
+                  className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-all"
+                >
+                  <FastForward className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="hidden lg:flex flex-col gap-2 shrink-0 border-l border-slate-100 pl-6">
+             <div className="bg-slate-50/50 p-3 rounded-xl border border-slate-100 min-w-[140px]">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Status</p>
+                <div className="flex items-center gap-2">
+                   <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                   <span className="text-[10px] font-black uppercase text-slate-600">Live</span>
+                </div>
+             </div>
+             <button 
+                onClick={() => skipAudio(session.duration)}
+                className="w-full py-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all flex items-center justify-center gap-1.5"
+              >
+                Jump to End <FastForward className="w-2.5 h-2.5" />
+             </button>
+          </div>
+        </div>
+      </section>
+
       <div className="grid grid-cols-1 gap-10">
         
-        {/* LOGS TABLE */}
+        {/* TIMELINE / LOGS TABLE */}
         <section className="space-y-4">
           <div className="flex items-center justify-between px-2">
-            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-widest">Interview Highlights</h3>
+            <div className="flex items-center gap-3">
+               <h3 className="text-sm font-bold text-slate-700 uppercase tracking-widest">Interview Timeline</h3>
+               <div className="h-4 w-[1px] bg-slate-200" />
+               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Chronological Highlights</p>
+            </div>
             <span className="text-xs font-bold text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-100">
-              {session.opportunities.length} Points
+              {session.opportunities.length} Pins
             </span>
           </div>
           
