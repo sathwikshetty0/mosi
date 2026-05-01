@@ -168,4 +168,4 @@ src/
 
 ## License
 
-Copyright © 2026 MOSI Intelligence. All rights reserved.
+Copyright © 2026 MOSI Intelligence (Sathwik Shetty ). All rights reserved.
