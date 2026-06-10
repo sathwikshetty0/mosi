@@ -16,6 +16,18 @@ import { motion, AnimatePresence } from 'framer-motion'
 const QUADRANT_IDS: CEEDTag[] = ['Core', 'Efficiency', 'Expansion', 'Disrupt']
 
 export default function LiveInterviewPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="w-10 h-10 border-4 border-slate-700 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <LiveInterviewContent />
+    </React.Suspense>
+  )
+}
+
+function LiveInterviewContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const isQuickMode = searchParams.get('quick') === '1'
