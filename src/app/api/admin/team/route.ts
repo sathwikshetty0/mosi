@@ -50,7 +50,33 @@ export async function GET() {
     workload: workload[p.id] || { total: 0, inReview: 0, published: 0 }
   }))
 
-  return NextResponse.json({ team })
+  // Get all teams with members for admin view
+  const { data: allTeams } = await supabase
+    .from('teams')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  const { data: allTeamMembers } = await supabase
+    .from('team_members')
+    .select('*')
+    .order('joined_at', { ascending: true })
+
+  const teamsWithMembers = (allTeams || []).map((t: any) => ({
+    ...t,
+    members: (allTeamMembers || [])
+      .filter((m: any) => m.team_id === t.id)
+      .map((m: any) => {
+        const profile = (profiles || []).find((p: any) => p.id === m.user_id)
+        return {
+          userId: m.user_id,
+          role: m.role,
+          name: profile?.full_name || 'Unknown',
+          joinedAt: m.joined_at,
+        }
+      })
+  }))
+
+  return NextResponse.json({ team, teams: teamsWithMembers })
 }
 
 // POST: Invite a new researcher (creates profile entry)

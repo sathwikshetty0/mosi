@@ -36,6 +36,7 @@ interface ActivityItem {
 export function TeamPanel() {
   const [team, setTeam] = useState<TeamMember[]>([])
   const [activities, setActivities] = useState<ActivityItem[]>([])
+  const [teams, setTeams] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showInvite, setShowInvite] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
@@ -57,6 +58,7 @@ export function TeamPanel() {
       const teamData = await teamRes.json()
       const activityData = await activityRes.json()
       if (teamData.team) setTeam(teamData.team)
+      if (teamData.teams) setTeams(teamData.teams)
       if (activityData.activities) setActivities(activityData.activities)
     } catch (e) {
       console.error('Failed to load team data:', e)
@@ -281,6 +283,41 @@ export function TeamPanel() {
           </div>
         ))}
       </div>
+
+      {/* TEAMS OVERVIEW */}
+      {teams.length > 0 && (
+        <div className="space-y-4 pt-4 border-t border-slate-100">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-slate-400" />
+            <h3 className="text-sm font-bold text-slate-800">All Teams ({teams.length})</h3>
+          </div>
+          
+          <div className="space-y-3">
+            {teams.map((t: any) => (
+              <div key={t.id} className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-slate-700">{t.name}</p>
+                    <p className="text-[10px] text-slate-400">{t.members?.length || 0} members · Created {t.created_at ? new Date(t.created_at).toLocaleDateString() : 'N/A'}</p>
+                  </div>
+                </div>
+                {t.members && t.members.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {t.members.map((m: any) => (
+                      <span key={m.userId} className={cn(
+                        "text-[10px] font-bold px-2 py-1 rounded-lg border",
+                        m.role === 'owner' ? "bg-amber-50 text-amber-700 border-amber-100" : "bg-white text-slate-600 border-slate-100"
+                      )}>
+                        {m.name} {m.role === 'owner' ? '👑' : ''}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ACTIVITY LOG */}
       <div className="space-y-4 pt-4 border-t border-slate-100">
