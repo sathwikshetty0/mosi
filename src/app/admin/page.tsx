@@ -420,6 +420,7 @@ function AdminDashboardContent() {
   // ⚡️ MULTI-SELECT STATE
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false)
+  const [teamCount, setTeamCount] = useState(0)
 
   // Sync tab with URL param
   useEffect(() => {
@@ -440,6 +441,13 @@ function AdminDashboardContent() {
         if (data.sessions) setSessions(data.sessions)
         if (data.profiles) setProfiles(data.profiles)
         if (data.stakeholders) setStakeholders(data.stakeholders)
+
+        // Fetch team count
+        try {
+          const teamRes = await fetch('/api/admin/team')
+          const teamData = await teamRes.json()
+          if (teamData.teams) setTeamCount(teamData.teams.length)
+        } catch {}
       } catch (e) {
         console.error('Admin data fetch failed:', e)
       } finally {
@@ -699,8 +707,8 @@ function AdminDashboardContent() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
                    
-                   {/* 🛡️ DATA STATUS (4 cols) */}
-                   <div className="lg:col-span-5 space-y-6 sm:space-y-8">
+                   {/* 🛡️ DATA STATUS (5 cols) */}
+                   <div className="lg:col-span-5 space-y-4 sm:space-y-6">
                      {sessions.filter(s => !s.user_id).length > 0 && (
                       <div className="bg-white border border-rose-100 bg-rose-50/20 rounded-[2rem] p-6 sm:p-10 space-y-6 relative overflow-hidden group">
                           <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
@@ -765,7 +773,7 @@ function AdminDashboardContent() {
                         <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mt-1">Users</p>
                       </div>
                       <div className="bg-emerald-50 rounded-2xl p-5 text-center">
-                        <p className="text-3xl font-black text-emerald-700">—</p>
+                        <p className="text-3xl font-black text-emerald-700">{teamCount}</p>
                         <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mt-1">Teams</p>
                       </div>
                       <div className="bg-amber-50 rounded-2xl p-5 text-center">
