@@ -159,6 +159,7 @@ interface MosiStore {
   setSidebarCollapsed: (collapsed: boolean) => void
   updateSessionSummary: (id: string, summary: string) => void
   updateSessionTranscript: (id: string, transcriptText: string) => void
+  updateSessionNotes: (id: string, notes: string) => void
   setRecordingUrl: (id: string, url: string) => void
   profiles: any[]
   fetchAllProfiles: () => Promise<void>
@@ -902,13 +903,19 @@ export const useMosiStore = create<MosiStore>()(
     }))
     if (supabase) {
       ;(async () => {
-        // Store in the transcript jsonb column as { text: "..." }
         const { error } = await supabase.from('sessions').update({ transcript: { text: transcriptText } }).eq('id', id)
         if (error) {
           console.error('Transcript update failed:', error.message)
         }
       })()
     }
+  },
+
+  updateSessionNotes: (id, notes) => {
+    set((s) => ({
+      sessions: s.sessions.map(sess => sess.id === id ? { ...sess, notes } : sess)
+    }))
+    // Notes are stored locally for now (no DB column yet — can add `notes text` to sessions table)
   },
 
   setRecordingUrl: (id: string, url: string) => set((s) => ({

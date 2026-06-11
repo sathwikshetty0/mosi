@@ -11,6 +11,7 @@ import {
 import { useMosiStore, CEEDTag, formatDuration, Opportunity } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { ReviewSkeleton } from '@/components/ui/skeleton'
+import { useToastStore } from '@/components/ui/toast'
 
 const tagColors: Record<CEEDTag, { bg: string; text: string; border: string }> = {
   Core: { bg: 'bg-blue-50/50', text: 'text-blue-500', border: 'border-blue-100' },
@@ -33,8 +34,9 @@ function ReviewContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('id')
+  const addToast = useToastStore(s => s.addToast)
   
-  const { sessions, updateOpportunity, deleteSession, updateSessionSummary, updateSessionStakeholder, updateSessionTranscript } = useMosiStore()
+  const { sessions, updateOpportunity, deleteSession, updateSessionSummary, updateSessionStakeholder, updateSessionTranscript, updateSessionNotes } = useMosiStore()
   
   const session = React.useMemo(() => {
     let sess = sessionId ? sessions.find(s => s.id === sessionId) : (sessions.find(s => s.status === 'Review') || sessions[0])
@@ -53,6 +55,7 @@ function ReviewContent() {
   const [checklist, setChecklist] = React.useState<boolean[]>(CHECKLIST.map(() => false))
   const [localSummary, setLocalSummary] = React.useState(session?.summary || '')
   const [localTranscript, setLocalTranscript] = React.useState(session?.transcriptText || '')
+  const [localNotes, setLocalNotes] = React.useState(session?.notes || '')
   const [isSynthesizing, setIsSynthesizing] = React.useState(false)
   const [showStakeholderEdit, setShowStakeholderEdit] = React.useState(false)
   const [stakeholderForm, setStakeholderForm] = React.useState({
@@ -97,6 +100,7 @@ function ReviewContent() {
     if (session) {
       updateSessionStakeholder(session.id, stakeholderForm)
       setShowStakeholderEdit(false)
+      addToast('Stakeholder details saved', 'success')
     }
   }
   
@@ -174,9 +178,10 @@ function ReviewContent() {
         setLocalSummary(data.summary)
         updateSessionSummary(session.id, data.summary)
       }
+      addToast('Transcript & summary generated successfully', 'success')
     } catch (err: any) {
       console.error(err)
-      alert(err.message || 'Failed to synthesize.')
+      addToast(err.message || 'Failed to synthesize', 'error')
     } finally {
       setIsSynthesizing(false)
     }
@@ -605,6 +610,18 @@ function ReviewContent() {
             placeholder="Executive summary will be generated here after processing. You can also edit manually..." 
             value={localSummary} 
             onChange={(e) => setLocalSummary(e.target.value)} 
+          />
+        </section>
+
+        {/* NOTES — Quick personal notes for this session */}
+        <section className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-6 shadow-sm space-y-3">
+          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest">Session Notes</h3>
+          <textarea 
+            className="w-full min-h-[80px] p-3 sm:p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm text-slate-700 leading-relaxed outline-none focus:bg-white focus:border-slate-300 transition-all resize-y"
+            placeholder="Add personal notes, follow-up reminders, or context..."
+            value={localNotes}
+            onChange={(e) => setLocalNotes(e.target.value)}
+            onBlur={() => { if (session && localNotes !== (session as any).notes) updateSessionNotes(session.id, localNotes) }}
           />
         </section>
 
