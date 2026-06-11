@@ -83,7 +83,7 @@ export function InterviewCard({
   const StatusIcon = config.icon
 
   return (
-    <Link href={status === 'Review' ? `/review?id=${id}` : status === 'Published' ? `/preview?id=${id}` : `/interview/${id}`}>
+    <Link href={status === 'Review' ? `/review?id=${id}` : status === 'Published' ? `/preview?id=${id}` : `/review?id=${id}`}>
       <div className="group relative bg-white rounded-2xl sm:rounded-[2.5rem] border border-slate-100 p-5 sm:p-8 transition-all duration-300 hover:shadow-xl hover:shadow-slate-200/50 hover:border-slate-300 overflow-hidden h-full flex flex-col">
         
         <div className="relative z-10 flex flex-col h-full space-y-5 sm:space-y-8">

@@ -114,7 +114,7 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
           {sessions.length > 0 ? (
             sessions.slice(0, 6).map((session) => (
-              <Link key={session.id} href={session.status === 'Review' ? `/review?id=${session.id}` : session.status === 'Published' ? `/preview?id=${session.id}` : `/interview/${session.id}`} className="block">
+              <Link key={session.id} href={session.status === 'Review' ? `/review?id=${session.id}` : session.status === 'Published' ? `/preview?id=${session.id}` : `/review?id=${session.id}`} className="block">
                 <div className="p-3 sm:p-6 bg-white border border-slate-100 rounded-xl sm:rounded-2xl hover:bg-slate-50/50 hover:shadow-sm hover:border-slate-200 transition-all flex items-center gap-3 sm:gap-5 group active:scale-[0.98]">
                     <div className="w-9 h-9 sm:w-12 sm:h-12 bg-slate-50 border border-slate-100 rounded-lg sm:rounded-xl flex items-center justify-center text-slate-300 shrink-0">
                         <Layers className="w-4 h-4 sm:w-6 sm:h-6" />

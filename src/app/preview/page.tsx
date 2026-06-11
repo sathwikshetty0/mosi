@@ -314,7 +314,20 @@ function PreviewContent() {
                   </div>
                 </div>
                 {session.recordingUrl ? (
-                  <audio src={session.recordingUrl} controls playsInline preload="metadata" className="w-full h-10 rounded-lg" />
+                  <>
+                    <audio src={session.recordingUrl} controls playsInline preload="metadata" className="w-full h-10 rounded-lg" 
+                      onError={(e) => {
+                        const target = e.currentTarget.parentElement
+                        if (target) {
+                          const msg = target.querySelector('.audio-error-msg')
+                          if (msg) (msg as HTMLElement).style.display = 'block'
+                        }
+                      }}
+                    />
+                    <p className="audio-error-msg text-[10px] text-amber-600 font-medium mt-1 hidden">
+                      Audio format may not be supported on this device. Try on a laptop or Chrome browser.
+                    </p>
+                  </>
                 ) : (
                   <p className="text-xs text-slate-400 italic">No recording found.</p>
                 )}
