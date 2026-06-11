@@ -447,7 +447,17 @@ export const useMosiStore = create<MosiStore>()(
         const dbIds = new Set(formattedSessions.map(s => s.id))
         // Keep ONLY local-only sessions that are actively resolving their background sync
         const localOnly = state.sessions.filter(s => !dbIds.has(s.id) && (s as any).isPendingSync)
-        return { sessions: [...localOnly, ...formattedSessions] }
+        
+        // Preserve local blob recordingUrl if DB doesn't have one yet
+        const merged = formattedSessions.map(dbSession => {
+          const localSession = state.sessions.find(s => s.id === dbSession.id)
+          if (localSession?.recordingUrl && !dbSession.recordingUrl) {
+            return { ...dbSession, recordingUrl: localSession.recordingUrl }
+          }
+          return dbSession
+        })
+        
+        return { sessions: [...localOnly, ...merged] }
       })
     }
   },

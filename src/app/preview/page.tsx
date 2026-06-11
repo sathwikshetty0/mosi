@@ -314,7 +314,7 @@ function PreviewContent() {
                   </div>
                 </div>
                 {session.recordingUrl ? (
-                  <audio src={session.recordingUrl} controls className="w-full h-8" />
+                  <audio src={session.recordingUrl} controls playsInline preload="metadata" className="w-full h-10 rounded-lg" />
                 ) : (
                   <p className="text-xs text-slate-400 italic">No recording found.</p>
                 )}
