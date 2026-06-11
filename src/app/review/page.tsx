@@ -103,6 +103,7 @@ function ReviewContent() {
   const [isPlaying, setIsPlaying] = React.useState(false)
   const [audioProgress, setAudioProgress] = React.useState(0)
   const [currentTimeFormatted, setCurrentTimeFormatted] = React.useState('0:00')
+  const [audioError, setAudioError] = React.useState(false)
 
   const selectedOpp = session?.opportunities.find(o => o.id === selectedId)
 
@@ -363,7 +364,22 @@ function ReviewContent() {
         )}
       </section>
 
-      <audio ref={audioRef} src={session.recordingUrl} onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} onTimeUpdate={handleTimeUpdate} className="hidden" />
+      <audio ref={audioRef} src={session.recordingUrl} onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} onTimeUpdate={handleTimeUpdate} onError={() => setAudioError(true)} className="hidden" />
+
+      {/* AUDIO UNAVAILABLE WARNING */}
+      {audioError && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+          <Headphones className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="text-sm font-bold text-amber-800">Audio not available</p>
+            <p className="text-xs text-amber-600">
+              {session.recordingUrl?.startsWith('blob:')
+                ? 'The recording was stored locally and has expired. It will be available once uploaded to cloud storage.'
+                : 'Could not load the audio file. The recording may still be uploading.'}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* 🟢 COMPACT LIGHT-THEME AUDIO PLAYER */}
       <section className="bg-white border border-slate-100 rounded-3xl p-5 sm:p-7 text-slate-800 shadow-md shadow-slate-200/20 relative overflow-hidden group">

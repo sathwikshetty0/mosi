@@ -15,7 +15,8 @@ export default function Home() {
 
   React.useEffect(() => {
     let mounted = true
-    // Safety timeout: never show spinner for more than 8 seconds
+    let retryCount = 0
+
     const timeout = setTimeout(() => {
       if (mounted) setIsLoading(false)
     }, 8000)
@@ -23,6 +24,14 @@ export default function Home() {
     const load = async () => {
       try {
         await fetchSessions()
+        // If no sessions returned and this is the first attempt, retry after a short delay
+        // (handles the race condition where auth cookies aren't ready yet)
+        const currentSessions = useMosiStore.getState().sessions
+        if (currentSessions.length === 0 && retryCount < 2) {
+          retryCount++
+          setTimeout(load, 1500)
+          return
+        }
       } catch (e) {
         console.error('Failed to fetch sessions:', e)
       } finally {

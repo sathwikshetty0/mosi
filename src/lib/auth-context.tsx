@@ -30,7 +30,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const initializeAuth = async () => {
       if (!supabase) return
       
-      // Use getUser() to ping the server to accurately read secure cookies
       const { data: { user }, error } = await supabase.auth.getUser()
       
       if (!mounted) return
@@ -44,6 +43,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .eq('id', user.id)
           .single()
         if (mounted) setProfile(profile)
+        
+        // Fetch sessions immediately once we confirm user is authenticated
+        useMosiStore.getState().fetchSessions()
       }
       
       if (mounted) setLoading(false)
@@ -74,7 +76,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           
           if (mounted) setProfile(profile)
           
-          if (event === 'SIGNED_IN') {
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
             fetchSessions()
           }
         } else {
@@ -93,7 +95,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
-      // Clear local state first for instant UI feedback
       setUser(null)
       setProfile(null)
 
@@ -101,10 +102,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         await supabase.auth.signOut()
       }
       
-      // Call Server Action to securely wipe cookies and redirect
       await logout()
     } catch (e: any) {
-      // If it's a redirect error (standard for Next.js server actions), it's a success!
       if (e?.digest?.startsWith('NEXT_REDIRECT')) return;
       
       console.error('Logout error:', e)

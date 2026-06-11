@@ -11,7 +11,16 @@ export default function InterviewsPage() {
   const { sessions, fetchSessions } = useMosiStore()
 
   React.useEffect(() => {
-    fetchSessions()
+    let retryCount = 0
+    const load = async () => {
+      await fetchSessions()
+      const current = useMosiStore.getState().sessions
+      if (current.length === 0 && retryCount < 2) {
+        retryCount++
+        setTimeout(load, 1500)
+      }
+    }
+    load()
   }, [fetchSessions])
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('All')
