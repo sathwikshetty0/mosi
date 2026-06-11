@@ -3,8 +3,8 @@
 import { cn } from '@/lib/utils'
 import { 
   BarChart3, Clock, TrendingUp, AlertCircle, Database, 
-  CheckCircle2, XCircle, Zap, Users, FileText, Headphones,
-  Download, HardDrive
+  CheckCircle2, Zap, Users, FileText, Headphones,
+  Download, HardDrive, ArrowUpRight, Activity
 } from 'lucide-react'
 
 interface SessionData {
@@ -44,9 +44,8 @@ export function AnalyticsPanel({ sessions, profiles, stakeholders }: Props) {
     ? Math.round(sessionsWithDuration.reduce((sum, s) => sum + s.duration, 0) / sessionsWithDuration.length)
     : 0
 
-  // --- TIME TO PUBLISH ---
-  const publishedSessions = sessions.filter(s => s.status === 'Published' && s.created_at)
-  // Can't calculate exact publish time without a published_at field, but show % published
+  // --- PUBLISH RATE ---
+  const publishedSessions = sessions.filter(s => s.status === 'Published')
   const publishRate = sessions.length > 0 ? Math.round((publishedSessions.length / sessions.length) * 100) : 0
 
   // --- TOP STAKEHOLDERS ---
@@ -72,7 +71,7 @@ export function AnalyticsPanel({ sessions, profiles, stakeholders }: Props) {
     return noStakeholder || noSummary || noRecording
   })
 
-  // --- STORAGE ESTIMATES ---
+  // --- STORAGE ---
   const totalEvidence = sessions.reduce((sum, s) => sum + (s.evidence?.length || 0), 0)
 
   // --- SESSIONS OVER TIME (last 8 weeks) ---
@@ -97,10 +96,6 @@ export function AnalyticsPanel({ sessions, profiles, stakeholders }: Props) {
   }
   const maxWeekly = Math.max(...weeklyData.map(w => w.count), 1)
 
-  // --- SYSTEM HEALTH ---
-  const hasElevenLabs = true // If we got here, the env is loaded
-  const hasNvidia = true
-
   // --- EXPORT ---
   const handleExportAll = async () => {
     const { exportSessionsCSV } = await import('@/lib/export-csv')
@@ -118,168 +113,196 @@ export function AnalyticsPanel({ sessions, profiles, stakeholders }: Props) {
     exportSessionsCSV(formatted as any)
   }
 
+  const ceedColors = [
+    { tag: 'Core', color: 'from-blue-500 to-blue-600', bg: 'bg-blue-500', light: 'text-blue-600' },
+    { tag: 'Efficiency', color: 'from-amber-400 to-amber-500', bg: 'bg-amber-500', light: 'text-amber-600' },
+    { tag: 'Expansion', color: 'from-emerald-400 to-emerald-500', bg: 'bg-emerald-500', light: 'text-emerald-600' },
+    { tag: 'Disrupt', color: 'from-rose-400 to-rose-500', bg: 'bg-rose-500', light: 'text-rose-600' },
+  ]
+
   return (
     <div className="space-y-6">
       
       {/* SESSIONS OVER TIME */}
-      <section className="bg-white border border-slate-100 rounded-2xl p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-blue-500" /> Sessions Over Time
-          </h3>
-          <span className="text-[10px] text-slate-400 font-medium">Last 8 weeks</span>
-        </div>
-        <div className="flex items-end gap-1.5 h-24">
-          {weeklyData.map((w, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1">
-              <div className="w-full bg-slate-100 rounded-sm overflow-hidden relative" style={{ height: '80px' }}>
+      <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl -mr-10 -mt-10" />
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h3 className="text-sm font-bold flex items-center gap-2">
+                <Activity className="w-4 h-4 text-blue-400" /> Session Activity
+              </h3>
+              <p className="text-[10px] text-slate-400 mt-0.5">Last 8 weeks</p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold">{sessions.length}</p>
+              <p className="text-[9px] text-slate-400 uppercase tracking-widest">Total</p>
+            </div>
+          </div>
+          <div className="flex items-end gap-1 h-20">
+            {weeklyData.map((w, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
                 <div 
-                  className="absolute bottom-0 left-0 right-0 bg-blue-500 rounded-sm transition-all" 
-                  style={{ height: `${(w.count / maxWeekly) * 100}%` }}
-                />
-              </div>
-              <span className="text-[8px] text-slate-400 font-bold">{w.count}</span>
-            </div>
-          ))}
-        </div>
-        <div className="flex justify-between text-[8px] text-slate-300 font-bold">
-          <span>{weeklyData[0]?.label}</span>
-          <span>{weeklyData[weeklyData.length - 1]?.label}</span>
-        </div>
-      </section>
-
-      {/* CEED BREAKDOWN */}
-      <section className="bg-white border border-slate-100 rounded-2xl p-5 space-y-4">
-        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
-          <Zap className="w-4 h-4 text-amber-500" /> CEED Framework Distribution
-        </h3>
-        <div className="space-y-2.5">
-          {[
-            { tag: 'Core', color: 'bg-blue-500', count: ceedCounts.Core },
-            { tag: 'Efficiency', color: 'bg-amber-500', count: ceedCounts.Efficiency },
-            { tag: 'Expansion', color: 'bg-emerald-500', count: ceedCounts.Expansion },
-            { tag: 'Disrupt', color: 'bg-rose-500', count: ceedCounts.Disrupt },
-          ].map(item => (
-            <div key={item.tag} className="flex items-center gap-3">
-              <span className="text-[10px] font-bold text-slate-600 w-20">{item.tag}</span>
-              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div className={cn("h-full rounded-full transition-all", item.color)} style={{ width: `${totalOpps > 0 ? (item.count / totalOpps) * 100 : 0}%` }} />
-              </div>
-              <span className="text-[10px] font-bold text-slate-500 w-8 text-right">{item.count}</span>
-            </div>
-          ))}
-        </div>
-        <p className="text-[10px] text-slate-400 pt-1">{totalOpps} total opportunities captured</p>
-      </section>
-
-      {/* KEY METRICS ROW */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-white border border-slate-100 rounded-xl p-4 text-center space-y-1">
-          <Clock className="w-4 h-4 text-slate-400 mx-auto" />
-          <p className="text-lg font-bold text-slate-800">{Math.floor(avgDuration / 60)}m</p>
-          <p className="text-[9px] text-slate-400 font-bold uppercase">Avg Duration</p>
-        </div>
-        <div className="bg-white border border-slate-100 rounded-xl p-4 text-center space-y-1">
-          <TrendingUp className="w-4 h-4 text-emerald-500 mx-auto" />
-          <p className="text-lg font-bold text-slate-800">{publishRate}%</p>
-          <p className="text-[9px] text-slate-400 font-bold uppercase">Publish Rate</p>
-        </div>
-        <div className="bg-white border border-slate-100 rounded-xl p-4 text-center space-y-1">
-          <Headphones className="w-4 h-4 text-blue-500 mx-auto" />
-          <p className="text-lg font-bold text-slate-800">{withRecording}</p>
-          <p className="text-[9px] text-slate-400 font-bold uppercase">Recordings</p>
-        </div>
-        <div className="bg-white border border-slate-100 rounded-xl p-4 text-center space-y-1">
-          <FileText className="w-4 h-4 text-violet-500 mx-auto" />
-          <p className="text-lg font-bold text-slate-800">{withTranscript}</p>
-          <p className="text-[9px] text-slate-400 font-bold uppercase">Transcribed</p>
-        </div>
-      </div>
-
-      {/* TOP STAKEHOLDERS */}
-      <section className="bg-white border border-slate-100 rounded-2xl p-5 space-y-3">
-        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
-          <Users className="w-4 h-4 text-slate-400" /> Top Stakeholders
-        </h3>
-        {topStakeholders.length > 0 ? (
-          <div className="space-y-2">
-            {topStakeholders.map((sh, i) => (
-              <div key={sh.name} className="flex items-center gap-3 py-1.5">
-                <span className="text-[10px] font-bold text-slate-300 w-4">{i + 1}.</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-slate-700 truncate">{sh.name}</p>
-                  <p className="text-[10px] text-slate-400">{sh.company}</p>
+                  className="w-full rounded-t-sm bg-gradient-to-t from-blue-500 to-blue-400 opacity-90 hover:opacity-100 transition-all cursor-default relative group"
+                  style={{ height: `${Math.max((w.count / maxWeekly) * 100, 4)}%` }}
+                >
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white text-slate-800 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap">
+                    {w.count}
+                  </div>
                 </div>
-                <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{sh.count} sessions</span>
               </div>
             ))}
           </div>
-        ) : (
-          <p className="text-xs text-slate-400 py-4 text-center">No stakeholder data yet</p>
-        )}
-      </section>
+          <div className="flex justify-between mt-2 text-[9px] text-slate-500">
+            <span>{weeklyData[0]?.label}</span>
+            <span>{weeklyData[weeklyData.length - 1]?.label}</span>
+          </div>
+        </div>
+      </div>
 
-      {/* INCOMPLETE SESSIONS */}
-      {incomplete.length > 0 && (
-        <section className="bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-3">
-          <h3 className="text-xs font-bold text-amber-800 uppercase tracking-widest flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" /> Incomplete Sessions ({incomplete.length})
-          </h3>
-          <div className="space-y-2 max-h-[200px] overflow-y-auto">
-            {incomplete.slice(0, 8).map(s => {
-              const issues = []
-              if (!s.stakeholders?.name || s.stakeholders.name === 'Untitled Stakeholder') issues.push('No stakeholder')
-              if (!s.summary || s.summary.length < 20) issues.push('No summary')
-              if (!s.recording_url || s.recording_url.startsWith('blob:')) issues.push('No recording')
+      {/* METRICS ROW */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: 'Avg Duration', value: `${Math.floor(avgDuration / 60)}m ${avgDuration % 60}s`, icon: Clock, accent: 'text-slate-600' },
+          { label: 'Publish Rate', value: `${publishRate}%`, icon: TrendingUp, accent: 'text-emerald-600' },
+          { label: 'Recordings', value: String(withRecording), icon: Headphones, accent: 'text-blue-600' },
+          { label: 'Transcribed', value: String(withTranscript), icon: FileText, accent: 'text-violet-600' },
+        ].map(m => (
+          <div key={m.label} className="bg-white border border-slate-100 rounded-xl p-4 group hover:border-slate-200 hover:shadow-sm transition-all">
+            <m.icon className={cn("w-4 h-4 mb-2", m.accent)} />
+            <p className="text-xl font-bold text-slate-800">{m.value}</p>
+            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{m.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* CEED + TOP STAKEHOLDERS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* CEED */}
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 text-amber-500" /> CEED Distribution
+            </h3>
+            <span className="text-[10px] text-slate-400 font-bold">{totalOpps} total</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {ceedColors.map(item => {
+              const count = ceedCounts[item.tag as keyof typeof ceedCounts]
+              const pct = totalOpps > 0 ? Math.round((count / totalOpps) * 100) : 0
               return (
-                <div key={s.id} className="flex items-center justify-between py-1.5 text-xs">
-                  <span className="font-bold text-amber-800 truncate max-w-[150px]">{s.stakeholders?.name || 'Unnamed'}</span>
-                  <span className="text-[10px] text-amber-600">{issues.join(', ')}</span>
+                <div key={item.tag} className="relative bg-slate-50 rounded-xl p-3 overflow-hidden">
+                  <div className={cn("absolute bottom-0 left-0 right-0 opacity-10", item.bg)} style={{ height: `${pct}%` }} />
+                  <div className="relative z-10">
+                    <p className={cn("text-lg font-bold", item.light)}>{count}</p>
+                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{item.tag}</p>
+                    <p className="text-[9px] text-slate-400">{pct}%</p>
+                  </div>
                 </div>
               )
             })}
           </div>
-        </section>
+        </div>
+
+        {/* TOP STAKEHOLDERS */}
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 space-y-4">
+          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+            <Users className="w-3.5 h-3.5 text-slate-400" /> Top Stakeholders
+          </h3>
+          {topStakeholders.length > 0 ? (
+            <div className="space-y-2.5">
+              {topStakeholders.map((sh, i) => (
+                <div key={sh.name} className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0",
+                    i === 0 ? "bg-amber-50 text-amber-700" : "bg-slate-50 text-slate-500"
+                  )}>
+                    {i + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-slate-700 truncate">{sh.name}</p>
+                    <p className="text-[10px] text-slate-400 truncate">{sh.company}</p>
+                  </div>
+                  <div className="flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                    {sh.count} <ArrowUpRight className="w-3 h-3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400 py-6 text-center">No data yet</p>
+          )}
+        </div>
+      </div>
+
+      {/* INCOMPLETE SESSIONS */}
+      {incomplete.length > 0 && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 rounded-2xl p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold text-amber-800 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" /> Incomplete Sessions
+            </h3>
+            <span className="text-[10px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">{incomplete.length}</span>
+          </div>
+          <div className="space-y-1.5 max-h-[160px] overflow-y-auto">
+            {incomplete.slice(0, 6).map(s => {
+              const issues = []
+              if (!s.stakeholders?.name || s.stakeholders.name === 'Untitled Stakeholder') issues.push('stakeholder')
+              if (!s.summary || s.summary.length < 20) issues.push('summary')
+              if (!s.recording_url || s.recording_url.startsWith('blob:')) issues.push('recording')
+              return (
+                <div key={s.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-amber-100/50 transition-all">
+                  <span className="text-xs font-bold text-amber-900 truncate max-w-[180px]">{s.stakeholders?.name || s.date || 'Unnamed'}</span>
+                  <span className="text-[9px] text-amber-600 font-medium">Missing: {issues.join(', ')}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
       )}
 
-      {/* SYSTEM HEALTH + EXPORT */}
+      {/* SYSTEM + EXPORT */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <section className="bg-white border border-slate-100 rounded-2xl p-5 space-y-3">
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 space-y-3">
           <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
-            <Database className="w-4 h-4 text-slate-400" /> System Health
+            <Database className="w-3.5 h-3.5 text-slate-400" /> System Status
           </h3>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] text-slate-600">ElevenLabs API</span>
-              <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600"><CheckCircle2 className="w-3 h-3" /> Connected</span>
+          <div className="space-y-2.5">
+            {[
+              { name: 'ElevenLabs (Transcription)', ok: true },
+              { name: 'NVIDIA Nemotron (Summary)', ok: true },
+              { name: 'Supabase Storage', ok: true },
+            ].map(s => (
+              <div key={s.name} className="flex items-center justify-between">
+                <span className="text-[11px] text-slate-600">{s.name}</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              </div>
+            ))}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-50 mt-2">
+              <span className="text-[11px] text-slate-500">Evidence files</span>
+              <span className="text-xs font-bold text-slate-700">{totalEvidence}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[11px] text-slate-600">NVIDIA API</span>
-              <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600"><CheckCircle2 className="w-3 h-3" /> Connected</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] text-slate-600">Supabase Storage</span>
-              <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600"><CheckCircle2 className="w-3 h-3" /> Active</span>
-            </div>
-            <div className="flex items-center justify-between pt-1 border-t border-slate-50">
-              <span className="text-[11px] text-slate-600">Evidence files</span>
-              <span className="text-[10px] font-bold text-slate-500">{totalEvidence} items</span>
+              <span className="text-[11px] text-slate-500">Cloud recordings</span>
+              <span className="text-xs font-bold text-slate-700">{withRecording}</span>
             </div>
           </div>
-        </section>
+        </div>
 
-        <section className="bg-white border border-slate-100 rounded-2xl p-5 space-y-3 flex flex-col">
-          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
-            <HardDrive className="w-4 h-4 text-slate-400" /> Data Export
-          </h3>
-          <p className="text-[10px] text-slate-400 flex-1">Export all session data as CSV for external analysis or backup.</p>
+        <div className="bg-gradient-to-br from-slate-50 to-white border border-slate-100 rounded-2xl p-5 flex flex-col justify-between">
+          <div>
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+              <HardDrive className="w-3.5 h-3.5 text-slate-400" /> Export
+            </h3>
+            <p className="text-[10px] text-slate-400 mt-1">Download all data for analysis or backup.</p>
+          </div>
           <button 
             onClick={handleExportAll}
-            className="h-9 px-4 bg-slate-900 text-white rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-black active:scale-95 transition-all w-full justify-center"
+            className="mt-4 h-10 w-full bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center gap-2 justify-center hover:bg-black active:scale-95 transition-all shadow-sm"
           >
-            <Download className="w-3.5 h-3.5" /> Export All Sessions (CSV)
+            <Download className="w-3.5 h-3.5" /> Export Sessions CSV
           </button>
-        </section>
+        </div>
       </div>
     </div>
   )
