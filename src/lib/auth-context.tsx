@@ -4,7 +4,6 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from './supabase'
 import { User } from '@supabase/supabase-js'
 import { useMosiStore } from './store'
-import { logout } from '@/app/login/actions'
 
 interface AuthContextType {
   user: User | null
@@ -97,15 +96,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setUser(null)
       setProfile(null)
+      useMosiStore.getState().setSessions([])
 
       if (supabase) {
         await supabase.auth.signOut()
       }
       
-      await logout()
+      // Navigate to login - use window.location for a full page reload
+      // which ensures all cookies and state are cleared
+      window.location.href = '/login'
     } catch (e: any) {
-      if (e?.digest?.startsWith('NEXT_REDIRECT')) return;
-      
       console.error('Logout error:', e)
       window.location.href = '/login'
     }
