@@ -258,46 +258,38 @@ function LiveInterviewContent() {
       />
 
       {/* 2X2 CEED QUADRANT SELECTOR */}
-      <header className="py-6 sm:py-10 space-y-4 sm:space-y-6 shrink-0 border-b-2 border-slate-50">
-        <div className="flex items-center justify-between px-1 sm:px-2">
-          <div className="space-y-1">
-            <h2 className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.4em] text-slate-400">Section 00 / Live Session</h2>
-            <div className="h-1 w-6 sm:w-8 bg-slate-800 rounded-full" />
-          </div>
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="flex items-center gap-2">
-              {isRecording && !isPaused && (
-                <div className="flex items-center gap-1 bg-red-50 px-2 py-1 rounded-md border border-red-100 scale-90 sm:scale-100">
-                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                  <span className="text-[8px] font-black text-red-600 uppercase tracking-widest">Live REC</span>
-                </div>
-              )}
-              <div className="flex items-center gap-3">
-                {isRecording && !isPaused && (
-                  <WaveformVisualizer 
-                    stream={stream} 
-                    isActive={true} 
-                    width={80} 
-                    height={24}
-                    color="#f43f5e" // rose-500
-                  />
-                )}
-                <span className="text-xs sm:text-sm font-mono font-black text-slate-800 tracking-wider bg-white border border-slate-200 px-3 sm:px-4 py-1.5 rounded-xl shadow-sm">{formatDuration(recordingSeconds)}</span>
+      <header className="py-4 sm:py-10 space-y-3 sm:space-y-6 shrink-0 border-b border-slate-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {isRecording && !isPaused && (
+              <div className="flex items-center gap-1 bg-red-50 px-2 py-1 rounded-md border border-red-100">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-[8px] font-black text-red-600 uppercase tracking-widest">REC</span>
               </div>
-            </div>
+            )}
+            {isRecording && !isPaused && stream && (
+              <WaveformVisualizer 
+                stream={stream} 
+                isActive={true} 
+                width={60} 
+                height={20}
+                color="#f43f5e"
+              />
+            )}
           </div>
+          <span className="text-sm font-mono font-black text-slate-800 tracking-wider bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">{formatDuration(recordingSeconds)}</span>
         </div>
         
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-3">
           {QUADRANT_IDS.map(qId => (
             <button 
               key={qId}
               onClick={() => { setActiveQuadrant(qId); setQuestionIndex(0) }}
               className={cn(
-                "h-11 sm:h-14 rounded-xl sm:rounded-2xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest sm:tracking-[0.2em] transition-all border-2 text-center flex items-center justify-center gap-2 px-1",
+                "h-10 sm:h-14 rounded-lg sm:rounded-2xl text-[9px] sm:text-[11px] font-black uppercase tracking-wider sm:tracking-[0.2em] transition-all border-2 text-center flex items-center justify-center",
                 activeQuadrant === qId 
-                  ? 'bg-slate-800 text-white border-slate-800 shadow-xl sm:shadow-2xl shadow-slate-200' 
-                  : 'bg-white text-slate-400 border-slate-100 hover:border-slate-300 hover:text-slate-600'
+                  ? 'bg-slate-800 text-white border-slate-800 shadow-lg' 
+                  : 'bg-white text-slate-400 border-slate-100 active:bg-slate-50'
               )}
             >
               {qId}
@@ -375,7 +367,7 @@ function LiveInterviewContent() {
       </div>
 
       {/* BOTTOM CONTROLS */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-8 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent pointer-events-none z-20 safe-area-bottom">
+      <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-8 bg-gradient-to-t from-slate-50 via-slate-50/95 to-transparent pointer-events-none z-20 safe-area-bottom">
         
         {/* CAPTURE TOAST */}
         <AnimatePresence>
@@ -384,23 +376,23 @@ function LiveInterviewContent() {
                initial={{ opacity: 0, y: 20 }} 
                animate={{ opacity: 1, y: 0 }} 
                exit={{ opacity: 0, y: -20 }}
-               className="pointer-events-none mb-4 mx-auto w-fit"
+               className="pointer-events-none mb-3 mx-auto w-fit"
             >
-              <div className="bg-emerald-600 text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center gap-2">
-                 <CheckCircle2 className="w-3 h-3" /> Entry Captured
+              <div className="bg-emerald-600 text-white px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl flex items-center gap-1.5">
+                 <CheckCircle2 className="w-3 h-3" /> Captured
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div className="max-w-2xl mx-auto flex flex-col gap-3 sm:gap-4 items-center pointer-events-auto">
+        <div className="max-w-2xl mx-auto flex flex-col gap-2 sm:gap-4 items-center pointer-events-auto">
           
           {/* UTILITY ROW */}
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full">
             {isRecording && (
               <button 
                 onClick={handlePauseInterview} 
-                className="h-11 px-5 flex-1 sm:flex-none rounded-2xl border-2 border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500 active:scale-95 transition-all shadow-sm"
+                className="h-10 px-4 flex-1 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500 active:scale-95 transition-all"
               >
                 {isPaused ? 'Resume' : 'Pause'}
               </button>
@@ -409,18 +401,18 @@ function LiveInterviewContent() {
               onClick={handleQuickCapture} 
               disabled={!isRecording || isUploading}
               className={cn(
-                "h-11 px-8 flex-[2] sm:flex-none rounded-2xl border-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-lg flex items-center justify-center gap-3 active:scale-90",
+                "h-10 px-6 flex-[2] rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 active:scale-90",
                 isCaptured ? "bg-emerald-600 border-emerald-600 text-white" :
-                (isRecording && !isUploading) ? "border-slate-800 bg-slate-800 text-white hover:bg-slate-700" : "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed"
+                (isRecording && !isUploading) ? "border-slate-800 bg-slate-800 text-white" : "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed"
               )}
             >
-              <Activity className={cn("w-4 h-4", isCaptured && "animate-bounce")} /> 
-              {isCaptured ? 'Captured ✓' : 'Capture Log'}
+              <Activity className={cn("w-3.5 h-3.5", isCaptured && "animate-bounce")} /> 
+              {isCaptured ? '✓' : 'Log'}
             </button>
           </div>
 
           {/* MAIN RECORDER BAR */}
-          <div className="w-full py-3 bg-white/90 backdrop-blur-xl rounded-[2rem] sm:rounded-full border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex items-center px-4 gap-3 sm:gap-4 ring-1 ring-white/50 relative">
+          <div className="w-full py-2.5 bg-white/95 backdrop-blur-xl rounded-2xl sm:rounded-full border border-slate-200 shadow-lg flex items-center px-3 sm:px-4 gap-3 relative">
             
             {/* START / STOP ACTION */}
             {!isRecording ? (

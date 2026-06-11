@@ -69,17 +69,25 @@ export function Sidebar() {
   return (
     <>
       {/* 📱 MOBILE TOP NAV */}
-      <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b-2 border-slate-50 z-30 w-full shrink-0 safe-area-top">
-        <div className="flex items-center gap-3">
-           <div className="w-9 h-9 bg-slate-700 rounded-xl flex items-center justify-center text-white text-[11px] font-black shadow-xl shadow-slate-200">M</div>
-           <h1 className="text-xl font-black text-slate-700 tracking-tighter uppercase">MOSI</h1>
+      <div className="lg:hidden flex items-center justify-between p-3 bg-white border-b border-slate-100 z-30 w-full shrink-0 safe-area-top">
+        <div className="flex items-center gap-2.5">
+           <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center text-white text-[10px] font-black">M</div>
+           <h1 className="text-lg font-black text-slate-700 tracking-tighter uppercase">MOSI</h1>
         </div>
-        <button 
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-700 active:scale-90 transition-all tap-highlight-none"
-        >
-          {isMobileMenuOpen ? <X className="w-5 h-5 transition-transform" /> : <Menu className="w-5 h-5 transition-transform" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link 
+            href="/interview/live?quick=1" 
+            className="h-9 px-3.5 bg-blue-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1.5 active:scale-95 transition-all"
+          >
+            <Mic className="w-3.5 h-3.5" /> Record
+          </Link>
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-50 text-slate-700 active:scale-90 transition-all"
+          >
+            {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
 
       {/* 🌫 BACKDROP */}
