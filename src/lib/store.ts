@@ -405,6 +405,42 @@ export const useMosiStore = create<MosiStore>()(
 
     if (error) {
       console.error('Fetch sessions failed:', error.message || error)
+      // If join fails, try without evidence (FK constraint issue)
+      const { data: fallbackData, error: fallbackErr } = await supabase
+        .from('sessions')
+        .select('*, stakeholders(*), opportunities(*)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+      
+      if (fallbackErr) {
+        console.error('Fallback fetch also failed:', fallbackErr.message)
+        return
+      }
+      
+      if (fallbackData) {
+        const formattedSessions: InterviewSession[] = fallbackData.map((s: any) => {
+          const sessionOpps = (s.opportunities || []).map((o: any) => ({
+            ...o,
+            evidence: []
+          }))
+          return {
+            id: s.id,
+            stakeholder: s.stakeholders || { name: 'Untitled Stakeholder', role: 'N/A', phone: '', email: '', linkedin: '', company: 'N/A', sector: '', products: '', employees: '', revenue: '', yearsInBusiness: '', geography: '' },
+            status: s.status,
+            date: s.date,
+            duration: s.duration,
+            opportunities: sessionOpps,
+            settings: s.audio_settings || { audio: true, video: true },
+            evidence: [],
+            recordingUrl: s.recording_url,
+            summary: s.summary || '',
+            transcriptText: typeof s.transcript === 'object' && s.transcript?.text ? s.transcript.text : '',
+            user_id: s.user_id,
+            ceedQuestions: s.ceed_questions || undefined
+          }
+        })
+        set({ sessions: formattedSessions })
+      }
       return
     }
 
@@ -435,7 +471,7 @@ export const useMosiStore = create<MosiStore>()(
           evidence: rootEvidence,
           recordingUrl: s.recording_url,
           summary: s.summary || '',
-          transcriptText: s.transcript?.text || '',
+          transcriptText: typeof s.transcript === 'object' && s.transcript !== null && !Array.isArray(s.transcript) ? (s.transcript.text || '') : '',
           user_id: s.user_id,
           ceedQuestions: s.ceed_questions || undefined
         }
@@ -491,7 +527,7 @@ export const useMosiStore = create<MosiStore>()(
         evidence: rootEvidence,
         recordingUrl: sessionData.recording_url,
         summary: sessionData.summary || '',
-        transcriptText: sessionData.transcript?.text || '',
+        transcriptText: typeof sessionData.transcript === 'object' && sessionData.transcript !== null && !Array.isArray(sessionData.transcript) ? (sessionData.transcript.text || '') : '',
         user_id: sessionData.user_id,
         ceedQuestions: sessionData.ceed_questions || undefined
       }
