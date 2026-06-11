@@ -399,10 +399,36 @@ export const useMosiStore = create<MosiStore>()(
       set({ sessions: [] })
       return
     }
+
+    // Get team member IDs for shared access
+    let teamUserIds: string[] = [user.id]
+    try {
+      const { data: memberships } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .eq('user_id', user.id)
+
+      if (memberships && memberships.length > 0) {
+        const teamIds = memberships.map(m => m.team_id)
+        const { data: allMembers } = await supabase
+          .from('team_members')
+          .select('user_id')
+          .in('team_id', teamIds)
+
+        if (allMembers) {
+          const ids = new Set(allMembers.map(m => m.user_id))
+          ids.add(user.id)
+          teamUserIds = Array.from(ids)
+        }
+      }
+    } catch (e) {
+      // If teams table doesn't exist yet, just use own ID
+      console.warn('Teams not available:', e)
+    }
     
     let query = supabase.from('sessions')
       .select('*, stakeholders(*), opportunities(*), evidence(*)')
-      .eq('user_id', user.id)
+      .in('user_id', teamUserIds)
 
     const { data: sessionsData, error } = await query.order('created_at', { ascending: false })
 
@@ -957,11 +983,39 @@ export const useMosiStore = create<MosiStore>()(
       set({ stakeholdersList: [] })
       return
     }
+
+    // Get team member IDs for shared access
+    let filterIds: string[] = [user.id]
+    try {
+      const { data: memberships } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .eq('user_id', user.id)
+
+      if (memberships && memberships.length > 0) {
+        const teamIds = memberships.map(m => m.team_id)
+        const { data: allMembers } = await supabase
+          .from('team_members')
+          .select('user_id')
+          .in('team_id', teamIds)
+
+        if (allMembers) {
+          const ids = new Set(allMembers.map(m => m.user_id))
+          ids.add(user.id)
+          filterIds = Array.from(ids)
+        }
+      }
+    } catch (e) {
+      // Teams table may not exist yet
+    }
+    
+    // Build OR filter for all team member IDs + null
+    const orFilter = [...filterIds.map(id => `user_id.eq.${id}`), 'user_id.is.null'].join(',')
     
     const { data, error } = await supabase
       .from('stakeholders')
       .select('*')
-      .or(`user_id.eq.${user.id},user_id.is.null`)
+      .or(orFilter)
       .order('name', { ascending: true })
 
     if (error) {

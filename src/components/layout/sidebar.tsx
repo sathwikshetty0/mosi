@@ -16,6 +16,7 @@ import { useAuth } from '@/lib/auth-context'
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Repository', href: '/interviews', icon: FileText },
+  { name: 'Team', href: '/team', icon: Users },
   { name: 'My Profile', href: '/profile', icon: User },
   { name: 'Chronology', href: '/schedule', icon: Calendar },
 ]
