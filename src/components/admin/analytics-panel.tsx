@@ -124,36 +124,35 @@ export function AnalyticsPanel({ sessions, profiles, stakeholders }: Props) {
     <div className="space-y-6">
       
       {/* SESSIONS OVER TIME */}
-      <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl -mr-10 -mt-10" />
+      <div className="bg-white border border-slate-100 rounded-2xl p-6 relative overflow-hidden">
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="text-sm font-bold flex items-center gap-2">
-                <Activity className="w-4 h-4 text-blue-400" /> Session Activity
+              <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-blue-500" /> Session Activity
               </h3>
               <p className="text-[10px] text-slate-400 mt-0.5">Last 8 weeks</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold">{sessions.length}</p>
+              <p className="text-2xl font-bold text-slate-800">{sessions.length}</p>
               <p className="text-[9px] text-slate-400 uppercase tracking-widest">Total</p>
             </div>
           </div>
-          <div className="flex items-end gap-1 h-20">
+          <div className="flex items-end gap-1.5 h-20">
             {weeklyData.map((w, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
                 <div 
-                  className="w-full rounded-t-sm bg-gradient-to-t from-blue-500 to-blue-400 opacity-90 hover:opacity-100 transition-all cursor-default relative group"
+                  className="w-full rounded-t-sm bg-gradient-to-t from-blue-500 to-blue-400 hover:from-blue-600 hover:to-blue-500 transition-all cursor-default relative group"
                   style={{ height: `${Math.max((w.count / maxWeekly) * 100, 4)}%` }}
                 >
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white text-slate-800 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap">
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap">
                     {w.count}
                   </div>
                 </div>
               </div>
             ))}
           </div>
-          <div className="flex justify-between mt-2 text-[9px] text-slate-500">
+          <div className="flex justify-between mt-2 text-[9px] text-slate-400">
             <span>{weeklyData[0]?.label}</span>
             <span>{weeklyData[weeklyData.length - 1]?.label}</span>
           </div>
