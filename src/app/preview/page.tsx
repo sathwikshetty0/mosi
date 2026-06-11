@@ -87,6 +87,12 @@ function PreviewContent() {
     setTimeout(() => setIsCopied(false), 2000)
   }
 
+  const handleExportPDF = async () => {
+    if (!session) return
+    const { exportSessionPDF } = await import('@/lib/export-pdf')
+    exportSessionPDF(session as any)
+  }
+
   const handleEmailDispatch = () => {
     if (!session) return
     const url = `${window.location.origin}/preview?id=${session.id}`
@@ -203,16 +209,22 @@ function PreviewContent() {
                 <div className="flex gap-2 flex-wrap">
                     <button 
                         onClick={handleShare}
-                        className="h-11 px-6 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl flex items-center justify-center gap-2 text-sm font-bold hover:bg-slate-100 transition-all active:scale-95 shadow-sm"
+                        className="h-11 px-4 sm:px-6 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-bold hover:bg-slate-100 transition-all active:scale-95 shadow-sm"
                     >
                         {isCopied ? <Check className="w-4 h-4 text-emerald-500" /> : <Share className="w-4 h-4" />}
-                        {isCopied ? 'Copied Link' : 'Copy Hub Link'}
+                        {isCopied ? 'Copied' : 'Share'}
+                    </button>
+                    <button 
+                        onClick={handleExportPDF}
+                        className="h-11 px-4 sm:px-6 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-bold hover:bg-slate-100 transition-all active:scale-95 shadow-sm"
+                    >
+                        <FileText className="w-4 h-4" /> PDF
                     </button>
                     <button 
                         onClick={handleEmailDispatch}
-                        className="h-11 px-6 bg-blue-600 text-white rounded-xl flex items-center justify-center gap-2 text-sm font-bold hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-100/50 flex-1 sm:flex-none"
+                        className="h-11 px-4 sm:px-6 bg-blue-600 text-white rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-bold hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-100/50 flex-1 sm:flex-none"
                     >
-                        <Mail className="w-4 h-4" /> Dispatch Briefing
+                        <Mail className="w-4 h-4" /> Email
                     </button>
                 </div>
             )}

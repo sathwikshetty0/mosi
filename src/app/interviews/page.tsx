@@ -2,7 +2,7 @@
 
 import { InterviewCard } from '@/components/ui/interview-card'
 import { useMosiStore } from '@/lib/store'
-import { Plus, Search, Filter, SlidersHorizontal, ArrowLeft } from 'lucide-react'
+import { Plus, Search, Filter, SlidersHorizontal, ArrowLeft, Download } from 'lucide-react'
 import Link from 'next/link'
 import * as React from 'react'
 import { cn } from '@/lib/utils'
@@ -28,6 +28,7 @@ export default function InterviewsPage() {
   }, [fetchSessions])
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('All')
+  const [page, setPage] = React.useState(1)
 
   const filteredSessions = sessions.filter(s => {
     const stakeholderName = s.stakeholder?.name || 'Untitled Participant'
@@ -59,12 +60,23 @@ export default function InterviewsPage() {
             <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-slate-800">Interview History</h2>
             <p className="text-sm text-slate-500 font-medium">Browse and manage your captured discovery sessions.</p>
           </div>
-          <Link href="/setup" className="sm:shrink-0">
-            <button id="new-interview-btn" className="w-full sm:w-auto h-12 px-6 sm:px-8 bg-slate-100 text-slate-800 rounded-2xl font-bold text-sm border border-slate-200 hover:bg-slate-200 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-sm">
-              <Plus className="w-5 h-5" />
-              New Stakeholder
+          <div className="flex gap-2">
+            <button 
+              onClick={async () => {
+                const { exportSessionsCSV } = await import('@/lib/export-csv')
+                exportSessionsCSV(sessions)
+              }}
+              className="h-12 px-4 bg-white text-slate-600 rounded-2xl font-bold text-xs border border-slate-200 hover:bg-slate-50 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-sm"
+            >
+              <Download className="w-4 h-4" /> CSV
             </button>
-          </Link>
+            <Link href="/setup" className="sm:shrink-0">
+              <button id="new-interview-btn" className="w-full sm:w-auto h-12 px-6 sm:px-8 bg-slate-100 text-slate-800 rounded-2xl font-bold text-sm border border-slate-200 hover:bg-slate-200 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-sm">
+                <Plus className="w-5 h-5" />
+                New Stakeholder
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -104,8 +116,9 @@ export default function InterviewsPage() {
 
       {/* 📋 GRID RESULTS */}
       {filteredSessions.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-20">
-          {filteredSessions.map((session) => (
+        <>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          {filteredSessions.slice(0, page * 12).map((session) => (
             <InterviewCard
               key={session.id}
               id={session.id}
@@ -118,6 +131,17 @@ export default function InterviewsPage() {
             />
           ))}
         </div>
+        {filteredSessions.length > page * 12 && (
+          <div className="flex justify-center pb-20">
+            <button 
+              onClick={() => setPage(p => p + 1)}
+              className="h-11 px-8 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all shadow-sm"
+            >
+              Load More ({filteredSessions.length - page * 12} remaining)
+            </button>
+          </div>
+        )}
+        </>
       ) : (
         <div className="bg-white rounded-2xl sm:rounded-[3rem] border border-dashed border-slate-200 py-20 sm:py-32 flex flex-col items-center justify-center text-center space-y-4 sm:space-y-6 px-4">
           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 rounded-2xl sm:rounded-[2rem] flex items-center justify-center border border-slate-100">

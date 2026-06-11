@@ -115,6 +115,8 @@ export interface InterviewSession {
   transcript?: TranscriptParagraph[]
   transcriptText?: string
   summary?: string
+  notes?: string
+  tags?: string[]
   user_id?: string
   ceedQuestions?: CEEDQuestion[]
 }
