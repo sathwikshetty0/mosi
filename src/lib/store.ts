@@ -651,16 +651,16 @@ export const useMosiStore = create<MosiStore>()(
           // 3. OPPORTUNITIES
           try {
             if (session.opportunities.length > 0) {
-              const { error: oppErr } = await supabase.from('opportunities').insert(
-                session.opportunities.map(o => ({
-                  session_id: newId,
-                  title: o.title,
-                  description: o.description,
-                  tag: o.tag,
-                  timestamp: o.timestamp,
-                  status: 'Pending'
-                }))
-              )
+              const oppsToInsert = session.opportunities.map(o => ({
+                id: o.id, // Preserve local UUID so evidence FK matches
+                session_id: newId,
+                title: o.title,
+                description: o.description,
+                tag: o.tag,
+                timestamp: o.timestamp,
+                status: 'Pending'
+              }))
+              const { error: oppErr } = await supabase.from('opportunities').insert(oppsToInsert)
               if (oppErr) console.error('Opportunities sync failed:', oppErr)
             }
           } catch (e) {

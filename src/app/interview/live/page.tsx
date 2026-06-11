@@ -174,7 +174,11 @@ function LiveInterviewContent() {
       setActiveEvidenceType(type)
       setTimeout(() => {
         if (fileInputRef.current) {
-          fileInputRef.current.value = '' // Clear previous selection
+          fileInputRef.current.value = ''
+          // Set accept based on type for better mobile UX
+          if (type === 'image') fileInputRef.current.accept = 'image/*'
+          else if (type === 'video') fileInputRef.current.accept = 'video/*'
+          else fileInputRef.current.accept = '*/*'
           fileInputRef.current.click()
         }
       }, 100)
@@ -226,7 +230,14 @@ function LiveInterviewContent() {
 
   return (
     <div className="max-w-2xl mx-auto flex flex-col min-h-[calc(100dvh-8rem)] relative animate-in fade-in duration-700 px-4 sm:px-6">
-      <input type="file" ref={fileInputRef} className="absolute inset-0 w-0 h-0 opacity-0 pointer-events-none" onChange={handleFileChange} />
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        accept="image/*,video/*,.pdf,.doc,.docx,.txt" 
+        capture="environment"
+        className="absolute inset-0 w-0 h-0 opacity-0 pointer-events-none" 
+        onChange={handleFileChange} 
+      />
 
       {/* 2X2 CEED QUADRANT SELECTOR */}
       <header className="py-6 sm:py-10 space-y-4 sm:space-y-6 shrink-0 border-b-2 border-slate-50">

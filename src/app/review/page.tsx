@@ -364,7 +364,17 @@ function ReviewContent() {
         )}
       </section>
 
-      <audio ref={audioRef} src={session.recordingUrl} onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} onTimeUpdate={handleTimeUpdate} onError={() => setAudioError(true)} className="hidden" />
+      <audio 
+        ref={audioRef} 
+        src={session.recordingUrl || undefined} 
+        onPlay={() => setIsPlaying(true)} 
+        onPause={() => setIsPlaying(false)} 
+        onTimeUpdate={handleTimeUpdate} 
+        onError={() => { if (session.recordingUrl) setAudioError(true) }}
+        onCanPlay={() => setAudioError(false)}
+        preload="auto"
+        className="hidden" 
+      />
 
       {/* AUDIO UNAVAILABLE WARNING */}
       {audioError && (
@@ -374,7 +384,7 @@ function ReviewContent() {
             <p className="text-sm font-bold text-amber-800">Audio not available</p>
             <p className="text-xs text-amber-600">
               {session.recordingUrl?.startsWith('blob:')
-                ? 'The recording was stored locally and has expired. It will be available once uploaded to cloud storage.'
+                ? 'The local recording has expired. It will be available once cloud sync completes — try refreshing in a moment.'
                 : 'Could not load the audio file. The recording may still be uploading.'}
             </p>
           </div>
