@@ -258,8 +258,17 @@ function EditModal({ sh, onOpenChange, onSave }: { sh: any, onOpenChange: (open:
 }
 
 export default function StakeholdersPage() {
-  const { sessions, fetchSessions, updateStakeholder, deleteStakeholder } = useMosiStore()
+  const { sessions, fetchSessions, updateStakeholder, deleteStakeholder, fetchStakeholdersList, stakeholdersList } = useMosiStore()
   const [editingStakeholder, setEditingStakeholder] = React.useState<any>(null)
+  const [search, setSearch] = React.useState('')
+  const [showAddModal, setShowAddModal] = React.useState(false)
+  const [addForm, setAddForm] = React.useState({ name: '', role: '', phone: '', email: '', linkedin: '', company: '', sector: '', employees: '', revenue: '', geography: '', domain: '' })
+  const [isAdding, setIsAdding] = React.useState(false)
+
+  React.useEffect(() => {
+    fetchSessions()
+    fetchStakeholdersList()
+  }, [fetchSessions, fetchStakeholdersList])
   
   // Extract unique stakeholders
   const stakeholders = React.useMemo(() => {
@@ -268,49 +277,106 @@ export default function StakeholdersPage() {
 
     sessions.forEach(session => {
       const sh = session.stakeholder
-      if (sh && sh.name && !processedNames.has(sh.name)) {
-        processedNames.add(sh.name)
+      if (sh && sh.name && !processedNames.has(sh.name.toLowerCase())) {
+        processedNames.add(sh.name.toLowerCase())
         list.push({
           ...sh,
-          id: sh.id || `sh_${session.id}`, // Fallback if no specific ID
+          id: sh.id || `sh_${session.id}`,
           lastInterview: session.date,
           sessionCount: sessions.filter(s => s.stakeholder?.name === sh.name).length
         })
       }
     })
+
+    // Also include stakeholders from DB that don't have sessions yet
+    stakeholdersList.forEach(sh => {
+      if (sh.name && !processedNames.has(sh.name.toLowerCase())) {
+        processedNames.add(sh.name.toLowerCase())
+        list.push({ ...sh, lastInterview: 'No sessions', sessionCount: 0 })
+      }
+    })
+
     return list
-  }, [sessions])
+  }, [sessions, stakeholdersList])
+
+  // Filtered by search
+  const filtered = React.useMemo(() => {
+    if (!search.trim()) return stakeholders
+    const q = search.toLowerCase()
+    return stakeholders.filter(sh => 
+      sh.name?.toLowerCase().includes(q) || 
+      sh.company?.toLowerCase().includes(q) || 
+      sh.sector?.toLowerCase().includes(q) ||
+      sh.role?.toLowerCase().includes(q)
+    )
+  }, [stakeholders, search])
+
+  const handleAddStakeholder = async () => {
+    if (!addForm.name.trim()) return
+    setIsAdding(true)
+    try {
+      const res = await fetch('/api/stakeholders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(addForm)
+      })
+      if (res.ok) {
+        setShowAddModal(false)
+        setAddForm({ name: '', role: '', phone: '', email: '', linkedin: '', company: '', sector: '', employees: '', revenue: '', geography: '', domain: '' })
+        fetchStakeholdersList()
+        fetchSessions()
+      }
+    } catch (e) {
+      console.error('Failed to add stakeholder:', e)
+    } finally {
+      setIsAdding(false)
+    }
+  }
+
+  const handleShare = (sh: any) => {
+    const text = `${sh.name} — ${sh.role} at ${sh.company}\n${sh.email ? 'Email: ' + sh.email : ''}${sh.phone ? '\nPhone: ' + sh.phone : ''}`
+    if (navigator.share) {
+      navigator.share({ title: `Stakeholder: ${sh.name}`, text })
+    } else {
+      navigator.clipboard.writeText(text)
+      alert('Stakeholder details copied to clipboard!')
+    }
+  }
 
   return (
-    <div className="space-y-8 sm:space-y-10 pb-16 animate-in fade-in duration-700 max-w-6xl mx-auto px-4 sm:px-6">
+    <div className="space-y-6 sm:space-y-10 pb-16 animate-in fade-in duration-700 max-w-6xl mx-auto px-4 sm:px-6">
       {/* Header */}
-      <section className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-4">
-        <div className="space-y-1 sm:space-y-2">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800">
+      <section className="flex flex-col md:flex-row md:items-end justify-between gap-4 pt-4">
+        <div className="space-y-1">
+          <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-slate-800">
             Stakeholder Registry
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            Manage your profiles and interview history.
+            {filtered.length} stakeholder{filtered.length !== 1 ? 's' : ''} in your network.
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <div className="relative group">
-            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
+        <div className="flex items-center gap-2">
+          <div className="relative group flex-1 sm:flex-none">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
             <input 
-              placeholder="Search registry..."
-              className="h-11 pl-11 pr-4 bg-white border border-slate-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-200 transition-all w-full sm:w-64 shadow-sm"
+              placeholder="Search..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="h-10 pl-9 pr-4 bg-white border border-slate-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-200 transition-all w-full sm:w-56 shadow-sm"
             />
           </div>
-          <button className="h-11 px-6 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-slate-200">
-            <Plus className="w-4 h-4" />
-            Add New
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="h-10 px-4 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2 shadow-md shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add
           </button>
         </div>
       </section>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {stakeholders.map((sh) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        {filtered.map((sh) => (
           <div key={sh.id} className="bg-white border border-slate-100 rounded-3xl p-6 space-y-6 hover:shadow-xl hover:shadow-slate-100/50 hover:border-slate-200 transition-all group active:scale-[0.99]">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4">
@@ -368,10 +434,9 @@ export default function StakeholdersPage() {
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  // In a real implementation this would trigger the share flow
-                  alert('Share feature activated! Allows sending this stakeholder\'s profile to colleagues.')
+                  handleShare(sh)
                 }}
-                className="w-12 h-12 bg-white border border-slate-200 text-slate-400 rounded-2xl flex items-center justify-center hover:text-blue-500 hover:border-blue-200 hover:bg-blue-50 transition-all shrink-0 tooltip-trigger"
+                className="w-12 h-12 bg-white border border-slate-200 text-slate-400 rounded-2xl flex items-center justify-center hover:text-blue-500 hover:border-blue-200 hover:bg-blue-50 transition-all shrink-0"
                 title="Share Stakeholder"
               >
                 <Share2 className="w-4 h-4" />
@@ -380,6 +445,62 @@ export default function StakeholdersPage() {
           </div>
         ))}
       </div>
+
+      {filtered.length === 0 && (
+        <div className="py-16 text-center bg-white border border-dashed border-slate-200 rounded-2xl space-y-3">
+          <Users className="w-8 h-8 text-slate-200 mx-auto" />
+          <p className="text-sm font-bold text-slate-500">{search ? 'No stakeholders match your search' : 'No stakeholders yet'}</p>
+          <p className="text-xs text-slate-400">
+            {search ? 'Try a different search term.' : 'Add one manually or start a new interview.'}
+          </p>
+        </div>
+      )}
+
+      {/* ADD NEW MODAL */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowAddModal(false)} />
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="px-5 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
+              <h2 className="text-sm font-bold text-slate-800">Add New Stakeholder</h2>
+              <button onClick={() => setShowAddModal(false)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-800 rounded-lg">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-3">
+              {[
+                { key: 'name', label: 'Name *', placeholder: 'Jane Doe' },
+                { key: 'role', label: 'Role', placeholder: 'Product Lead' },
+                { key: 'email', label: 'Email', placeholder: 'jane@company.com' },
+                { key: 'phone', label: 'Phone', placeholder: '+1 555-0000' },
+                { key: 'company', label: 'Company', placeholder: 'Acme Corp' },
+                { key: 'sector', label: 'Sector', placeholder: 'Fintech' },
+                { key: 'linkedin', label: 'LinkedIn', placeholder: 'linkedin.com/in/...' },
+              ].map(f => (
+                <div key={f.key}>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">{f.label}</label>
+                  <input 
+                    className="w-full h-10 px-3 bg-slate-50 border border-slate-100 rounded-lg text-sm focus:bg-white focus:border-blue-300 outline-none transition-all"
+                    placeholder={f.placeholder}
+                    value={(addForm as any)[f.key]}
+                    onChange={e => setAddForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t border-slate-100 flex gap-2">
+              <button onClick={() => setShowAddModal(false)} className="flex-1 h-10 text-sm font-bold text-slate-400 hover:text-slate-700 transition-all">Cancel</button>
+              <button 
+                onClick={handleAddStakeholder} 
+                disabled={isAdding || !addForm.name.trim()}
+                className="flex-1 h-10 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-black active:scale-95 transition-all disabled:opacity-50"
+              >
+                {isAdding ? 'Adding...' : 'Add Stakeholder'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editingStakeholder && (
         <EditModal 

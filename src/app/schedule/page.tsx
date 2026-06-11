@@ -1,83 +1,110 @@
 'use client'
 
-import { Calendar as CalendarIcon, Clock, Users, ArrowRight, Video, MapPin, ChevronLeft, ChevronRight, Plus, Sparkles, CheckCircle, BarChart3 } from 'lucide-react'
+import { Calendar as CalendarIcon, Clock, ArrowRight, MapPin, ChevronLeft, ChevronRight, Plus, BarChart3 } from 'lucide-react'
 import * as React from 'react'
 import { useMosiStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
+import Link from 'next/link'
+
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 export default function SchedulePage() {
-  const [view, setView] = React.useState('upcoming')
+  const [view, setView] = React.useState<'upcoming' | 'completed'>('upcoming')
+  const { sessions, fetchSessions } = useMosiStore()
   
-  const { sessions } = useMosiStore()
-  
-  const scheduled = sessions.filter(s => s.status === 'Scheduled')
-  const past = sessions.filter(s => s.status !== 'Recording' && s.status !== 'Scheduled')
-  
-  const list = view === 'upcoming' ? scheduled : past
+  React.useEffect(() => { fetchSessions() }, [fetchSessions])
 
-  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  // Dynamic calendar state
+  const [calMonth, setCalMonth] = React.useState(new Date().getMonth())
+  const [calYear, setCalYear] = React.useState(new Date().getFullYear())
+
+  const today = new Date()
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate()
+  const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay()
+
+  // Map session dates to day numbers for the current calendar month
+  const sessionDays = React.useMemo(() => {
+    const days = new Set<number>()
+    sessions.forEach(s => {
+      if (!s.date) return
+      // Parse date like "Jun 11, 2026"
+      const d = new Date(s.date)
+      if (!isNaN(d.getTime()) && d.getMonth() === calMonth && d.getFullYear() === calYear) {
+        days.add(d.getDate())
+      }
+    })
+    return days
+  }, [sessions, calMonth, calYear])
+
+  const prevMonth = () => {
+    if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1) }
+    else setCalMonth(m => m - 1)
+  }
+  const nextMonth = () => {
+    if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1) }
+    else setCalMonth(m => m + 1)
+  }
+
+  const scheduled = sessions.filter(s => s.status === 'Scheduled')
+  const completed = sessions.filter(s => s.status === 'Published' || s.status === 'Review')
+  const list = view === 'upcoming' ? scheduled : completed
 
   return (
-    <div className="space-y-10 pb-20 animate-in fade-in slide-in-from-bottom-2 duration-700">
+    <div className="space-y-6 sm:space-y-10 pb-20 animate-in fade-in duration-500">
       
-      {/* 🚀 ELITE HEADER */}
-      <div className="flex flex-col gap-4 sm:gap-6 px-1 sm:px-2">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1.5 rounded-full w-fit">
-              <Clock className="w-3.5 h-3.5" /> Meeting Schedule
-            </div>
-            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tighter text-slate-700 uppercase leading-[0.9]">
-              Interview <br className="hidden sm:block"/><span className="text-indigo-600">Chronology</span>
-            </h2>
-            <p className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-widest">Plan and manage upcoming stakeholder sessions.</p>
-          </div>
-          <a href="/setup" className="sm:shrink-0">
-            <button id="book-meeting-btn" className="w-full sm:w-auto px-6 sm:px-8 py-4 sm:py-5 bg-slate-700 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-slate-200 hover:bg-indigo-600 transition-all active:scale-95 flex items-center justify-center gap-2">
-              <Plus className="w-5 h-5" />
-              Schedule New
-            </button>
-          </a>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-2 sm:pt-4">
+        <div className="space-y-1">
+          <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-slate-800">Chronology</h1>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium">Your interview schedule and history.</p>
         </div>
+        <Link href="/setup">
+          <button className="h-10 px-5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2 shadow-md">
+            <Plus className="w-3.5 h-3.5" /> Schedule New
+          </button>
+        </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* 📅 CALENDAR PERSPECTIVE */}
-        <div className="lg:col-span-4 space-y-6 sm:space-y-8">
-          <div className="premium-card p-5 sm:p-8 bg-white border-2 border-slate-100 shadow-2xl shadow-slate-200/50">
-            <div className="flex items-center justify-between mb-8">
-               <div className="space-y-1">
-                  <h3 className="text-lg font-black text-slate-700 uppercase tracking-tighter">March 2026</h3>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Standardized Time (UTC)</p>
-               </div>
-               <div className="flex gap-2">
-                 <button className="w-8 h-8 flex items-center justify-center hover:bg-slate-50 rounded-xl text-slate-400 border border-slate-100 transition-all"><ChevronLeft className="w-4 h-4" /></button>
-                 <button className="w-8 h-8 flex items-center justify-center hover:bg-slate-50 rounded-xl text-slate-400 border border-slate-100 transition-all"><ChevronRight className="w-4 h-4" /></button>
-               </div>
+        {/* Calendar */}
+        <div className="lg:col-span-4 space-y-4">
+          <div className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-slate-800">{MONTHS[calMonth]} {calYear}</h3>
+              <div className="flex gap-1">
+                <button onClick={prevMonth} className="w-7 h-7 flex items-center justify-center hover:bg-slate-50 rounded-lg text-slate-400 transition-all"><ChevronLeft className="w-4 h-4" /></button>
+                <button onClick={nextMonth} className="w-7 h-7 flex items-center justify-center hover:bg-slate-50 rounded-lg text-slate-400 transition-all"><ChevronRight className="w-4 h-4" /></button>
+              </div>
             </div>
             
-            <div className="grid grid-cols-7 gap-2 mb-4">
-              {DAYS.map((d, i) => (
-                <div key={i} className="text-center text-[10px] font-black text-slate-300 uppercase tracking-widest">{d}</div>
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {DAYS.map(d => (
+                <div key={d} className="text-center text-[9px] font-bold text-slate-400 uppercase py-1">{d}</div>
               ))}
             </div>
-            <div className="grid grid-cols-7 gap-2 text-center">
-              {Array.from({ length: 31 }).map((_, i) => {
+            <div className="grid grid-cols-7 gap-1">
+              {/* Empty cells before first day */}
+              {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+                <div key={`empty-${i}`} />
+              ))}
+              {/* Day cells */}
+              {Array.from({ length: daysInMonth }).map((_, i) => {
                 const day = i + 1
-                const isToday = day === new Date().getDate()
-                const hasMeeting = scheduled.length > 0 && day === 16
+                const isToday = day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear()
+                const hasSession = sessionDays.has(day)
                 return (
                   <div
                     key={day}
                     className={cn(
-                       "aspect-square flex flex-col items-center justify-center text-xs font-black rounded-2xl cursor-pointer transition-all relative border-2 border-transparent",
-                       isToday ? "bg-slate-700 text-white shadow-xl shadow-slate-300 border-slate-700" : "hover:bg-indigo-50 hover:text-indigo-600 hover:border-slate-50 text-slate-500"
+                      "aspect-square flex items-center justify-center text-xs font-bold rounded-lg relative transition-all",
+                      isToday ? "bg-slate-800 text-white" : hasSession ? "bg-blue-50 text-blue-600" : "text-slate-500 hover:bg-slate-50"
                     )}
                   >
                     {day}
-                    {hasMeeting && !isToday && (
-                      <div className="absolute bottom-2 w-1.5 h-1.5 bg-indigo-500 rounded-full" />
+                    {hasSession && !isToday && (
+                      <div className="absolute bottom-0.5 w-1 h-1 bg-blue-500 rounded-full" />
                     )}
                   </div>
                 )
@@ -85,122 +112,72 @@ export default function SchedulePage() {
             </div>
           </div>
 
-          <div className="premium-card p-5 sm:p-8 bg-slate-700 text-white overflow-hidden relative shadow-2xl">
-            <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
-              <CalendarIcon className="w-32 h-32 -mr-16 -mt-16" />
-            </div>
-            <div className="relative z-10 space-y-6">
-               <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Daily Trajectory</h4>
-               </div>
-               <p className="text-sm font-bold leading-relaxed uppercase tracking-tight text-slate-300">
-                {scheduled.length > 0 
-                  ? `Active load: ${scheduled.length} interview${scheduled.length > 1 ? 's' : ''} detected.`
-                  : "No sessions currently scheduled."}
-               </p>
-               <button className="flex items-center gap-3 text-[10px] font-black text-white hover:text-indigo-400 transition-all group uppercase tracking-widest border-b-2 border-white/10 pb-2">
-                 Refresh Schedule
-                 <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-2" />
-               </button>
-            </div>
+          {/* Summary card */}
+          <div className="bg-slate-800 text-white rounded-2xl p-4 sm:p-5">
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Summary</p>
+            <p className="text-sm font-medium text-slate-300">
+              {scheduled.length > 0 
+                ? `${scheduled.length} upcoming session${scheduled.length > 1 ? 's' : ''}`
+                : 'No sessions scheduled'}
+            </p>
+            <p className="text-xs text-slate-500 mt-1">{completed.length} completed this period</p>
           </div>
         </div>
 
-        {/* 📋 CHRONOLOGICAL FEED */}
-        <div className="lg:col-span-8 space-y-6 sm:space-y-8">
-          <div className="flex bg-slate-100 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-slate-200 w-fit">
+        {/* Session feed */}
+        <div className="lg:col-span-8 space-y-4">
+          {/* Tabs */}
+          <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
             <button 
               onClick={() => setView('upcoming')} 
-              className={cn(
-                 "px-5 sm:px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                 view === 'upcoming' ? "bg-white text-slate-700 shadow-xl" : "text-slate-500 hover:text-slate-700"
-              )}
+              className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all", view === 'upcoming' ? "bg-white text-slate-800 shadow-sm" : "text-slate-500")}
             >
-               Upcoming
+              Upcoming ({scheduled.length})
             </button>
             <button 
               onClick={() => setView('completed')} 
-              className={cn(
-                 "px-5 sm:px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                 view === 'completed' ? "bg-white text-slate-700 shadow-xl" : "text-slate-500 hover:text-slate-700"
-              )}
+              className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all", view === 'completed' ? "bg-white text-slate-800 shadow-sm" : "text-slate-500")}
             >
-               History
+              Completed ({completed.length})
             </button>
           </div>
 
-          <div className="space-y-6">
-            {list.length > 0 ? list.map((meeting, i) => (
-              <div key={meeting.id} className="premium-card p-1 flex flex-col sm:flex-row items-stretch bg-white border-2 border-slate-100 shadow-xl hover:border-slate-700 transition-all group overflow-hidden h-fit sm:h-32">
-                 <div className="w-full sm:w-32 bg-slate-50 flex flex-row sm:flex-col items-center justify-center text-slate-700 border-b sm:border-b-0 sm:border-r border-slate-100 p-3 sm:p-0 gap-2 sm:gap-0">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 sm:mb-1">{meeting.date.split(',')[0].split(' ')[0]}</span>
-                    <span className="text-xl sm:text-3xl font-black tracking-tighter">{meeting.date.split(',')[0].split(' ')[1]}</span>
-                 </div>
-                 <div className="flex-1 p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
-                    <div className="space-y-2">
-                       <div className="flex items-center gap-3">
-                          <span className="bg-indigo-50 text-indigo-600 text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-widest border border-slate-50">Synchronized</span>
-                          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{meeting.date.includes(',') ? meeting.date.split(',')[1] : 'TIME TBD'}</span>
-                       </div>
-                       <h4 className="text-xl font-black text-slate-700 uppercase tracking-tighter group-hover:text-indigo-600 transition-colors">Stakeholder: {meeting.stakeholder.name}</h4>
-                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                          <span className="flex items-center gap-1.5"><Building2IconFix className="w-3 h-3" />{meeting.stakeholder.company}</span>
-                          <span className="flex items-center gap-1.5"><MapPin className="w-3 h-3" />{meeting.location || 'ONLINE NODE'}</span>
-                       </div>
-                    </div>
-                    
-                    <a href="/interview/live" className="shrink-0">
-                      <button className="h-full px-8 bg-slate-50 group-hover:bg-slate-700 group-hover:text-white rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 border border-slate-100 group-hover:border-slate-700">
-                        {meeting.status === 'Scheduled' ? 'Initiate Session' : 'Access History'}
-                      </button>
-                    </a>
-                 </div>
-              </div>
+          {/* List */}
+          <div className="space-y-3">
+            {list.length > 0 ? list.slice(0, 20).map(session => (
+              <Link key={session.id} href={session.status === 'Scheduled' ? `/setup` : `/review?id=${session.id}`}>
+                <div className="bg-white border border-slate-100 rounded-xl p-4 flex items-center gap-4 hover:border-slate-200 hover:shadow-sm transition-all active:scale-[0.99] group">
+                  <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 border border-slate-100 shrink-0">
+                    <CalendarIcon className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-slate-700 truncate">{session.stakeholder?.name || 'Untitled'}</p>
+                    <p className="text-[10px] text-slate-400 font-medium flex items-center gap-2">
+                      <span>{session.date}</span>
+                      {session.stakeholder?.company && <span>· {session.stakeholder.company}</span>}
+                      {session.location && <span className="flex items-center gap-0.5"><MapPin className="w-3 h-3" />{session.location}</span>}
+                    </p>
+                  </div>
+                  <div className={cn(
+                    "text-[9px] font-bold uppercase px-2 py-0.5 rounded border",
+                    session.status === 'Scheduled' ? "bg-indigo-50 text-indigo-600 border-indigo-100" :
+                    session.status === 'Published' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                    "bg-amber-50 text-amber-600 border-amber-100"
+                  )}>
+                    {session.status}
+                  </div>
+                </div>
+              </Link>
             )) : (
-              <div className="bg-slate-50/50 border-4 border-dashed border-slate-100 rounded-[3rem] py-32 flex flex-col items-center justify-center text-center space-y-6">
-                <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center border border-slate-100 shadow-xl">
-                  <BarChart3 className="w-10 h-10 text-slate-200" />
-                </div>
-                <div className="space-y-2">
-                   <h3 className="text-xl font-black text-slate-700 uppercase tracking-tighter">Chronology Empty</h3>
-                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest max-w-[200px] leading-loose">No {view} meeting threads were discovered in the local lattice.</p>
-                </div>
+              <div className="py-16 text-center bg-white border border-dashed border-slate-200 rounded-2xl space-y-3">
+                <BarChart3 className="w-8 h-8 text-slate-200 mx-auto" />
+                <p className="text-sm font-bold text-slate-500">No {view} sessions</p>
+                <p className="text-xs text-slate-400">{view === 'upcoming' ? 'Schedule one from the setup page.' : 'Complete some interviews first.'}</p>
               </div>
             )}
-
-            <button className="w-full py-6 bg-white border-2 border-dashed border-slate-200 rounded-[2rem] flex items-center justify-center gap-4 text-slate-300 font-black uppercase tracking-[0.2em] text-[10px] hover:border-indigo-400 hover:text-indigo-600 transition-all active:scale-98">
-              <Plus className="w-5 h-5" />
-              Schedule Meeting
-            </button>
           </div>
         </div>
       </div>
     </div>
-  )
-}
-
-function Building2IconFix(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18" />
-      <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" />
-      <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" />
-      <path d="M10 6h4" />
-      <path d="M10 10h4" />
-      <path d="M10 14h4" />
-      <path d="M10 18h4" />
-    </svg>
   )
 }
