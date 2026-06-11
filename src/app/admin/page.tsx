@@ -781,27 +781,6 @@ function AdminDashboardContent() {
                         <p className="text-[9px] font-bold text-amber-500 uppercase tracking-widest mt-1">Pending</p>
                       </div>
                     </div>
-
-                    {/* Quick user list */}
-                    <div className="space-y-3">
-                      {profiles.slice(0, 5).map(u => (
-                        <div key={u.id} className="flex items-center gap-3 py-1">
-                          <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-[10px] font-bold text-slate-500">
-                            {u.full_name?.[0] || '?'}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-slate-700 truncate">{u.full_name || 'Unknown'}</p>
-                          </div>
-                          <span className={cn(
-                            "text-[9px] font-bold px-2 py-0.5 rounded border",
-                            u.role === 'admin' ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-slate-50 text-slate-500 border-slate-100"
-                          )}>{u.role}</span>
-                        </div>
-                      ))}
-                      {profiles.length > 5 && (
-                        <p className="text-[10px] text-slate-400 font-medium text-center pt-2">+{profiles.length - 5} more users</p>
-                      )}
-                    </div>
                   </div>
                 </div>
 
