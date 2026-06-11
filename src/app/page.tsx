@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useMosiStore } from '@/lib/store'
 import { 
-  Users, Video, Lightbulb, Activity, Plus, 
+  Users, Video, Lightbulb, Activity, Plus, Mic,
   ArrowRight, Layers, CheckCircle2, X, Trash2
 } from 'lucide-react'
 import Link from 'next/link'
@@ -68,12 +68,20 @@ export default function Home() {
             Your discovery sessions and insights at a glance.
           </p>
         </div>
-        <Link href="/setup">
-          <button className="h-11 px-5 sm:px-6 bg-slate-100 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all active:scale-95 flex items-center gap-2 border border-slate-200 w-full sm:w-auto justify-center">
-            <Plus className="w-4 h-4" />
-            New Session
-          </button>
-        </Link>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Link href="/interview/live?quick=1" className="flex-1 sm:flex-none">
+            <button className="h-11 px-5 sm:px-6 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all active:scale-95 flex items-center gap-2 w-full justify-center shadow-lg shadow-blue-200/50">
+              <Mic className="w-4 h-4" />
+              Quick Record
+            </button>
+          </Link>
+          <Link href="/setup" className="flex-1 sm:flex-none">
+            <button className="h-11 px-5 sm:px-6 bg-slate-100 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all active:scale-95 flex items-center gap-2 border border-slate-200 w-full justify-center">
+              <Plus className="w-4 h-4" />
+              New Session
+            </button>
+          </Link>
+        </div>
       </section>
 
       {/* STATS */}

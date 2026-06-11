@@ -6,7 +6,7 @@ import {
   Play, Pause, FastForward, Rewind, Clock, ChevronRight, ChevronLeft,
   CheckCircle2, Trash2, BarChart2, CheckCircle, Sparkles,
   FileText, Headphones, Save, Zap, Image as ImageIcon, Link as LinkIcon, File as FileIcon,
-  X
+  X, User, Building2, ChevronDown
 } from 'lucide-react'
 import { useMosiStore, CEEDTag, formatDuration, Opportunity } from '@/lib/store'
 import { cn } from '@/lib/utils'
@@ -33,7 +33,7 @@ function ReviewContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('id')
   
-  const { sessions, updateOpportunity, deleteSession, updateSessionSummary } = useMosiStore()
+  const { sessions, updateOpportunity, deleteSession, updateSessionSummary, updateSessionStakeholder, updateSessionTranscript } = useMosiStore()
   
   const session = React.useMemo(() => {
     let sess = sessionId ? sessions.find(s => s.id === sessionId) : (sessions.find(s => s.status === 'Review') || sessions[0])
@@ -51,7 +51,53 @@ function ReviewContent() {
   const [showChecklistPopup, setShowChecklistPopup] = React.useState(false)
   const [checklist, setChecklist] = React.useState<boolean[]>(CHECKLIST.map(() => false))
   const [localSummary, setLocalSummary] = React.useState(session?.summary || '')
+  const [localTranscript, setLocalTranscript] = React.useState(session?.transcriptText || '')
   const [isSynthesizing, setIsSynthesizing] = React.useState(false)
+  const [showStakeholderEdit, setShowStakeholderEdit] = React.useState(false)
+  const [stakeholderForm, setStakeholderForm] = React.useState({
+    name: session?.stakeholder?.name || '',
+    role: session?.stakeholder?.role || '',
+    phone: session?.stakeholder?.phone || '',
+    email: session?.stakeholder?.email || '',
+    company: session?.stakeholder?.company || '',
+    sector: session?.stakeholder?.sector || '',
+    linkedin: session?.stakeholder?.linkedin || '',
+    employees: session?.stakeholder?.employees || '',
+    revenue: session?.stakeholder?.revenue || '',
+    geography: session?.stakeholder?.geography || '',
+  })
+
+  // Auto-open stakeholder edit if it's a quick session with missing details
+  React.useEffect(() => {
+    if (session && (!session.stakeholder?.name || !session.stakeholder?.company)) {
+      setShowStakeholderEdit(true)
+    }
+  }, [session])
+
+  // Keep stakeholder form in sync when session changes
+  React.useEffect(() => {
+    if (session?.stakeholder) {
+      setStakeholderForm({
+        name: session.stakeholder.name || '',
+        role: session.stakeholder.role || '',
+        phone: session.stakeholder.phone || '',
+        email: session.stakeholder.email || '',
+        company: session.stakeholder.company || '',
+        sector: session.stakeholder.sector || '',
+        linkedin: session.stakeholder.linkedin || '',
+        employees: session.stakeholder.employees || '',
+        revenue: session.stakeholder.revenue || '',
+        geography: session.stakeholder.geography || '',
+      })
+    }
+  }, [session?.id])
+
+  const handleSaveStakeholder = () => {
+    if (session) {
+      updateSessionStakeholder(session.id, stakeholderForm)
+      setShowStakeholderEdit(false)
+    }
+  }
   
   const audioRef = React.useRef<HTMLAudioElement>(null)
   const [isPlaying, setIsPlaying] = React.useState(false)
@@ -115,8 +161,17 @@ function ReviewContent() {
       }
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'API Error')
-      setLocalSummary(data.summary)
-      updateSessionSummary(session.id, data.summary)
+      
+      // Set transcript (word-for-word from ElevenLabs)
+      if (data.transcript) {
+        setLocalTranscript(data.transcript)
+        updateSessionTranscript(session.id, data.transcript)
+      }
+      // Set summary (structured from NVIDIA Nemotron)
+      if (data.summary) {
+        setLocalSummary(data.summary)
+        updateSessionSummary(session.id, data.summary)
+      }
     } catch (err: any) {
       console.error(err)
       alert(err.message || 'Failed to synthesize.')
@@ -227,6 +282,86 @@ function ReviewContent() {
           </button>
         </div>
       </div>
+
+      {/* STAKEHOLDER DETAILS — Editable Section */}
+      <section className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+        <button 
+          onClick={() => setShowStakeholderEdit(!showStakeholderEdit)}
+          className="w-full flex items-center justify-between p-5 hover:bg-slate-50/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "w-10 h-10 rounded-xl flex items-center justify-center border",
+              (!session.stakeholder?.name || !session.stakeholder?.company) 
+                ? "bg-amber-50 border-amber-200 text-amber-500" 
+                : "bg-slate-50 border-slate-100 text-slate-400"
+            )}>
+              <User className="w-5 h-5" />
+            </div>
+            <div className="text-left">
+              <h3 className="text-sm font-bold text-slate-700">
+                {session.stakeholder?.name || <span className="text-amber-500 italic">Add Stakeholder Details</span>}
+              </h3>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                {session.stakeholder?.role ? `${session.stakeholder.role} · ` : ''}{session.stakeholder?.company || 'Company not set'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {(!session.stakeholder?.name || !session.stakeholder?.company) && (
+              <span className="text-[9px] font-bold text-amber-500 bg-amber-50 px-2 py-1 rounded border border-amber-100 uppercase tracking-widest">Incomplete</span>
+            )}
+            <ChevronDown className={cn("w-4 h-4 text-slate-300 transition-transform", showStakeholderEdit && "rotate-180")} />
+          </div>
+        </button>
+
+        {showStakeholderEdit && (
+          <div className="px-5 pb-5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 border-t border-slate-100 pt-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Stakeholder Name</label>
+                <input className={inputClass} placeholder="e.g. Jane Doe" value={stakeholderForm.name} onChange={e => setStakeholderForm(f => ({ ...f, name: e.target.value }))} />
+              </div>
+              <div>
+                <label className={labelClass}>Role / Title</label>
+                <input className={inputClass} placeholder="e.g. Product Lead" value={stakeholderForm.role} onChange={e => setStakeholderForm(f => ({ ...f, role: e.target.value }))} />
+              </div>
+              <div>
+                <label className={labelClass}>Company</label>
+                <input className={inputClass} placeholder="e.g. Acme Corp" value={stakeholderForm.company} onChange={e => setStakeholderForm(f => ({ ...f, company: e.target.value }))} />
+              </div>
+              <div>
+                <label className={labelClass}>Sector</label>
+                <input className={inputClass} placeholder="e.g. Fintech" value={stakeholderForm.sector} onChange={e => setStakeholderForm(f => ({ ...f, sector: e.target.value }))} />
+              </div>
+              <div>
+                <label className={labelClass}>Email</label>
+                <input className={inputClass} type="email" placeholder="e.g. jane@company.com" value={stakeholderForm.email} onChange={e => setStakeholderForm(f => ({ ...f, email: e.target.value }))} />
+              </div>
+              <div>
+                <label className={labelClass}>Phone</label>
+                <input className={inputClass} type="tel" placeholder="e.g. +1 555-0000" value={stakeholderForm.phone} onChange={e => setStakeholderForm(f => ({ ...f, phone: e.target.value }))} />
+              </div>
+              <div>
+                <label className={labelClass}>LinkedIn</label>
+                <input className={inputClass} placeholder="e.g. linkedin.com/in/janedoe" value={stakeholderForm.linkedin} onChange={e => setStakeholderForm(f => ({ ...f, linkedin: e.target.value }))} />
+              </div>
+              <div>
+                <label className={labelClass}>Employees</label>
+                <input className={inputClass} placeholder="e.g. 50-200" value={stakeholderForm.employees} onChange={e => setStakeholderForm(f => ({ ...f, employees: e.target.value }))} />
+              </div>
+            </div>
+            <div className="flex justify-end pt-2">
+              <button 
+                onClick={handleSaveStakeholder} 
+                className="h-10 px-6 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-black active:scale-95 transition-all flex items-center gap-2 shadow-lg shadow-slate-200"
+              >
+                <Save className="w-3.5 h-3.5" /> Save Details
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
 
       <audio ref={audioRef} src={session.recordingUrl} onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} onTimeUpdate={handleTimeUpdate} className="hidden" />
 
@@ -432,19 +567,44 @@ function ReviewContent() {
           )}
         </section>
 
-        {/* SUMMARY */}
-        <section className="bg-white border border-slate-100 rounded-2xl sm:rounded-3xl p-5 sm:p-8 space-y-4 sm:space-y-6 shadow-sm overflow-hidden">
-           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* TRANSCRIPT — Word-for-word from ElevenLabs */}
+        <section className="bg-white border border-slate-100 rounded-2xl sm:rounded-3xl p-5 sm:p-8 space-y-4 sm:space-y-5 shadow-sm overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-1">
-              <h3 className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-widest">Executive Summary</h3>
-              <p className="text-[10px] sm:text-xs text-slate-400 font-medium italic">Refine the consolidated interview synthesis.</p>
+              <h3 className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+                <FileText className="w-4 h-4 text-slate-400" /> Transcript
+              </h3>
+              <p className="text-[10px] sm:text-xs text-slate-400 font-medium">Word-for-word transcription via ElevenLabs. Editable.</p>
             </div>
-            <button onClick={handleSynthesize} disabled={isSynthesizing} className={cn("h-10 px-4 sm:px-6 rounded-xl text-xs font-bold flex items-center gap-2 transition-all border shadow-sm shrink-0", isSynthesizing ? "bg-slate-50 text-slate-300 border-slate-100" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50")}>
-              <Sparkles className={cn("w-4 h-4", isSynthesizing ? "text-slate-300 animate-pulse" : "text-blue-500")} /> 
-              {isSynthesizing ? "Synthesizing..." : "AI Refine"}
+            <button onClick={handleSynthesize} disabled={isSynthesizing} className={cn("h-10 px-4 sm:px-6 rounded-xl text-xs font-bold flex items-center gap-2 transition-all border shadow-sm shrink-0", isSynthesizing ? "bg-slate-50 text-slate-300 border-slate-100" : "bg-blue-600 text-white border-blue-600 hover:bg-blue-700")}>
+              <Sparkles className={cn("w-4 h-4", isSynthesizing && "animate-pulse")} />
+              {isSynthesizing ? "Processing..." : "Generate Transcript & Summary"}
             </button>
           </div>
-          <textarea className="w-full min-h-[200px] sm:min-h-[300px] p-5 sm:p-8 bg-slate-50 border border-slate-100 rounded-xl sm:rounded-2xl text-sm sm:text-base text-slate-700 leading-relaxed outline-none focus:bg-white focus:border-slate-300 transition-all resize-none font-medium" placeholder="Review and finalize the session summary here..." value={localSummary} onChange={(e) => setLocalSummary(e.target.value)} />
+          <textarea 
+            className="w-full min-h-[180px] sm:min-h-[250px] p-4 sm:p-6 bg-slate-50 border border-slate-100 rounded-xl sm:rounded-2xl text-sm text-slate-700 leading-relaxed outline-none focus:bg-white focus:border-slate-300 transition-all resize-y font-medium" 
+            placeholder="Transcript will appear here after processing the audio. You can also paste or type manually..." 
+            value={localTranscript} 
+            onChange={(e) => setLocalTranscript(e.target.value)} 
+          />
+        </section>
+
+        {/* SUMMARY — Structured from NVIDIA Nemotron */}
+        <section className="bg-white border border-slate-100 rounded-2xl sm:rounded-3xl p-5 sm:p-8 space-y-4 sm:space-y-5 shadow-sm overflow-hidden">
+           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <h3 className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-blue-500" /> Executive Summary
+              </h3>
+              <p className="text-[10px] sm:text-xs text-slate-400 font-medium">AI-generated summary powered by NVIDIA Nemotron. Editable.</p>
+            </div>
+          </div>
+          <textarea 
+            className="w-full min-h-[200px] sm:min-h-[300px] p-4 sm:p-6 bg-slate-50 border border-slate-100 rounded-xl sm:rounded-2xl text-sm sm:text-base text-slate-700 leading-relaxed outline-none focus:bg-white focus:border-slate-300 transition-all resize-y font-medium" 
+            placeholder="Executive summary will be generated here after processing. You can also edit manually..." 
+            value={localSummary} 
+            onChange={(e) => setLocalSummary(e.target.value)} 
+          />
         </section>
 
       </div>

@@ -113,6 +113,7 @@ export interface InterviewSession {
   recordingUrl?: string
   location?: string
   transcript?: TranscriptParagraph[]
+  transcriptText?: string
   summary?: string
   user_id?: string
   ceedQuestions?: CEEDQuestion[]
@@ -133,6 +134,8 @@ interface MosiStore {
 
   // Actions  
   setCurrentSession: (session: Partial<InterviewSession>) => void
+  startQuickSession: () => void
+  updateSessionStakeholder: (id: string, stakeholder: Partial<StakeholderProfile>) => void
   startRecording: () => void
   stopRecording: () => void
   setActiveQuadrant: (q: CEEDTag) => void
@@ -153,6 +156,7 @@ interface MosiStore {
   toggleSidebar: () => void
   setSidebarCollapsed: (collapsed: boolean) => void
   updateSessionSummary: (id: string, summary: string) => void
+  updateSessionTranscript: (id: string, transcriptText: string) => void
   setRecordingUrl: (id: string, url: string) => void
   profiles: any[]
   fetchAllProfiles: () => Promise<void>
@@ -188,6 +192,93 @@ export const useMosiStore = create<MosiStore>()(
   setCurrentSession: (session) => set((s) => ({
     currentSession: { ...s.currentSession, ...session }
   })),
+
+  startQuickSession: () => {
+    set({
+      currentSession: {
+        stakeholder: {
+          name: '', role: '', phone: '', email: '', linkedin: '',
+          company: '', sector: '', products: '', employees: '', revenue: '',
+          yearsInBusiness: '', geography: ''
+        },
+        settings: { audio: true, video: true },
+        opportunities: [],
+        status: 'Recording',
+        ceedQuestions: DEFAULT_CEED_QUESTIONS
+      }
+    })
+  },
+
+  updateSessionStakeholder: (id: string, stakeholderUpdates: Partial<StakeholderProfile>) => {
+    // 1. Update local state
+    set((s) => ({
+      sessions: s.sessions.map(sess =>
+        sess.id === id
+          ? { ...sess, stakeholder: { ...sess.stakeholder, ...stakeholderUpdates } }
+          : sess
+      )
+    }))
+
+    // 2. Sync to Supabase
+    if (supabase) {
+      ;(async () => {
+        try {
+          // Get the session's stakeholder_id from Supabase
+          const { data: sessionData } = await supabase
+            .from('sessions')
+            .select('stakeholder_id')
+            .eq('id', id)
+            .single()
+
+          if (sessionData?.stakeholder_id) {
+            // Update the existing stakeholder record
+            const { error } = await supabase
+              .from('stakeholders')
+              .update(stakeholderUpdates)
+              .eq('id', sessionData.stakeholder_id)
+
+            if (error) console.error('Stakeholder update sync failed:', error.message)
+          } else {
+            // No stakeholder linked yet — create one and link it
+            const { data: { user } } = await supabase.auth.getUser()
+            const currentState = get().sessions.find(s => s.id === id)
+            const fullStakeholder = { ...currentState?.stakeholder, ...stakeholderUpdates }
+
+            const insertData: any = {
+              name: fullStakeholder.name || 'Unnamed',
+              role: fullStakeholder.role || '',
+              phone: fullStakeholder.phone || '',
+              email: fullStakeholder.email || '',
+              linkedin: fullStakeholder.linkedin || '',
+              company: fullStakeholder.company || '',
+              sector: fullStakeholder.sector || '',
+              employees: fullStakeholder.employees || '',
+              revenue: fullStakeholder.revenue || '',
+              geography: fullStakeholder.geography || '',
+              domain: fullStakeholder.domain || '',
+              address: fullStakeholder.address || '',
+              pincode: fullStakeholder.pincode || ''
+            }
+            if (user) insertData.user_id = user.id
+
+            const { data: newSH, error: shErr } = await supabase
+              .from('stakeholders')
+              .insert(insertData)
+              .select()
+              .single()
+
+            if (shErr) {
+              console.error('Create stakeholder for session failed:', shErr.message)
+            } else if (newSH) {
+              await supabase.from('sessions').update({ stakeholder_id: newSH.id }).eq('id', id)
+            }
+          }
+        } catch (e) {
+          console.error('updateSessionStakeholder sync exception:', e)
+        }
+      })()
+    }
+  },
 
   startRecording: () => set({ isRecording: true }),
   stopRecording: () => set({ isRecording: false }),
@@ -344,6 +435,7 @@ export const useMosiStore = create<MosiStore>()(
           evidence: rootEvidence,
           recordingUrl: s.recording_url,
           summary: s.summary || '',
+          transcriptText: s.transcript?.text || '',
           user_id: s.user_id,
           ceedQuestions: s.ceed_questions || undefined
         }
@@ -399,6 +491,7 @@ export const useMosiStore = create<MosiStore>()(
         evidence: rootEvidence,
         recordingUrl: sessionData.recording_url,
         summary: sessionData.summary || '',
+        transcriptText: sessionData.transcript?.text || '',
         user_id: sessionData.user_id,
         ceedQuestions: sessionData.ceed_questions || undefined
       }
@@ -470,55 +563,61 @@ export const useMosiStore = create<MosiStore>()(
             console.error('Failed to get current user:', e)
           }
           
-          // 1. STAKEHOLDER (Find existing or Create)
+          // 1. STAKEHOLDER (Find existing or Create — SKIP if quick session with no name)
           let stakeholderId: any = null
-          try {
-            const dbStakeholder: any = {
-              name: stakeholder.name || 'Anonymous',
-              role: stakeholder.role || 'Unspecified',
-              phone: stakeholder.phone || '',
-              email: stakeholder.email || '',
-              linkedin: stakeholder.linkedin || '',
-              company: stakeholder.company || 'N/A',
-              sector: stakeholder.sector || '',
-              employees: stakeholder.employees || '',
-              revenue: stakeholder.revenue || '',
-              geography: stakeholder.geography || '',
-              domain: stakeholder.domain || '',
-              address: stakeholder.address || '',
-              pincode: stakeholder.pincode || ''
-            }
-
-            if (currentUserId) {
-              dbStakeholder.user_id = currentUserId
-            }
-
-            // First, try to find an existing stakeholder by name to avoid duplicates
-            devLog('Checking for existing stakeholder:', dbStakeholder.name)
-            const { data: existingSH } = await supabase
-              .from('stakeholders')
-              .select('id')
-              .eq('name', dbStakeholder.name)
-              .maybeSingle()
-
-            if (existingSH) {
-              stakeholderId = existingSH.id
-              devLog('Found existing stakeholder, linking to ID:', stakeholderId)
-              
-              // Update their details while we are at it
-              await supabase.from('stakeholders').update(dbStakeholder).eq('id', stakeholderId)
-            } else {
-              devLog('Creating new stakeholder:', dbStakeholder.name)
-              const { data: sData, error: sErr } = await supabase.from('stakeholders').insert(dbStakeholder).select().single()
-              if (sErr || !sData) {
-                console.error('Stakeholder sync failed:', sErr?.message || sErr)
-              } else {
-                stakeholderId = sData.id
-                devLog('Stakeholder created successfully, ID:', stakeholderId)
+          const hasStakeholderData = stakeholder.name && stakeholder.name.trim() !== ''
+          
+          if (hasStakeholderData) {
+            try {
+              const dbStakeholder: any = {
+                name: stakeholder.name,
+                role: stakeholder.role || 'Unspecified',
+                phone: stakeholder.phone || '',
+                email: stakeholder.email || '',
+                linkedin: stakeholder.linkedin || '',
+                company: stakeholder.company || 'N/A',
+                sector: stakeholder.sector || '',
+                employees: stakeholder.employees || '',
+                revenue: stakeholder.revenue || '',
+                geography: stakeholder.geography || '',
+                domain: stakeholder.domain || '',
+                address: stakeholder.address || '',
+                pincode: stakeholder.pincode || ''
               }
+
+              if (currentUserId) {
+                dbStakeholder.user_id = currentUserId
+              }
+
+              // First, try to find an existing stakeholder by name to avoid duplicates
+              devLog('Checking for existing stakeholder:', dbStakeholder.name)
+              const { data: existingSH } = await supabase
+                .from('stakeholders')
+                .select('id')
+                .eq('name', dbStakeholder.name)
+                .maybeSingle()
+
+              if (existingSH) {
+                stakeholderId = existingSH.id
+                devLog('Found existing stakeholder, linking to ID:', stakeholderId)
+                
+                // Update their details while we are at it
+                await supabase.from('stakeholders').update(dbStakeholder).eq('id', stakeholderId)
+              } else {
+                devLog('Creating new stakeholder:', dbStakeholder.name)
+                const { data: sData, error: sErr } = await supabase.from('stakeholders').insert(dbStakeholder).select().single()
+                if (sErr || !sData) {
+                  console.error('Stakeholder sync failed:', sErr?.message || sErr)
+                } else {
+                  stakeholderId = sData.id
+                  devLog('Stakeholder created successfully, ID:', stakeholderId)
+                }
+              }
+            } catch (e) {
+              console.error('Stakeholder sync exception:', e)
             }
-          } catch (e) {
-            console.error('Stakeholder sync exception:', e)
+          } else {
+            devLog('Quick session — skipping stakeholder creation (will be created when user fills details)')
           }
 
           // 2. SESSION (Crucial step)
@@ -744,6 +843,21 @@ export const useMosiStore = create<MosiStore>()(
           set((s) => ({
             sessions: s.sessions.map(sess => sess.id === id ? { ...sess, summary: prevSummary } : sess)
           }))
+        }
+      })()
+    }
+  },
+
+  updateSessionTranscript: (id, transcriptText) => {
+    set((s) => ({
+      sessions: s.sessions.map(sess => sess.id === id ? { ...sess, transcriptText } : sess)
+    }))
+    if (supabase) {
+      ;(async () => {
+        // Store in the transcript jsonb column as { text: "..." }
+        const { error } = await supabase.from('sessions').update({ transcript: { text: transcriptText } }).eq('id', id)
+        if (error) {
+          console.error('Transcript update failed:', error.message)
         }
       })()
     }

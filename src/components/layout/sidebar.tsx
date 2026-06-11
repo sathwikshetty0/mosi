@@ -151,6 +151,19 @@ export function Sidebar() {
           <div className="px-4 py-6 space-y-4">
              {/* Only show New Session for non-admin OR admin not on /admin */}
              {(!isAdmin || pathname !== '/admin') && (
+                <>
+                <Link
+                  href="/interview/live?quick=1"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={cn(
+                    "group w-full h-14 bg-blue-600 border border-blue-500 text-white rounded-[1.2rem] font-black uppercase tracking-[0.15em] text-[10px] transition-all shadow-xl shadow-blue-200/50 flex items-center justify-center gap-2.5 overflow-hidden relative active:scale-95 hover:bg-blue-700",
+                    isSidebarCollapsed && "h-14 w-14 p-0"
+                  )}
+                >
+                  <Mic className="w-4 h-4 relative z-10" />
+                  {!isSidebarCollapsed && <span className="relative z-10">Quick Record</span>}
+                  {isSidebarCollapsed && <span className="sr-only">Quick Record</span>}
+                </Link>
                 <Link
                   href="/setup"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -163,6 +176,7 @@ export function Sidebar() {
                   {!isSidebarCollapsed && <span className="relative z-10">New Session</span>}
                   {isSidebarCollapsed && <span className="sr-only">New Session</span>}
                 </Link>
+                </>
              )}
           </div>
         </div>

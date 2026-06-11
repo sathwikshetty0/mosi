@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Square, Play, Pause, Plus, Image as ImageIcon, Video, Link as LinkIcon,
   File as FileIcon, Sparkles, Activity, Layers, Globe, ArrowUp, X,
@@ -17,11 +17,20 @@ const QUADRANT_IDS: CEEDTag[] = ['Core', 'Efficiency', 'Expansion', 'Disrupt']
 
 export default function LiveInterviewPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const isQuickMode = searchParams.get('quick') === '1'
   const {
     isRecording, recordingSeconds, activeQuadrant, currentSession,
     startRecording, stopRecording, setActiveQuadrant, addOpportunity,
-    addEvidence, finalizeSession, tick
+    addEvidence, finalizeSession, tick, startQuickSession
   } = useMosiStore()
+
+  // If quick mode and no current session, set up a blank one
+  React.useEffect(() => {
+    if (isQuickMode && !currentSession) {
+      startQuickSession()
+    }
+  }, [isQuickMode, currentSession, startQuickSession])
 
   const [questionIndex, setQuestionIndex] = React.useState(0)
   const [answeredQuestions, setAnsweredQuestions] = React.useState<Set<string>>(new Set())
@@ -257,7 +266,7 @@ export default function LiveInterviewPage() {
       </header>
 
       {/* MAIN QUESTION */}
-      <div className="flex-1 flex flex-col justify-center pb-40 sm:pb-48 space-y-8 sm:space-y-10 py-8 sm:py-0">
+      <div className="flex-1 flex flex-col justify-center pb-44 sm:pb-48 space-y-6 sm:space-y-10 py-6 sm:py-0">
         {questions.length > 0 ? (
         <>
         <div className="space-y-3 sm:space-y-4">
@@ -370,7 +379,7 @@ export default function LiveInterviewPage() {
           </div>
 
           {/* MAIN RECORDER BAR */}
-          <div className="w-full h-18 bg-white/90 backdrop-blur-xl rounded-[2.5rem] sm:rounded-full border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex items-center px-4 gap-4 ring-1 ring-white/50 relative">
+          <div className="w-full py-3 bg-white/90 backdrop-blur-xl rounded-[2rem] sm:rounded-full border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex items-center px-4 gap-3 sm:gap-4 ring-1 ring-white/50 relative">
             
             {/* START / STOP ACTION */}
             {!isRecording ? (
