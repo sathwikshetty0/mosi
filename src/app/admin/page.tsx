@@ -588,7 +588,7 @@ function AdminDashboardContent() {
     { label: 'Stakeholders', val: stats.stakeholders, icon: Globe, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
     { label: 'Published', val: stats.published, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
     { label: 'In Review', val: stats.inReview, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
-    { label: 'Publish Rate', val: `${stats.publishRate}%`, icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+    { label: 'Users', val: profiles.length, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
   ]
 
   return (
@@ -747,51 +747,51 @@ function AdminDashboardContent() {
                      </div>
                    </div>
 
-                  {/* 👥 USER ACTIVITY (7 cols) */}
-                  <div className="lg:col-span-7 bg-white border border-slate-100 rounded-[2rem] p-6 sm:p-10 space-y-10">
+                  {/* 👥 TEAMS SUMMARY (7 cols) */}
+                  <div className="lg:col-span-7 bg-white border border-slate-100 rounded-[2rem] p-6 sm:p-10 space-y-6">
                     <div className="flex items-center justify-between border-b border-slate-50 pb-6">
                       <div className="space-y-1">
                         <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                          <UserCheck className="w-5 h-5 text-blue-600" /> Team Utilization
+                          <Users className="w-5 h-5 text-blue-600" /> Teams Overview
                         </h2>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Active User Load & Output</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Organization structure</p>
                       </div>
-                      <Link href="/admin?tab=users" className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline">Manage All Users →</Link>
+                      <Link href="/admin?tab=team" className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline">Manage Teams →</Link>
                     </div>
-                    <div className="space-y-8">
-                      {userStats.slice(0, 6).map((u, i) => (
-                        <div key={u.id} className="group cursor-default">
-                           <div className="flex items-center justify-between mb-3 px-1">
-                              <div className="flex items-center gap-3">
-                                 <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-black relative overflow-hidden group-hover:scale-105 group-hover:border-blue-100 group-hover:bg-blue-50 transition-all duration-500 shadow-sm">
-                                    {u.avatar_url ? (
-                                       <img src={u.avatar_url} alt={u.full_name} className="w-full h-full object-cover" />
-                                    ) : (
-                                       u.full_name[0]
-                                    )}
-                                 </div>
-                                 <div>
-                                    <p className="text-xs font-black text-slate-800">{u.full_name}</p>
-                                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Platform User</p>
-                                 </div>
-                              </div>
-                              <div className="text-right">
-                                 <p className="text-xs font-black text-slate-900">{u.sessionCount} <span className="text-slate-300 font-medium text-[10px]">sessions</span></p>
-                                 <p className="text-[9px] text-blue-600 font-bold uppercase">{u.insightCount} Insights</p>
-                              </div>
-                           </div>
-                           <div className="h-2 bg-slate-50 rounded-full overflow-hidden mx-1">
-                              <motion.div initial={{ width: 0 }} animate={{ width: `${(u.sessionCount / Math.max(...userStats.map(x => x.sessionCount), 1)) * 100}%` }} className="h-full bg-slate-900 rounded-full relative overflow-hidden">
-                                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-80" />
-                              </motion.div>
-                           </div>
+                    
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="bg-blue-50 rounded-2xl p-5 text-center">
+                        <p className="text-3xl font-black text-blue-700">{profiles.length}</p>
+                        <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mt-1">Users</p>
+                      </div>
+                      <div className="bg-emerald-50 rounded-2xl p-5 text-center">
+                        <p className="text-3xl font-black text-emerald-700">—</p>
+                        <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mt-1">Teams</p>
+                      </div>
+                      <div className="bg-amber-50 rounded-2xl p-5 text-center">
+                        <p className="text-3xl font-black text-amber-700">{sessions.filter(s => s.status === 'Review').length}</p>
+                        <p className="text-[9px] font-bold text-amber-500 uppercase tracking-widest mt-1">Pending</p>
+                      </div>
+                    </div>
+
+                    {/* Quick user list */}
+                    <div className="space-y-3">
+                      {profiles.slice(0, 5).map(u => (
+                        <div key={u.id} className="flex items-center gap-3 py-1">
+                          <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-[10px] font-bold text-slate-500">
+                            {u.full_name?.[0] || '?'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-slate-700 truncate">{u.full_name || 'Unknown'}</p>
+                          </div>
+                          <span className={cn(
+                            "text-[9px] font-bold px-2 py-0.5 rounded border",
+                            u.role === 'admin' ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-slate-50 text-slate-500 border-slate-100"
+                          )}>{u.role}</span>
                         </div>
                       ))}
-                      {userStats.length === 0 && (
-                        <div className="py-20 text-center space-y-4">
-                           <Users className="w-12 h-12 text-slate-100 mx-auto" />
-                           <p className="text-slate-300 font-bold uppercase tracking-[0.2em] text-[10px]">No users registered</p>
-                        </div>
+                      {profiles.length > 5 && (
+                        <p className="text-[10px] text-slate-400 font-medium text-center pt-2">+{profiles.length - 5} more users</p>
                       )}
                     </div>
                   </div>
