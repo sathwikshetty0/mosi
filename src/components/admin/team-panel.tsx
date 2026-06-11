@@ -285,39 +285,64 @@ export function TeamPanel() {
       </div>
 
       {/* TEAMS OVERVIEW */}
-      {teams.length > 0 && (
-        <div className="space-y-4 pt-4 border-t border-slate-100">
+      <div className="space-y-4 pt-4 border-t border-slate-100">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-slate-400" />
-            <h3 className="text-sm font-bold text-slate-800">All Teams ({teams.length})</h3>
+            <h3 className="text-sm font-bold text-slate-800">All Teams</h3>
           </div>
-          
-          <div className="space-y-3">
-            {teams.map((t: any) => (
-              <div key={t.id} className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-bold text-slate-700">{t.name}</p>
-                    <p className="text-[10px] text-slate-400">{t.members?.length || 0} members · Created {t.created_at ? new Date(t.created_at).toLocaleDateString() : 'N/A'}</p>
-                  </div>
-                </div>
-                {t.members && t.members.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {t.members.map((m: any) => (
-                      <span key={m.userId} className={cn(
-                        "text-[10px] font-bold px-2 py-1 rounded-lg border",
-                        m.role === 'owner' ? "bg-amber-50 text-amber-700 border-amber-100" : "bg-white text-slate-600 border-slate-100"
-                      )}>
-                        {m.name} {m.role === 'owner' ? '👑' : ''}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-100">
+            {teams.length} team{teams.length !== 1 ? 's' : ''} · {teams.reduce((sum, t) => sum + (t.members?.length || 0), 0)} total members
+          </span>
         </div>
-      )}
+
+        {/* Team stats summary */}
+        {teams.length > 0 && (
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-blue-50 rounded-xl p-3 text-center">
+              <p className="text-lg font-bold text-blue-700">{teams.length}</p>
+              <p className="text-[9px] font-bold text-blue-500 uppercase">Teams</p>
+            </div>
+            <div className="bg-emerald-50 rounded-xl p-3 text-center">
+              <p className="text-lg font-bold text-emerald-700">{teams.reduce((sum, t) => sum + (t.members?.length || 0), 0)}</p>
+              <p className="text-[9px] font-bold text-emerald-500 uppercase">Members</p>
+            </div>
+            <div className="bg-amber-50 rounded-xl p-3 text-center">
+              <p className="text-lg font-bold text-amber-700">{Math.round(teams.reduce((sum, t) => sum + (t.members?.length || 0), 0) / Math.max(teams.length, 1))}</p>
+              <p className="text-[9px] font-bold text-amber-500 uppercase">Avg Size</p>
+            </div>
+          </div>
+        )}
+        
+        <div className="space-y-3">
+          {teams.length > 0 ? teams.map((t: any) => (
+            <div key={t.id} className="bg-white border border-slate-100 rounded-xl p-4 space-y-3 hover:border-slate-200 transition-all">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold text-slate-700">{t.name}</p>
+                  <p className="text-[10px] text-slate-400">{t.members?.length || 0} members · Created {t.created_at ? new Date(t.created_at).toLocaleDateString() : 'N/A'}</p>
+                </div>
+              </div>
+              {t.members && t.members.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {t.members.map((m: any) => (
+                    <span key={m.userId} className={cn(
+                      "text-[10px] font-bold px-2 py-1 rounded-lg border",
+                      m.role === 'owner' ? "bg-amber-50 text-amber-700 border-amber-100" : "bg-white text-slate-600 border-slate-100"
+                    )}>
+                      {m.name} {m.role === 'owner' ? '👑' : ''}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )) : (
+            <div className="py-8 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              No teams created yet
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* ACTIVITY LOG */}
       <div className="space-y-4 pt-4 border-t border-slate-100">

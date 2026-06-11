@@ -17,6 +17,7 @@ const adminNav = [
   { label: 'All Stakeholders', href: '/admin?tab=stakeholders', icon: Globe, query: 'stakeholders' },
   { label: 'Accounts', href: '/admin?tab=companies', icon: Briefcase, query: 'companies' },
   { label: 'Users', href: '/admin?tab=users', icon: Users, query: 'users' },
+  { label: 'Teams', href: '/admin?tab=team', icon: Database, query: 'team' },
 ]
 
 export function AdminSidebar() {
