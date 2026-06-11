@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { TeamPanel } from '@/components/admin/team-panel'
 import { 
   Users, Video, Search, ShieldCheck, 
   Zap, Activity, UserCheck, Inbox,
@@ -75,7 +76,7 @@ const tagColors: Record<string, { text: string; border: string; bg: string }> = 
   Disrupt: { text: 'text-rose-600', border: 'border-rose-100', bg: 'bg-rose-50/50' },
 }
 
-type Tab = 'overview' | 'sessions' | 'users' | 'stakeholders' | 'companies'
+type Tab = 'overview' | 'sessions' | 'users' | 'stakeholders' | 'companies' | 'team'
 
 // ─── INLINE SESSION DETAIL PANEL ───
 function SessionDetailPanel({ session, profiles, onClose, onPublish, onDelete, onAssign }: { 
@@ -421,7 +422,7 @@ function AdminDashboardContent() {
 
   // Sync tab with URL param
   useEffect(() => {
-    if (urlTab && ['overview', 'sessions', 'users', 'stakeholders', 'companies'].includes(urlTab)) {
+    if (urlTab && ['overview', 'sessions', 'users', 'stakeholders', 'companies', 'team'].includes(urlTab)) {
       setTab(urlTab as Tab)
     } else if (!urlTab) {
       setTab('overview')
@@ -542,6 +543,7 @@ function AdminDashboardContent() {
     { id: 'stakeholders', label: 'Stakeholders', shortLabel: 'People' },
     { id: 'companies', label: 'Companies', shortLabel: 'Accounts' },
     { id: 'users', label: 'Users', shortLabel: 'Users' },
+    { id: 'team', label: 'Team Management', shortLabel: 'Team' },
   ]
 
   const allStakeholdersList = useMemo(() => {
@@ -673,6 +675,7 @@ function AdminDashboardContent() {
             onAssign={handleAssignSingle}
           />
         ) : (
+          <>
           <AnimatePresence mode="wait">
 
             {/* ─── OVERVIEW ─── */}
@@ -1323,6 +1326,8 @@ function AdminDashboardContent() {
             )}
 
           </AnimatePresence>
+          {tab === 'team' && <TeamPanel />}
+          </>
         )}
       </div>
     </div>
