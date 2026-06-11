@@ -380,101 +380,68 @@ function ReviewContent() {
 
       {/* AUDIO UNAVAILABLE WARNING */}
       {audioError && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
-          <Headphones className="w-5 h-5 text-amber-500 shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-bold text-amber-800">Audio not available</p>
-            <p className="text-xs text-amber-600">
-              {session.recordingUrl?.startsWith('blob:')
-                ? 'The local recording has expired. It will be available once cloud sync completes — try refreshing in a moment.'
-                : 'Could not load the audio file. Check that the recordings bucket is public in Supabase Storage.'}
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-3">
+          <Headphones className="w-4 h-4 text-amber-500 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-amber-800">Audio not available</p>
+            <p className="text-[10px] text-amber-600">
+              {session.recordingUrl?.endsWith('.webm')
+                ? 'WebM format is not supported on iOS. Try on Android or laptop.'
+                : session.recordingUrl?.startsWith('blob:')
+                ? 'Local recording expired. Refresh once cloud sync completes.'
+                : 'Could not load audio. Check Supabase Storage bucket is public.'}
             </p>
           </div>
           <button 
             onClick={() => { setAudioError(false); if (audioRef.current) audioRef.current.load() }}
-            className="shrink-0 h-8 px-3 bg-amber-100 text-amber-700 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-amber-200 transition-all"
+            className="shrink-0 h-7 px-2.5 bg-amber-100 text-amber-700 rounded-lg text-[9px] font-bold uppercase hover:bg-amber-200 transition-all"
           >
             Retry
           </button>
         </div>
       )}
 
-      {/* 🟢 COMPACT LIGHT-THEME AUDIO PLAYER */}
-      <section className="bg-white border border-slate-100 rounded-3xl p-5 sm:p-7 text-slate-800 shadow-md shadow-slate-200/20 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none group-hover:opacity-[0.04] transition-opacity text-slate-900">
-          <Headphones className="w-32 h-32 -mr-8 -mt-8" />
-        </div>
-        
-        <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
-          <div className="flex-1 w-full space-y-5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                 <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center border border-blue-100/50">
-                    <Headphones className="w-5 h-5 text-blue-500" />
-                 </div>
-                 <div>
-                    <h3 className="text-sm font-black uppercase tracking-tight text-slate-800 line-clamp-1">{session.stakeholder?.name || 'Unspecified Stakeholder'}</h3>
-                    <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest leading-none mt-0.5">Interview Audio • {session.recordingUrl?.startsWith('blob') ? 'Local' : 'Synchronized'}</p>
-                 </div>
+      {/* AUDIO PLAYER — Simplified for mobile */}
+      <section className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="space-y-3">
+          {/* Title row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
+                <Headphones className="w-4 h-4 text-blue-500" />
               </div>
-              <div className="text-right">
-                <span className="text-xl font-black font-mono text-slate-800 tracking-tighter">{currentTimeFormatted}</span>
-                <span className="text-xs font-bold text-slate-200 mx-1.5">/</span>
-                <span className="text-xs font-black font-mono text-slate-400">{formatDuration(session.duration)}</span>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-slate-700 truncate">{session.stakeholder?.name || 'Recording'}</p>
+                <p className="text-[9px] text-slate-400 font-medium">{session.recordingUrl?.startsWith('blob') ? 'Local' : 'Cloud'} · {formatDuration(session.duration)}</p>
               </div>
             </div>
-
-            <div className="space-y-4">
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden w-full cursor-pointer relative group/seek" onClick={handleSeek}>
-                <div 
-                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-100 ease-linear" 
-                  style={{ width: `${audioProgress}%` }} 
-                />
-              </div>
-
-              <div className="flex items-center justify-center gap-6">
-                <button 
-                  onClick={() => skipAudio(-10)} 
-                  className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-all"
-                >
-                  <Rewind className="w-5 h-5" />
-                </button>
-                
-                <button 
-                  onClick={() => toggleAudio()} 
-                  className="w-14 h-14 bg-slate-900 text-white rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg shadow-slate-300"
-                >
-                  {isPlaying ? <Pause className="w-7 h-7 fill-current" /> : <Play className="w-7 h-7 fill-current ml-1" />}
-                </button>
-
-                <button 
-                  onClick={() => skipAudio(10)} 
-                  className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-all"
-                >
-                  <FastForward className="w-5 h-5" />
-                </button>
-              </div>
+            <div className="text-right shrink-0">
+              <span className="text-sm font-mono font-bold text-slate-800">{currentTimeFormatted}</span>
             </div>
           </div>
 
-          <div className="hidden lg:flex flex-col gap-2 shrink-0 border-l border-slate-100 pl-6">
-             <div className="bg-slate-50/50 p-3 rounded-xl border border-slate-100 min-w-[140px]">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Status</p>
-                <div className="flex items-center gap-2">
-                   <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                   <span className="text-[10px] font-black uppercase text-slate-600">Live</span>
-                </div>
-             </div>
-             <button 
-                onClick={() => skipAudio(session.duration)}
-                className="w-full py-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all flex items-center justify-center gap-1.5"
-              >
-                Jump to End <FastForward className="w-2.5 h-2.5" />
-             </button>
+          {/* Progress bar */}
+          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden cursor-pointer" onClick={handleSeek}>
+            <div 
+              className="h-full bg-blue-500 rounded-full transition-all duration-100" 
+              style={{ width: `${audioProgress}%` }} 
+            />
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center justify-center gap-4">
+            <button onClick={() => skipAudio(-10)} className="w-9 h-9 flex items-center justify-center text-slate-400 active:text-slate-700 rounded-full active:bg-slate-50">
+              <Rewind className="w-4 h-4" />
+            </button>
+            <button onClick={() => toggleAudio()} className="w-12 h-12 bg-slate-900 text-white rounded-full flex items-center justify-center active:scale-90 transition-transform shadow-md">
+              {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
+            </button>
+            <button onClick={() => skipAudio(10)} className="w-9 h-9 flex items-center justify-center text-slate-400 active:text-slate-700 rounded-full active:bg-slate-50">
+              <FastForward className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </section>
-
       <div className="grid grid-cols-1 gap-10">
         
         {/* TIMELINE / LOGS TABLE */}
