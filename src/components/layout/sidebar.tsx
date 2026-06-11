@@ -74,20 +74,12 @@ export function Sidebar() {
            <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center text-white text-[10px] font-black">M</div>
            <h1 className="text-lg font-black text-slate-700 tracking-tighter uppercase">MOSI</h1>
         </div>
-        <div className="flex items-center gap-2">
-          <Link 
-            href="/interview/live?quick=1" 
-            className="h-9 px-3.5 bg-blue-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1.5 active:scale-95 transition-all"
-          >
-            <Mic className="w-3.5 h-3.5" /> Record
-          </Link>
-          <button 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-50 text-slate-700 active:scale-90 transition-all"
-          >
-            {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-          </button>
-        </div>
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-50 text-slate-700 active:scale-90 transition-all"
+        >
+          {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+        </button>
       </div>
 
       {/* 🌫 BACKDROP */}
