@@ -13,6 +13,7 @@ import { DashboardSkeleton } from '@/components/ui/skeleton'
 export default function Home() {
   const { sessions, fetchSessions, deleteSession } = useMosiStore()
   const [isLoading, setIsLoading] = React.useState(true)
+  const [teamInfo, setTeamInfo] = React.useState<{ name: string; memberCount: number } | null>(null)
 
   React.useEffect(() => {
     let mounted = true
@@ -25,8 +26,6 @@ export default function Home() {
     const load = async () => {
       try {
         await fetchSessions()
-        // If no sessions returned and this is the first attempt, retry after a short delay
-        // (handles the race condition where auth cookies aren't ready yet)
         const currentSessions = useMosiStore.getState().sessions
         if (currentSessions.length === 0 && retryCount < 2) {
           retryCount++
@@ -41,6 +40,15 @@ export default function Home() {
       }
     }
     load()
+
+    // Fetch team info
+    fetch('/api/teams').then(r => r.json()).then(data => {
+      if (mounted && data.teams?.length > 0) {
+        const t = data.teams[0]
+        setTeamInfo({ name: t.name, memberCount: t.members?.length || 1 })
+      }
+    }).catch(() => {})
+
     return () => { mounted = false; clearTimeout(timeout) }
   }, [fetchSessions])
 
@@ -69,8 +77,13 @@ export default function Home() {
           <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-slate-800">
             Dashboard
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium">
+          <p className="text-xs sm:text-sm text-slate-500 font-medium flex items-center gap-2">
             Sessions and insights at a glance.
+            {teamInfo && (
+              <span className="text-[9px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-100">
+                <Users className="w-3 h-3 inline mr-1" />{teamInfo.name} · {teamInfo.memberCount} members
+              </span>
+            )}
           </p>
         </div>
         <div className="flex gap-2">
