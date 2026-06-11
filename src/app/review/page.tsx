@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { useMosiStore, CEEDTag, formatDuration, Opportunity } from '@/lib/store'
 import { cn } from '@/lib/utils'
+import { ReviewSkeleton } from '@/components/ui/skeleton'
 
 const tagColors: Record<CEEDTag, { bg: string; text: string; border: string }> = {
   Core: { bg: 'bg-blue-50/50', text: 'text-blue-500', border: 'border-blue-100' },
@@ -761,7 +762,7 @@ function ReviewContent() {
 
 export default function ReviewPage() {
   return (
-    <React.Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-4 border-slate-800 border-t-transparent rounded-full animate-spin" /></div>}>
+    <React.Suspense fallback={<ReviewSkeleton />}>
       <ReviewContent />
     </React.Suspense>
   )

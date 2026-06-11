@@ -6,9 +6,11 @@ import { Plus, Search, Filter, SlidersHorizontal, ArrowLeft } from 'lucide-react
 import Link from 'next/link'
 import * as React from 'react'
 import { cn } from '@/lib/utils'
+import { InterviewsSkeleton } from '@/components/ui/skeleton'
 
 export default function InterviewsPage() {
   const { sessions, fetchSessions } = useMosiStore()
+  const [isLoading, setIsLoading] = React.useState(true)
 
   React.useEffect(() => {
     let retryCount = 0
@@ -18,7 +20,9 @@ export default function InterviewsPage() {
       if (current.length === 0 && retryCount < 2) {
         retryCount++
         setTimeout(load, 1500)
+        return
       }
+      setIsLoading(false)
     }
     load()
   }, [fetchSessions])
@@ -33,6 +37,10 @@ export default function InterviewsPage() {
     const matchesStatus = statusFilter === 'All' || s.status === statusFilter
     return matchesSearch && matchesStatus
   })
+
+  if (isLoading) {
+    return <InterviewsSkeleton />
+  }
 
   return (
     <div className="space-y-8 sm:space-y-10 animate-in fade-in duration-500 max-w-7xl mx-auto pt-6 sm:pt-10">

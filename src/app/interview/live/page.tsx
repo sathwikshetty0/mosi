@@ -18,8 +18,19 @@ const QUADRANT_IDS: CEEDTag[] = ['Core', 'Efficiency', 'Expansion', 'Disrupt']
 export default function LiveInterviewPage() {
   return (
     <React.Suspense fallback={
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-10 h-10 border-4 border-slate-700 border-t-transparent rounded-full animate-spin" />
+      <div className="max-w-2xl mx-auto px-4 pt-6 space-y-4 animate-pulse">
+        <div className="flex justify-between items-center">
+          <div className="h-5 w-24 bg-slate-200 rounded" />
+          <div className="h-8 w-20 bg-slate-200 rounded-lg" />
+        </div>
+        <div className="grid grid-cols-4 gap-1.5">
+          {[...Array(4)].map((_, i) => <div key={i} className="h-10 bg-slate-200 rounded-lg" />)}
+        </div>
+        <div className="pt-12 space-y-4">
+          <div className="h-4 w-20 bg-slate-200 rounded" />
+          <div className="h-8 w-3/4 bg-slate-200 rounded" />
+          <div className="h-6 w-1/2 bg-slate-200 rounded" />
+        </div>
       </div>
     }>
       <LiveInterviewContent />
