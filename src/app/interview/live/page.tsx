@@ -75,13 +75,31 @@ function LiveInterviewContent() {
     return () => { stream?.getTracks().forEach(t => t.stop()) }
   }, [])
 
+  // Determine best recording MIME type for this browser
+  const getMimeType = () => {
+    if (typeof MediaRecorder === 'undefined') return 'audio/webm'
+    if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) return 'audio/webm;codecs=opus'
+    if (MediaRecorder.isTypeSupported('audio/webm')) return 'audio/webm'
+    if (MediaRecorder.isTypeSupported('audio/mp4')) return 'audio/mp4'
+    if (MediaRecorder.isTypeSupported('audio/aac')) return 'audio/aac'
+    return '' // Let browser pick default
+  }
+
+  const mimeTypeRef = React.useRef(getMimeType())
+
   React.useEffect(() => {
     if (isRecording && stream && !mediaRecorderRef.current) {
       chunksRef.current = []
-      const recorder = new MediaRecorder(stream)
+      const options: MediaRecorderOptions = {}
+      if (mimeTypeRef.current) options.mimeType = mimeTypeRef.current
+      
+      const recorder = new MediaRecorder(stream, options)
+      // Use the actual mimeType the recorder chose (may differ from requested)
+      const actualMime = recorder.mimeType || mimeTypeRef.current || 'audio/webm'
+      
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+        const blob = new Blob(chunksRef.current, { type: actualMime })
         setBlobUrl(URL.createObjectURL(blob))
       }
       recorder.start()

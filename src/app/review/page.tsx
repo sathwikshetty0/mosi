@@ -372,7 +372,8 @@ function ReviewContent() {
         onTimeUpdate={handleTimeUpdate} 
         onError={() => { if (session.recordingUrl) setAudioError(true) }}
         onCanPlay={() => setAudioError(false)}
-        preload="auto"
+        preload="metadata"
+        playsInline
         className="hidden" 
       />
 

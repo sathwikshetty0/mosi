@@ -701,26 +701,30 @@ export const useMosiStore = create<MosiStore>()(
               devLog('Fetching audio blob for upload...')
               const response = await fetch(recordingUrl)
               const blob = await response.blob()
-              const fileName = `${newId}.webm`
               
-              devLog('Uploading audio to Supabase Storage...')
+              // Detect format from blob type for proper extension
+              const mimeType = blob.type || 'audio/webm'
+              const ext = mimeType.includes('mp4') ? 'mp4' 
+                        : mimeType.includes('aac') ? 'aac' 
+                        : 'webm'
+              const fileName = `${newId}.${ext}`
+              
+              devLog(`Uploading audio to Supabase Storage (${mimeType}, ${(blob.size / 1024).toFixed(0)}KB)...`)
               const { data: uploadData, error: uploadErr } = await supabase.storage
                 .from('recordings')
                 .upload(fileName, blob, {
-                  contentType: 'audio/webm',
+                  contentType: mimeType,
                   upsert: true
                 })
               
               if (uploadErr) {
                 console.error('Audio upload failed:', uploadErr)
-                // Keep the blob URL locally so it still plays in this session
               } else if (uploadData) {
                 devLog('Audio uploaded successfully, retrieving public URL...')
                 const { data: { publicUrl } } = supabase.storage.from('recordings').getPublicUrl(fileName)
                 
                 devLog('Public URL:', publicUrl)
                 
-                // Update the session in DB
                 const { error: updateErr } = await supabase.from('sessions').update({ recording_url: publicUrl }).eq('id', newId)
                 
                 if (updateErr) {
