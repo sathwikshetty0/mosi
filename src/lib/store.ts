@@ -696,7 +696,6 @@ export const useMosiStore = create<MosiStore>()(
           }
 
           // 5. AUDIO UPLOAD & RECORDING URL UPDATE
-          // This is often the most important but also the most fragile step
           try {
             if (recordingUrl && recordingUrl.startsWith('blob:')) {
               devLog('Fetching audio blob for upload...')
@@ -705,15 +704,23 @@ export const useMosiStore = create<MosiStore>()(
               const fileName = `${newId}.webm`
               
               devLog('Uploading audio to Supabase Storage...')
-              const { data: uploadData, error: uploadErr } = await supabase.storage.from('recordings').upload(fileName, blob)
+              const { data: uploadData, error: uploadErr } = await supabase.storage
+                .from('recordings')
+                .upload(fileName, blob, {
+                  contentType: 'audio/webm',
+                  upsert: true
+                })
               
               if (uploadErr) {
                 console.error('Audio upload failed:', uploadErr)
+                // Keep the blob URL locally so it still plays in this session
               } else if (uploadData) {
                 devLog('Audio uploaded successfully, retrieving public URL...')
                 const { data: { publicUrl } } = supabase.storage.from('recordings').getPublicUrl(fileName)
                 
-                devLog('Updating session with recording URL...')
+                devLog('Public URL:', publicUrl)
+                
+                // Update the session in DB
                 const { error: updateErr } = await supabase.from('sessions').update({ recording_url: publicUrl }).eq('id', newId)
                 
                 if (updateErr) {
@@ -724,7 +731,6 @@ export const useMosiStore = create<MosiStore>()(
                 }
               }
             } else if (recordingUrl) {
-              // Not a blob, maybe already a URL? update it directly
               await supabase.from('sessions').update({ recording_url: recordingUrl }).eq('id', newId)
             }
           } catch (e) {

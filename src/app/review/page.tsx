@@ -378,16 +378,22 @@ function ReviewContent() {
 
       {/* AUDIO UNAVAILABLE WARNING */}
       {audioError && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
-          <Headphones className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-          <div className="space-y-1">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
+          <Headphones className="w-5 h-5 text-amber-500 shrink-0" />
+          <div className="flex-1">
             <p className="text-sm font-bold text-amber-800">Audio not available</p>
             <p className="text-xs text-amber-600">
               {session.recordingUrl?.startsWith('blob:')
                 ? 'The local recording has expired. It will be available once cloud sync completes — try refreshing in a moment.'
-                : 'Could not load the audio file. The recording may still be uploading.'}
+                : 'Could not load the audio file. Check that the recordings bucket is public in Supabase Storage.'}
             </p>
           </div>
+          <button 
+            onClick={() => { setAudioError(false); if (audioRef.current) audioRef.current.load() }}
+            className="shrink-0 h-8 px-3 bg-amber-100 text-amber-700 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-amber-200 transition-all"
+          >
+            Retry
+          </button>
         </div>
       )}
 
