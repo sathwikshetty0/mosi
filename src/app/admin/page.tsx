@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { TeamPanel } from '@/components/admin/team-panel'
+import { AnalyticsPanel } from '@/components/admin/analytics-panel'
 import { 
   Users, Video, Search, ShieldCheck, 
   Zap, Activity, UserCheck, Inbox,
@@ -795,6 +796,10 @@ function AdminDashboardContent() {
                     </div>
                   </div>
                 </div>
+
+                {/* ANALYTICS PANEL */}
+                <AnalyticsPanel sessions={sessions} profiles={profiles} stakeholders={stakeholders} />
+
               </motion.div>
             )}
 
