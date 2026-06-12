@@ -1,6 +1,6 @@
 # MOSI — Feature Guide & User Flows
 
-> **MOSI** stands for **Meeting · Opportunity · Strategic · Intelligence**
+> **MOSI** stands for **Mapping Opportunities through Stakeholder Interviews**
 > A platform that turns stakeholder conversations into strategic, actionable reports.
 
 ---

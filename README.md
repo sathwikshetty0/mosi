@@ -9,7 +9,7 @@
 ╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚═╝
 ```
 
-**Meeting · Opportunity · Strategic · Intelligence**
+**Mapping Opportunities through Stakeholder Interviews**
 
 *Turn stakeholder conversations into strategic artifacts — in real time.*
 
