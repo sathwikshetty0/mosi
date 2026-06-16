@@ -325,13 +325,15 @@ function SessionDetailPanel({ session, profiles, onClose, onPublish, onDelete, o
       </section>
 
       {/* Transcript */}
-      {(session as any).transcript?.text && (
+      {((session as any).transcript?.text || session.summary) && (
         <section className="space-y-3">
           <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
             <FileText className="w-4 h-4 text-slate-400" /> Transcript
           </h3>
           <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm max-h-[300px] overflow-y-auto">
-            <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{(session as any).transcript.text}</p>
+            <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+              {(session as any).transcript?.text || session.summary || 'No transcript available. Generate one from the Review page.'}
+            </p>
           </div>
         </section>
       )}
