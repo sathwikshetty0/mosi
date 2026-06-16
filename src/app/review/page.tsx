@@ -36,7 +36,7 @@ function ReviewContent() {
   const sessionId = searchParams.get('id')
   const addToast = useToastStore(s => s.addToast)
   
-  const { sessions, updateOpportunity, deleteSession, updateSessionSummary, updateSessionStakeholder, updateSessionTranscript, updateSessionNotes, updateSessionReviewNotes } = useMosiStore()
+  const { sessions, updateOpportunity, deleteSession, updateSessionSummary, updateSessionStakeholder, updateSessionTranscript, updateSessionNotes, updateSessionReviewNotes, fetchStakeholdersList, stakeholdersList, globalCompanies, fetchGlobalCompanies } = useMosiStore()
   
   const session = React.useMemo(() => {
     let sess = sessionId ? sessions.find(s => s.id === sessionId) : (sessions.find(s => s.status === 'Review') || sessions[0])
@@ -59,6 +59,8 @@ function ReviewContent() {
   const [reviewNotes, setReviewNotes] = React.useState<{ category: string; content: string }[]>(session?.reviewNotes || [])
   const [isSynthesizing, setIsSynthesizing] = React.useState(false)
   const [showStakeholderEdit, setShowStakeholderEdit] = React.useState(false)
+  const [showNameSuggestions, setShowNameSuggestions] = React.useState(false)
+  const [showCompanySuggestions, setShowCompanySuggestions] = React.useState(false)
   const [stakeholderForm, setStakeholderForm] = React.useState({
     name: session?.stakeholder?.name || '',
     role: session?.stakeholder?.role || '',
@@ -78,6 +80,44 @@ function ReviewContent() {
       setShowStakeholderEdit(true)
     }
   }, [session])
+
+  // Fetch suggestions data when edit panel is shown
+  React.useEffect(() => {
+    if (showStakeholderEdit) {
+      fetchStakeholdersList()
+      fetchGlobalCompanies()
+    }
+  }, [showStakeholderEdit, fetchStakeholdersList, fetchGlobalCompanies])
+
+  // Compute name suggestions
+  const nameSuggestions = React.useMemo(() => {
+    if (!showNameSuggestions || !stakeholderForm.name) return []
+    return stakeholdersList
+      .filter(s => s.name && s.name.toLowerCase().includes(stakeholderForm.name.toLowerCase()))
+      .slice(0, 5)
+  }, [stakeholderForm.name, stakeholdersList, showNameSuggestions])
+
+  // Compute company suggestions
+  const companySuggestions = React.useMemo(() => {
+    if (!showCompanySuggestions || !stakeholderForm.company) return []
+    const seen = new Set<string>()
+    const results: { name: string; sector?: string }[] = []
+    
+    stakeholdersList.forEach(s => {
+      if (s.company && s.company.toLowerCase().includes(stakeholderForm.company.toLowerCase()) && !seen.has(s.company.toLowerCase())) {
+        seen.add(s.company.toLowerCase())
+        results.push({ name: s.company, sector: s.sector })
+      }
+    })
+    globalCompanies.forEach(c => {
+      const name = c.name || c.company
+      if (name && name.toLowerCase().includes(stakeholderForm.company.toLowerCase()) && !seen.has(name.toLowerCase())) {
+        seen.add(name.toLowerCase())
+        results.push({ name, sector: c.sector })
+      }
+    })
+    return results.slice(0, 5)
+  }, [stakeholderForm.company, stakeholdersList, globalCompanies, showCompanySuggestions])
 
   // Keep stakeholder form in sync when session changes
   React.useEffect(() => {
@@ -326,17 +366,80 @@ function ReviewContent() {
         {showStakeholderEdit && (
           <div className="px-5 pb-5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 border-t border-slate-100 pt-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div className="relative">
                 <label className={labelClass}>Stakeholder Name</label>
-                <input className={inputClass} placeholder="e.g. Jane Doe" value={stakeholderForm.name} onChange={e => setStakeholderForm(f => ({ ...f, name: e.target.value }))} />
+                <input 
+                  className={inputClass} 
+                  placeholder="e.g. Jane Doe" 
+                  value={stakeholderForm.name} 
+                  onChange={e => { setStakeholderForm(f => ({ ...f, name: e.target.value })); setShowNameSuggestions(true) }}
+                  onFocus={() => setShowNameSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowNameSuggestions(false), 200)}
+                />
+                {nameSuggestions.length > 0 && (
+                  <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-[#E8EAEB] rounded-xl shadow-lg overflow-hidden">
+                    {nameSuggestions.map((s, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onMouseDown={e => {
+                          e.preventDefault()
+                          setStakeholderForm(f => ({ 
+                            ...f, 
+                            name: s.name, 
+                            role: s.role || f.role, 
+                            phone: s.phone || f.phone, 
+                            email: s.email || f.email, 
+                            company: s.company || f.company,
+                            sector: s.sector || f.sector,
+                            linkedin: s.linkedin || f.linkedin,
+                          }))
+                          setShowNameSuggestions(false)
+                        }}
+                        className="w-full px-3 py-2.5 text-left hover:bg-[#F1F2FB] transition-colors flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-[#1C2A3B]">{s.name}</p>
+                          <p className="text-[10px] text-[#8E959D]">{s.role} · {s.company}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <label className={labelClass}>Role / Title</label>
                 <input className={inputClass} placeholder="e.g. Product Lead" value={stakeholderForm.role} onChange={e => setStakeholderForm(f => ({ ...f, role: e.target.value }))} />
               </div>
-              <div>
+              <div className="relative">
                 <label className={labelClass}>Company</label>
-                <input className={inputClass} placeholder="e.g. Acme Corp" value={stakeholderForm.company} onChange={e => setStakeholderForm(f => ({ ...f, company: e.target.value }))} />
+                <input 
+                  className={inputClass} 
+                  placeholder="e.g. Acme Corp" 
+                  value={stakeholderForm.company} 
+                  onChange={e => { setStakeholderForm(f => ({ ...f, company: e.target.value })); setShowCompanySuggestions(true) }}
+                  onFocus={() => { setShowCompanySuggestions(true); fetchGlobalCompanies() }}
+                  onBlur={() => setTimeout(() => setShowCompanySuggestions(false), 200)}
+                />
+                {companySuggestions.length > 0 && (
+                  <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-[#E8EAEB] rounded-xl shadow-lg overflow-hidden">
+                    {companySuggestions.map((c, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onMouseDown={e => {
+                          e.preventDefault()
+                          setStakeholderForm(f => ({ ...f, company: c.name, sector: c.sector || f.sector }))
+                          setShowCompanySuggestions(false)
+                        }}
+                        className="w-full px-3 py-2.5 text-left hover:bg-[#F1F2FB] transition-colors"
+                      >
+                        <p className="text-sm font-medium text-[#1C2A3B]">{c.name}</p>
+                        {c.sector && <p className="text-[10px] text-[#8E959D]">{c.sector}</p>}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <label className={labelClass}>Sector</label>
