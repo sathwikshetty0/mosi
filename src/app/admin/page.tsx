@@ -466,12 +466,14 @@ function AdminDashboardContent() {
   const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false)
   const [teamCount, setTeamCount] = useState(0)
 
-  // Sync tab with URL param
+  // Sync tab with URL param — also clear session detail when switching tabs
   useEffect(() => {
     if (urlTab && ['overview', 'sessions', 'users', 'stakeholders', 'companies', 'team'].includes(urlTab)) {
       setTab(urlTab as Tab)
+      setSelectedSessionId(null)
     } else if (!urlTab) {
       setTab('overview')
+      setSelectedSessionId(null)
     }
   }, [urlTab])
 
