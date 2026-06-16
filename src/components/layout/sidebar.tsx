@@ -70,14 +70,14 @@ export function Sidebar() {
   return (
     <>
       {/* 📱 MOBILE TOP NAV */}
-      <div className="lg:hidden flex items-center justify-between p-3 bg-white border-b border-slate-100 z-30 w-full shrink-0 safe-area-top">
+      <div className="lg:hidden flex items-center justify-between p-3 bg-white border-b border-[#E8EAEB] z-30 w-full shrink-0 safe-area-top">
         <div className="flex items-center gap-2.5">
-           <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center text-white text-[10px] font-black">M</div>
-           <h1 className="text-lg font-black text-slate-700 tracking-tighter uppercase">MOSI</h1>
+           <div className="w-8 h-8 bg-[#786BF9] rounded-lg flex items-center justify-center text-white text-[10px] font-bold">M</div>
+           <h1 className="text-lg font-bold text-[#1C2A3B]">MOSI</h1>
         </div>
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-50 text-slate-700 active:scale-90 transition-all"
+          className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#F1F2FB] text-[#1C2A3B] active:scale-90 transition-all"
         >
           {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
         </button>
@@ -91,7 +91,7 @@ export function Sidebar() {
 
       {/* 🏰 SIDEBAR ARCHITECTURE */}
       <div className={cn(
-        "fixed lg:sticky top-0 left-0 bottom-0 z-50 h-full lg:h-screen transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) border-r-2 border-slate-50 bg-white flex flex-col",
+        "fixed lg:sticky top-0 left-0 bottom-0 z-50 h-full lg:h-screen transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) border-r border-[#E8EAEB] bg-white flex flex-col",
         isSidebarCollapsed ? "w-24" : "w-72",
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
@@ -157,7 +157,7 @@ export function Sidebar() {
                   href="/interview/live?quick=1"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={cn(
-                    "group w-full h-14 bg-blue-600 border border-blue-500 text-white rounded-[1.2rem] font-black uppercase tracking-[0.15em] text-[10px] transition-all shadow-xl shadow-blue-200/50 flex items-center justify-center gap-2.5 overflow-hidden relative active:scale-95 hover:bg-blue-700",
+                    "group w-full h-14 bg-[#786BF9] border border-[#6056C7] text-white rounded-xl font-semibold text-xs transition-all shadow-sm flex items-center justify-center gap-2.5 overflow-hidden relative active:scale-95 hover:bg-[#6056C7]",
                     isSidebarCollapsed && "h-14 w-14 p-0"
                   )}
                 >
@@ -169,11 +169,11 @@ export function Sidebar() {
                   href="/setup"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={cn(
-                    "group w-full h-16 bg-slate-900 border border-slate-800 text-white rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[10px] transition-all shadow-2xl shadow-slate-200 flex items-center justify-center gap-3 overflow-hidden relative active:scale-95",
-                    isSidebarCollapsed && "h-16 w-16 p-0"
+                    "group w-full h-14 bg-[#1C2A3B] border border-[#1C2A3B] text-white rounded-xl font-semibold text-xs transition-all shadow-sm flex items-center justify-center gap-2.5 overflow-hidden relative active:scale-95 hover:bg-[#141D29]",
+                    isSidebarCollapsed && "h-14 w-14 p-0"
                   )}
                 >
-                  <PlusCircle className="w-5 h-5 relative z-10 text-blue-400" />
+                  <PlusCircle className="w-4 h-4 relative z-10 text-[#786BF9]" />
                   {!isSidebarCollapsed && <span className="relative z-10">New Session</span>}
                   {isSidebarCollapsed && <span className="sr-only">New Session</span>}
                 </Link>

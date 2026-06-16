@@ -41,7 +41,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col lg:flex-row h-screen h-[100dvh] overflow-hidden">
       <Sidebar />
-      <main className="flex-1 min-h-0 overflow-y-auto bg-slate-50">
+      <main className="flex-1 min-h-0 overflow-y-auto bg-[#F1F2FB]">
         <div className="max-w-7xl mx-auto p-4 lg:p-10 transition-all">
           {children}
         </div>
