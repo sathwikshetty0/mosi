@@ -779,29 +779,53 @@ function ReviewContent() {
 
       {/* CHECKLIST MODAL */}
       {showChecklistPopup && (
-        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-10 space-y-10 border border-slate-100">
-            <div className="text-center space-y-3">
-              <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto shadow-sm border border-blue-100"><CheckCircle2 className="w-8 h-8" /></div>
-              <h3 className="text-2xl font-bold text-slate-800 tracking-tight">Finalizing Review</h3>
-              <p className="text-sm font-medium text-slate-400">Ensure all interview highlights are correct.</p>
+        <div className="fixed inset-0 bg-[#1C2A3B]/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white w-full max-w-md rounded-[28px] shadow-2xl overflow-hidden border border-[#E8EAEB]">
+            
+            {/* Header */}
+            <div className="p-6 pb-4 text-center space-y-2 border-b border-[#E8EAEB]">
+              <div className="w-12 h-12 bg-[#E4E1FE] text-[#786BF9] rounded-full flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-[#1C2A3B]">Pre-publish Checklist</h3>
+              <p className="text-sm text-[#8E959D]">Confirm these items before generating the report.</p>
             </div>
             
-            <div className="space-y-3">
+            {/* Checklist items */}
+            <div className="p-5 space-y-2 max-h-[50vh] overflow-y-auto">
               {CHECKLIST.map((item, i) => (
-                <button key={i} onClick={() => toggleChecklist(i)} className={cn("w-full flex items-center gap-4 p-5 rounded-2xl transition-all text-left border", checklist[i] ? "bg-emerald-50 border-emerald-100" : "bg-white border-slate-100 hover:border-slate-200")}>
-                  <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border-2 transition-all", checklist[i] ? "bg-emerald-500 border-emerald-500 text-white" : "border-slate-200")}>{checklist[i] && <CheckCircle className="w-4 h-4" />}</div>
-                  <span className={cn("text-xs font-bold", checklist[i] ? "text-emerald-700" : "text-slate-500")}>{item}</span>
+                <button 
+                  key={i} 
+                  onClick={() => toggleChecklist(i)} 
+                  className={cn(
+                    "w-full flex items-center gap-3 p-3.5 rounded-xl transition-all text-left border",
+                    checklist[i] ? "bg-[#D2F2E3] border-[#1EC075]/20" : "bg-white border-[#E8EAEB] hover:border-[#786BF9]/30 hover:bg-[#F1F2FB]"
+                  )}
+                >
+                  <div className={cn(
+                    "w-5 h-5 rounded-md flex items-center justify-center shrink-0 border-2 transition-all",
+                    checklist[i] ? "bg-[#1EC075] border-[#1EC075] text-white" : "border-[#D2D4D8]"
+                  )}>
+                    {checklist[i] && <CheckCircle className="w-3 h-3" />}
+                  </div>
+                  <span className={cn("text-sm font-medium", checklist[i] ? "text-[#1C2A3B]" : "text-[#8E959D]")}>{item}</span>
                 </button>
               ))}
             </div>
 
-            <div className="flex flex-col gap-3">
-              <button onClick={handleGoToPreview} className="h-14 bg-slate-900 text-white font-bold text-sm rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-200">
-                Generate Report <ChevronRight className="w-5 h-5" />
+            {/* Actions */}
+            <div className="p-5 pt-3 border-t border-[#E8EAEB] space-y-2">
+              <button 
+                onClick={handleGoToPreview} 
+                className="w-full h-12 bg-[#786BF9] text-white font-semibold text-sm rounded-lg hover:bg-[#6056C7] transition-all flex items-center justify-center gap-2 shadow-sm active:scale-[0.98]"
+              >
+                Generate Report <ChevronRight className="w-4 h-4" />
               </button>
-              <button onClick={() => setShowChecklistPopup(false)} className="h-12 text-slate-400 font-bold text-xs hover:text-slate-600 transition-all uppercase tracking-widest text-center flex items-center justify-center gap-2">
-                <ChevronLeft className="w-4 h-4" /> Back to Editing
+              <button 
+                onClick={() => setShowChecklistPopup(false)} 
+                className="w-full h-10 text-[#8E959D] font-medium text-sm hover:text-[#1C2A3B] transition-all flex items-center justify-center gap-1.5 rounded-lg hover:bg-[#F1F2FB]"
+              >
+                <ChevronLeft className="w-4 h-4" /> Back to editing
               </button>
             </div>
           </div>
