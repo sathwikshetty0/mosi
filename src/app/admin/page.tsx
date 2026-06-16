@@ -324,6 +324,48 @@ function SessionDetailPanel({ session, profiles, onClose, onPublish, onDelete, o
         </div>
       </section>
 
+      {/* Transcript */}
+      {(session as any).transcript?.text && (
+        <section className="space-y-3">
+          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+            <FileText className="w-4 h-4 text-slate-400" /> Transcript
+          </h3>
+          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm max-h-[300px] overflow-y-auto">
+            <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{(session as any).transcript.text}</p>
+          </div>
+        </section>
+      )}
+
+      {/* Review Compartments */}
+      {(session as any).transcript?.reviewNotes && (session as any).transcript.reviewNotes.length > 0 && (
+        <section className="space-y-3">
+          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Review Compartments
+          </h3>
+          <div className="space-y-2">
+            {(session as any).transcript.reviewNotes.map((note: any, i: number) => (
+              <div key={i} className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+                <p className="text-[10px] font-bold text-[#786BF9] uppercase tracking-widest mb-1">{note.category}</p>
+                <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{note.content}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Session Metadata */}
+      <section className="space-y-3">
+        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+          <Clock className="w-4 h-4 text-slate-400" /> Session Info
+        </h3>
+        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div><p className="text-[9px] text-slate-400 font-bold uppercase">Duration</p><p className="text-sm font-bold text-slate-800">{Math.floor(session.duration / 60)}m {session.duration % 60}s</p></div>
+          <div><p className="text-[9px] text-slate-400 font-bold uppercase">Highlights</p><p className="text-sm font-bold text-slate-800">{opportunities.length}</p></div>
+          <div><p className="text-[9px] text-slate-400 font-bold uppercase">Evidence</p><p className="text-sm font-bold text-slate-800">{session.evidence?.length || 0}</p></div>
+          <div><p className="text-[9px] text-slate-400 font-bold uppercase">ID</p><p className="text-[10px] font-mono text-slate-500 truncate">{session.id.slice(0, 12)}</p></div>
+        </div>
+      </section>
+
       {/* Stakeholder Dossier */}
       <section className="space-y-4 pt-10 border-t border-slate-100">
         <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2 px-1">
