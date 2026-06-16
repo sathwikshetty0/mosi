@@ -779,53 +779,46 @@ function ReviewContent() {
 
       {/* CHECKLIST MODAL */}
       {showChecklistPopup && (
-        <div className="fixed inset-0 bg-[#1C2A3B]/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white w-full max-w-md rounded-[28px] shadow-2xl overflow-hidden border border-[#E8EAEB]">
+        <div className="fixed inset-0 bg-black/20 z-50 flex items-end sm:items-center justify-center animate-in fade-in" onClick={() => setShowChecklistPopup(false)}>
+          <div className="bg-white w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6 space-y-5" onClick={e => e.stopPropagation()}>
             
-            {/* Header */}
-            <div className="p-6 pb-4 text-center space-y-2 border-b border-[#E8EAEB]">
-              <div className="w-12 h-12 bg-[#E4E1FE] text-[#786BF9] rounded-full flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-bold text-[#1C2A3B]">Pre-publish Checklist</h3>
-              <p className="text-sm text-[#8E959D]">Confirm these items before generating the report.</p>
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-semibold text-[#1C2A3B]">Review checklist</h3>
+              <button onClick={() => setShowChecklistPopup(false)} className="text-[#8E959D] hover:text-[#1C2A3B]">
+                <X className="w-5 h-5" />
+              </button>
             </div>
             
-            {/* Checklist items */}
-            <div className="p-5 space-y-2 max-h-[50vh] overflow-y-auto">
+            <div className="space-y-1">
               {CHECKLIST.map((item, i) => (
                 <button 
                   key={i} 
                   onClick={() => toggleChecklist(i)} 
-                  className={cn(
-                    "w-full flex items-center gap-3 p-3.5 rounded-xl transition-all text-left border",
-                    checklist[i] ? "bg-[#D2F2E3] border-[#1EC075]/20" : "bg-white border-[#E8EAEB] hover:border-[#786BF9]/30 hover:bg-[#F1F2FB]"
-                  )}
+                  className="w-full flex items-center gap-3 py-2.5 text-left group"
                 >
                   <div className={cn(
-                    "w-5 h-5 rounded-md flex items-center justify-center shrink-0 border-2 transition-all",
-                    checklist[i] ? "bg-[#1EC075] border-[#1EC075] text-white" : "border-[#D2D4D8]"
+                    "w-4.5 h-4.5 rounded border flex items-center justify-center shrink-0 transition-all",
+                    checklist[i] ? "bg-[#786BF9] border-[#786BF9]" : "border-[#D2D4D8] group-hover:border-[#786BF9]"
                   )}>
-                    {checklist[i] && <CheckCircle className="w-3 h-3" />}
+                    {checklist[i] && <CheckCircle className="w-3 h-3 text-white" />}
                   </div>
-                  <span className={cn("text-sm font-medium", checklist[i] ? "text-[#1C2A3B]" : "text-[#8E959D]")}>{item}</span>
+                  <span className={cn("text-sm", checklist[i] ? "text-[#1C2A3B]" : "text-[#8E959D]")}>{item}</span>
                 </button>
               ))}
             </div>
 
-            {/* Actions */}
-            <div className="p-5 pt-3 border-t border-[#E8EAEB] space-y-2">
+            <div className="pt-2 space-y-2">
               <button 
                 onClick={handleGoToPreview} 
-                className="w-full h-12 bg-[#786BF9] text-white font-semibold text-sm rounded-lg hover:bg-[#6056C7] transition-all flex items-center justify-center gap-2 shadow-sm active:scale-[0.98]"
+                className="w-full h-11 bg-[#786BF9] text-white text-sm font-medium rounded-lg hover:bg-[#6056C7] transition-all active:scale-[0.98]"
               >
-                Generate Report <ChevronRight className="w-4 h-4" />
+                Publish
               </button>
               <button 
                 onClick={() => setShowChecklistPopup(false)} 
-                className="w-full h-10 text-[#8E959D] font-medium text-sm hover:text-[#1C2A3B] transition-all flex items-center justify-center gap-1.5 rounded-lg hover:bg-[#F1F2FB]"
+                className="w-full h-10 text-sm text-[#8E959D] hover:text-[#1C2A3B] transition-all"
               >
-                <ChevronLeft className="w-4 h-4" /> Back to editing
+                ← Back
               </button>
             </div>
           </div>
