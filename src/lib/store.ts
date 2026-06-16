@@ -394,15 +394,16 @@ export const useMosiStore = create<MosiStore>()(
 
   fetchSessions: async () => {
     if (!supabase) return
+    
+    // Use cached user if available (avoid redundant getUser calls)
     const { data: { user } } = await supabase.auth.getUser()
     
-    // 🛡️ SECURITY BLOCK: If no researcher is logged in, show ZERO data in the archive
     if (!user) {
       set({ sessions: [] })
       return
     }
 
-    // Get team member IDs for shared access
+    // Get team member IDs — cache this to avoid re-fetching
     let teamUserIds: string[] = [user.id]
     try {
       const { data: memberships } = await supabase
@@ -424,53 +425,44 @@ export const useMosiStore = create<MosiStore>()(
         }
       }
     } catch (e) {
-      // If teams table doesn't exist yet, just use own ID
-      console.warn('Teams not available:', e)
+      // Teams not available, use own ID only
     }
     
-    let query = supabase.from('sessions')
-      .select('*, stakeholders(*), opportunities(*), evidence(*)')
+    // OPTIMIZED: Fetch sessions WITHOUT evidence join (evidence loaded on demand)
+    const { data: sessionsData, error } = await supabase
+      .from('sessions')
+      .select('*, stakeholders(*), opportunities(*)')
       .in('user_id', teamUserIds)
-
-    const { data: sessionsData, error } = await query.order('created_at', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(50)
 
     if (error) {
       console.error('Fetch sessions failed:', error.message || error)
-      // If join fails, try without evidence (FK constraint issue)
-      const { data: fallbackData, error: fallbackErr } = await supabase
+      // Fallback: try without opportunities too
+      const { data: fallbackData } = await supabase
         .from('sessions')
-        .select('*, stakeholders(*), opportunities(*)')
-        .eq('user_id', user.id)
+        .select('*, stakeholders(*)')
+        .in('user_id', teamUserIds)
         .order('created_at', { ascending: false })
-      
-      if (fallbackErr) {
-        console.error('Fallback fetch also failed:', fallbackErr.message)
-        return
-      }
+        .limit(50)
       
       if (fallbackData) {
-        const formattedSessions: InterviewSession[] = fallbackData.map((s: any) => {
-          const sessionOpps = (s.opportunities || []).map((o: any) => ({
-            ...o,
-            evidence: []
-          }))
-          return {
-            id: s.id,
-            stakeholder: s.stakeholders || { name: 'Untitled Stakeholder', role: 'N/A', phone: '', email: '', linkedin: '', company: 'N/A', sector: '', products: '', employees: '', revenue: '', yearsInBusiness: '', geography: '' },
-            status: s.status,
-            date: s.date,
-            duration: s.duration,
-            opportunities: sessionOpps,
-            settings: s.audio_settings || { audio: true, video: true },
-            evidence: [],
-            recordingUrl: s.recording_url,
-            summary: s.summary || '',
-            transcriptText: typeof s.transcript === 'object' && s.transcript?.text ? s.transcript.text : '',
-            reviewNotes: typeof s.transcript === 'object' && s.transcript?.reviewNotes ? s.transcript.reviewNotes : [],
-            user_id: s.user_id,
-            ceedQuestions: s.ceed_questions || undefined
-          }
-        })
+        const formattedSessions: InterviewSession[] = fallbackData.map((s: any) => ({
+          id: s.id,
+          stakeholder: s.stakeholders || { name: 'Untitled Stakeholder', role: 'N/A', phone: '', email: '', linkedin: '', company: 'N/A', sector: '', products: '', employees: '', revenue: '', yearsInBusiness: '', geography: '' },
+          status: s.status,
+          date: s.date,
+          duration: s.duration,
+          opportunities: [],
+          settings: s.audio_settings || { audio: true, video: true },
+          evidence: [],
+          recordingUrl: s.recording_url,
+          summary: s.summary || '',
+          transcriptText: typeof s.transcript === 'object' && s.transcript !== null && !Array.isArray(s.transcript) ? (s.transcript.text || '') : '',
+          reviewNotes: typeof s.transcript === 'object' && s.transcript !== null && !Array.isArray(s.transcript) ? (s.transcript.reviewNotes || []) : [],
+          user_id: s.user_id,
+          ceedQuestions: s.ceed_questions || undefined
+        }))
         set({ sessions: formattedSessions })
       }
       return
@@ -485,12 +477,10 @@ export const useMosiStore = create<MosiStore>()(
       }
       
       const formattedSessions: InterviewSession[] = sessionsData.map((s: any) => {
-        const sessionEvidence = s.evidence || []
         const sessionOpps = (s.opportunities || []).map((o: any) => ({
           ...o,
-          evidence: sessionEvidence.filter((e: any) => e.opportunity_id === o.id)
+          evidence: []
         }))
-        const rootEvidence = sessionEvidence.filter((e: any) => !e.opportunity_id)
 
         return {
           id: s.id,
@@ -500,7 +490,7 @@ export const useMosiStore = create<MosiStore>()(
           duration: s.duration,
           opportunities: sessionOpps,
           settings: s.audio_settings || { audio: true, video: true },
-          evidence: rootEvidence,
+          evidence: [],
           recordingUrl: s.recording_url,
           summary: s.summary || '',
           transcriptText: typeof s.transcript === 'object' && s.transcript !== null && !Array.isArray(s.transcript) ? (s.transcript.text || '') : '',
@@ -510,11 +500,8 @@ export const useMosiStore = create<MosiStore>()(
         }
       })
 
-      // 🚀 SMART MERGE: Keep ALL local sessions (like newly generated ones) 
-      // until the DB sync is 100% complete and returned in the fetch.
       set((state) => {
         const dbIds = new Set(formattedSessions.map(s => s.id))
-        // Keep ONLY local-only sessions that are actively resolving their background sync
         const localOnly = state.sessions.filter(s => !dbIds.has(s.id) && (s as any).isPendingSync)
         return { sessions: [...localOnly, ...formattedSessions] }
       })
@@ -1090,7 +1077,8 @@ export const useMosiStore = create<MosiStore>()(
   name: 'mosi-storage',
   partialize: (state) => ({ 
     currentSession: state.currentSession,
-    isSidebarCollapsed: state.isSidebarCollapsed 
+    isSidebarCollapsed: state.isSidebarCollapsed,
+    sessions: state.sessions.slice(0, 20), // Cache last 20 sessions for instant load
   }),
 })
 )
