@@ -779,46 +779,47 @@ function ReviewContent() {
 
       {/* CHECKLIST MODAL */}
       {showChecklistPopup && (
-        <div className="fixed inset-0 bg-black/20 z-50 flex items-end sm:items-center justify-center animate-in fade-in" onClick={() => setShowChecklistPopup(false)}>
-          <div className="bg-white w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6 space-y-5" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowChecklistPopup(false)}>
+          <div className="bg-white w-full max-w-sm rounded-3xl shadow-xl p-8 space-y-6" onClick={e => e.stopPropagation()}>
             
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold text-[#1C2A3B]">Review checklist</h3>
-              <button onClick={() => setShowChecklistPopup(false)} className="text-[#8E959D] hover:text-[#1C2A3B]">
-                <X className="w-5 h-5" />
-              </button>
+            <div className="text-center space-y-1">
+              <h3 className="text-lg font-bold text-[#1C2A3B]">Before you publish</h3>
+              <p className="text-xs text-[#8E959D]">Quick check to make sure everything is good.</p>
             </div>
             
-            <div className="space-y-1">
+            <div className="space-y-2">
               {CHECKLIST.map((item, i) => (
                 <button 
                   key={i} 
                   onClick={() => toggleChecklist(i)} 
-                  className="w-full flex items-center gap-3 py-2.5 text-left group"
+                  className={cn(
+                    "w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left",
+                    checklist[i] ? "bg-[#E4E1FE]" : "hover:bg-[#F1F2FB]"
+                  )}
                 >
                   <div className={cn(
-                    "w-4.5 h-4.5 rounded border flex items-center justify-center shrink-0 transition-all",
-                    checklist[i] ? "bg-[#786BF9] border-[#786BF9]" : "border-[#D2D4D8] group-hover:border-[#786BF9]"
+                    "w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all",
+                    checklist[i] ? "bg-[#786BF9] text-white" : "border-2 border-[#D2D4D8]"
                   )}>
-                    {checklist[i] && <CheckCircle className="w-3 h-3 text-white" />}
+                    {checklist[i] && <CheckCircle className="w-3 h-3" />}
                   </div>
-                  <span className={cn("text-sm", checklist[i] ? "text-[#1C2A3B]" : "text-[#8E959D]")}>{item}</span>
+                  <span className={cn("text-sm", checklist[i] ? "text-[#1C2A3B] font-medium" : "text-[#8E959D]")}>{item}</span>
                 </button>
               ))}
             </div>
 
-            <div className="pt-2 space-y-2">
+            <div className="space-y-2 pt-2">
               <button 
                 onClick={handleGoToPreview} 
-                className="w-full h-11 bg-[#786BF9] text-white text-sm font-medium rounded-lg hover:bg-[#6056C7] transition-all active:scale-[0.98]"
+                className="w-full h-11 bg-[#786BF9] text-white text-sm font-semibold rounded-xl hover:bg-[#6056C7] transition-all active:scale-[0.98]"
               >
-                Publish
+                Publish Report
               </button>
               <button 
                 onClick={() => setShowChecklistPopup(false)} 
-                className="w-full h-10 text-sm text-[#8E959D] hover:text-[#1C2A3B] transition-all"
+                className="w-full h-9 text-sm text-[#8E959D] hover:text-[#1C2A3B] transition-all"
               >
-                ← Back
+                ← Go back
               </button>
             </div>
           </div>
