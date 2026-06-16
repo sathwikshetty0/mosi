@@ -287,27 +287,6 @@ function PreviewContent() {
           </section>
         )}
 
-        {/* PRE-PUBLISH CHECKLIST */}
-        {session.status === 'Published' && (
-          <section className="space-y-4">
-            <h3 className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
-              <FileCheck className="w-4 h-4 text-emerald-500" /> Review Checklist
-            </h3>
-            <div className="bg-white rounded-2xl border border-slate-100 p-5 sm:p-6 shadow-sm">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {['Stakeholder profile reviewed', 'Company context verified', 'Market insights assessed', 'Core opportunities confirmed', 'Efficiency gains noted', 'Expansion potential explored', 'Disruptive ideas captured'].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2.5 py-1.5">
-                    <div className="w-4 h-4 bg-emerald-500 rounded flex items-center justify-center shrink-0">
-                      <Check className="w-2.5 h-2.5 text-white" />
-                    </div>
-                    <span className="text-xs text-slate-600 font-medium">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
         {/* METADATA & AUDIO */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-start">
 
@@ -518,9 +497,24 @@ function PreviewContent() {
           </section>
         )}
 
-      </div>
+        {/* REVIEW COMPARTMENTS — Researcher's structured notes */}
+        {session.reviewNotes && session.reviewNotes.length > 0 && (
+          <section className="space-y-4 sm:space-y-6">
+            <h3 className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2 px-1 sm:px-2">
+              <FileCheck className="w-4 h-4 text-emerald-500" /> Review Notes
+            </h3>
+            <div className="space-y-3 sm:space-y-4">
+              {session.reviewNotes.map((note: any, i: number) => (
+                <div key={i} className="bg-white border border-slate-100 rounded-2xl p-5 sm:p-6 space-y-2">
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">{note.category}</p>
+                  <p className="text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap">{note.content}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
-      {/* LIGHTBOX MODAL */}
+      </div>
       <AnimatePresence>
         {selectedAsset && (
           <motion.div 

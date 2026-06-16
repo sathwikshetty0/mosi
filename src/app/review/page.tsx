@@ -6,7 +6,7 @@ import {
   Play, Pause, FastForward, Rewind, Clock, ChevronRight, ChevronLeft,
   CheckCircle2, Trash2, BarChart2, CheckCircle, Sparkles,
   FileText, Headphones, Save, Zap, Image as ImageIcon, Link as LinkIcon, File as FileIcon,
-  X, User, Building2, ChevronDown
+  X, User, Building2, ChevronDown, Plus
 } from 'lucide-react'
 import { useMosiStore, CEEDTag, formatDuration, Opportunity } from '@/lib/store'
 import { cn } from '@/lib/utils'
@@ -36,7 +36,7 @@ function ReviewContent() {
   const sessionId = searchParams.get('id')
   const addToast = useToastStore(s => s.addToast)
   
-  const { sessions, updateOpportunity, deleteSession, updateSessionSummary, updateSessionStakeholder, updateSessionTranscript, updateSessionNotes } = useMosiStore()
+  const { sessions, updateOpportunity, deleteSession, updateSessionSummary, updateSessionStakeholder, updateSessionTranscript, updateSessionNotes, updateSessionReviewNotes } = useMosiStore()
   
   const session = React.useMemo(() => {
     let sess = sessionId ? sessions.find(s => s.id === sessionId) : (sessions.find(s => s.status === 'Review') || sessions[0])
@@ -53,11 +53,10 @@ function ReviewContent() {
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
   const [showChecklistPopup, setShowChecklistPopup] = React.useState(false)
   const [checklist, setChecklist] = React.useState<boolean[]>(CHECKLIST.map(() => false))
-  const [customChecklist, setCustomChecklist] = React.useState<{ text: string; done: boolean }[]>([])
-  const [newCheckItem, setNewCheckItem] = React.useState('')
   const [localSummary, setLocalSummary] = React.useState(session?.summary || '')
   const [localTranscript, setLocalTranscript] = React.useState(session?.transcriptText || '')
   const [localNotes, setLocalNotes] = React.useState(session?.notes || '')
+  const [reviewNotes, setReviewNotes] = React.useState<{ category: string; content: string }[]>(session?.reviewNotes || [])
   const [isSynthesizing, setIsSynthesizing] = React.useState(false)
   const [showStakeholderEdit, setShowStakeholderEdit] = React.useState(false)
   const [stakeholderForm, setStakeholderForm] = React.useState({
@@ -116,10 +115,6 @@ function ReviewContent() {
 
   const toggleChecklist = (i: number) => {
     setChecklist(prev => prev.map((v, idx) => idx === i ? !v : v))
-  }
-
-  const toggleCustomChecklist = (i: number) => {
-    setCustomChecklist(prev => prev.map((item, idx) => idx === i ? { ...item, done: !item.done } : item))
   }
 
   const handleNextClick = () => {
@@ -631,6 +626,71 @@ function ReviewContent() {
           />
         </section>
 
+        {/* REVIEW COMPARTMENTS — Structured notes per checklist item */}
+        <section className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest">Review Compartments</h3>
+              <p className="text-[10px] text-slate-400 mt-0.5">Add detailed notes for each review area. These appear in the published report.</p>
+            </div>
+            <button
+              onClick={() => setReviewNotes(prev => [...prev, { category: CHECKLIST[0], content: '' }])}
+              className="h-8 px-3 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold flex items-center gap-1.5 hover:bg-blue-100 transition-all"
+            >
+              <Plus className="w-3 h-3" /> Add
+            </button>
+          </div>
+
+          {reviewNotes.length > 0 ? (
+            <div className="space-y-3">
+              {reviewNotes.map((note, idx) => (
+                <div key={idx} className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={note.category}
+                      onChange={(e) => {
+                        const updated = [...reviewNotes]
+                        updated[idx] = { ...updated[idx], category: e.target.value }
+                        setReviewNotes(updated)
+                      }}
+                      className="flex-1 h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none focus:border-blue-400"
+                    >
+                      {CHECKLIST.map(item => (
+                        <option key={item} value={item}>{item}</option>
+                      ))}
+                    </select>
+                    <button 
+                      onClick={() => {
+                        const updated = reviewNotes.filter((_, i) => i !== idx)
+                        setReviewNotes(updated)
+                        if (session) updateSessionReviewNotes(session.id, updated)
+                      }}
+                      className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <textarea
+                    className="w-full min-h-[60px] p-3 bg-white border border-slate-100 rounded-lg text-sm text-slate-700 outline-none focus:border-slate-300 transition-all resize-y"
+                    placeholder={`Write your notes about "${note.category}"...`}
+                    value={note.content}
+                    onChange={(e) => {
+                      const updated = [...reviewNotes]
+                      updated[idx] = { ...updated[idx], content: e.target.value }
+                      setReviewNotes(updated)
+                    }}
+                    onBlur={() => { if (session) updateSessionReviewNotes(session.id, reviewNotes) }}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-6 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              No compartments added. Click "Add" to write detailed notes for specific review areas.
+            </div>
+          )}
+        </section>
+
       </div>
 
       {/* BOTTOM ACTION BAR */}
@@ -720,60 +780,28 @@ function ReviewContent() {
       {/* CHECKLIST MODAL */}
       {showChecklistPopup && (
         <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white w-full max-w-md rounded-2xl sm:rounded-[2.5rem] shadow-2xl p-6 sm:p-10 space-y-6 sm:space-y-10 border border-slate-100 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <button onClick={() => setShowChecklistPopup(false)} className="h-9 px-3 text-xs font-bold text-slate-400 hover:text-slate-700 flex items-center gap-1.5 rounded-lg hover:bg-slate-50 transition-all">
-                <ChevronLeft className="w-4 h-4" /> Back
-              </button>
-              <div className="text-right">
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{checklist.filter(Boolean).length}/{checklist.length} done</p>
-              </div>
-            </div>
-
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-10 space-y-10 border border-slate-100">
             <div className="text-center space-y-3">
-              <div className="w-14 h-14 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto border border-blue-100"><CheckCircle2 className="w-7 h-7" /></div>
-              <h3 className="text-xl font-bold text-slate-800 tracking-tight">Pre-Publish Checklist</h3>
-              <p className="text-xs text-slate-400">Verify before generating the final report.</p>
+              <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto shadow-sm border border-blue-100"><CheckCircle2 className="w-8 h-8" /></div>
+              <h3 className="text-2xl font-bold text-slate-800 tracking-tight">Finalizing Review</h3>
+              <p className="text-sm font-medium text-slate-400">Ensure all interview highlights are correct.</p>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-3">
               {CHECKLIST.map((item, i) => (
-                <button key={i} onClick={() => toggleChecklist(i)} className={cn("w-full flex items-center gap-3 p-4 rounded-xl transition-all text-left border", checklist[i] ? "bg-emerald-50 border-emerald-100" : "bg-white border-slate-100 hover:border-slate-200")}>
-                  <div className={cn("w-5 h-5 rounded-md flex items-center justify-center shrink-0 border-2 transition-all", checklist[i] ? "bg-emerald-500 border-emerald-500 text-white" : "border-slate-200")}>{checklist[i] && <CheckCircle className="w-3 h-3" />}</div>
+                <button key={i} onClick={() => toggleChecklist(i)} className={cn("w-full flex items-center gap-4 p-5 rounded-2xl transition-all text-left border", checklist[i] ? "bg-emerald-50 border-emerald-100" : "bg-white border-slate-100 hover:border-slate-200")}>
+                  <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border-2 transition-all", checklist[i] ? "bg-emerald-500 border-emerald-500 text-white" : "border-slate-200")}>{checklist[i] && <CheckCircle className="w-4 h-4" />}</div>
                   <span className={cn("text-xs font-bold", checklist[i] ? "text-emerald-700" : "text-slate-500")}>{item}</span>
                 </button>
               ))}
-              
-              {/* Custom checklist items */}
-              {customChecklist.map((item, i) => (
-                <button key={`custom-${i}`} onClick={() => toggleCustomChecklist(i)} className={cn("w-full flex items-center gap-3 p-4 rounded-xl transition-all text-left border", item.done ? "bg-emerald-50 border-emerald-100" : "bg-white border-slate-100 hover:border-slate-200")}>
-                  <div className={cn("w-5 h-5 rounded-md flex items-center justify-center shrink-0 border-2 transition-all", item.done ? "bg-emerald-500 border-emerald-500 text-white" : "border-slate-200")}>{item.done && <CheckCircle className="w-3 h-3" />}</div>
-                  <span className={cn("text-xs font-bold", item.done ? "text-emerald-700" : "text-slate-500")}>{item.text}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Add custom item */}
-            <div className="flex gap-2">
-              <input 
-                placeholder="Add custom check item..."
-                value={newCheckItem}
-                onChange={e => setNewCheckItem(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && newCheckItem.trim()) { setCustomChecklist(prev => [...prev, { text: newCheckItem.trim(), done: false }]); setNewCheckItem('') }}}
-                className="flex-1 h-9 px-3 bg-slate-50 border border-slate-100 rounded-lg text-xs outline-none focus:border-blue-300 focus:bg-white transition-all"
-              />
-              <button 
-                onClick={() => { if (newCheckItem.trim()) { setCustomChecklist(prev => [...prev, { text: newCheckItem.trim(), done: false }]); setNewCheckItem('') }}}
-                disabled={!newCheckItem.trim()}
-                className="h-9 px-3 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold disabled:opacity-30 hover:bg-slate-200 transition-all"
-              >
-                Add
-              </button>
             </div>
 
             <div className="flex flex-col gap-3">
-              <button onClick={handleGoToPreview} className="h-12 sm:h-14 bg-slate-900 text-white font-bold text-sm rounded-xl sm:rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-200">
+              <button onClick={handleGoToPreview} className="h-14 bg-slate-900 text-white font-bold text-sm rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-200">
                 Generate Report <ChevronRight className="w-5 h-5" />
+              </button>
+              <button onClick={() => setShowChecklistPopup(false)} className="h-12 text-slate-400 font-bold text-xs hover:text-slate-600 transition-all uppercase tracking-widest text-center flex items-center justify-center gap-2">
+                <ChevronLeft className="w-4 h-4" /> Back to Editing
               </button>
             </div>
           </div>

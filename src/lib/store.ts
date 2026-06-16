@@ -117,6 +117,7 @@ export interface InterviewSession {
   summary?: string
   notes?: string
   tags?: string[]
+  reviewNotes?: { category: string; content: string }[]
   user_id?: string
   ceedQuestions?: CEEDQuestion[]
 }
@@ -160,6 +161,7 @@ interface MosiStore {
   updateSessionSummary: (id: string, summary: string) => void
   updateSessionTranscript: (id: string, transcriptText: string) => void
   updateSessionNotes: (id: string, notes: string) => void
+  updateSessionReviewNotes: (id: string, reviewNotes: { category: string; content: string }[]) => void
   setRecordingUrl: (id: string, url: string) => void
   profiles: any[]
   fetchAllProfiles: () => Promise<void>
@@ -464,6 +466,7 @@ export const useMosiStore = create<MosiStore>()(
             recordingUrl: s.recording_url,
             summary: s.summary || '',
             transcriptText: typeof s.transcript === 'object' && s.transcript?.text ? s.transcript.text : '',
+            reviewNotes: typeof s.transcript === 'object' && s.transcript?.reviewNotes ? s.transcript.reviewNotes : [],
             user_id: s.user_id,
             ceedQuestions: s.ceed_questions || undefined
           }
@@ -501,6 +504,7 @@ export const useMosiStore = create<MosiStore>()(
           recordingUrl: s.recording_url,
           summary: s.summary || '',
           transcriptText: typeof s.transcript === 'object' && s.transcript !== null && !Array.isArray(s.transcript) ? (s.transcript.text || '') : '',
+          reviewNotes: typeof s.transcript === 'object' && s.transcript !== null && !Array.isArray(s.transcript) ? (s.transcript.reviewNotes || []) : [],
           user_id: s.user_id,
           ceedQuestions: s.ceed_questions || undefined
         }
@@ -557,6 +561,7 @@ export const useMosiStore = create<MosiStore>()(
         recordingUrl: sessionData.recording_url,
         summary: sessionData.summary || '',
         transcriptText: typeof sessionData.transcript === 'object' && sessionData.transcript !== null && !Array.isArray(sessionData.transcript) ? (sessionData.transcript.text || '') : '',
+        reviewNotes: typeof sessionData.transcript === 'object' && sessionData.transcript !== null && !Array.isArray(sessionData.transcript) ? (sessionData.transcript.reviewNotes || []) : [],
         user_id: sessionData.user_id,
         ceedQuestions: sessionData.ceed_questions || undefined
       }
@@ -941,7 +946,25 @@ export const useMosiStore = create<MosiStore>()(
     set((s) => ({
       sessions: s.sessions.map(sess => sess.id === id ? { ...sess, notes } : sess)
     }))
-    // Notes are stored locally for now (no DB column yet — can add `notes text` to sessions table)
+  },
+
+  updateSessionReviewNotes: (id, reviewNotes) => {
+    set((s) => ({
+      sessions: s.sessions.map(sess => sess.id === id ? { ...sess, reviewNotes } : sess)
+    }))
+    // Persist to Supabase in the session's transcript jsonb (alongside text)
+    if (supabase) {
+      ;(async () => {
+        const { data: sessionData } = await supabase.from('sessions').select('transcript').eq('id', id).single()
+        const existing = (sessionData?.transcript && typeof sessionData.transcript === 'object' && !Array.isArray(sessionData.transcript)) 
+          ? sessionData.transcript 
+          : {}
+        const { error } = await supabase.from('sessions').update({ 
+          transcript: { ...existing, reviewNotes } 
+        }).eq('id', id)
+        if (error) console.error('Review notes save failed:', error.message)
+      })()
+    }
   },
 
   setRecordingUrl: (id: string, url: string) => set((s) => ({
