@@ -287,6 +287,27 @@ function PreviewContent() {
           </section>
         )}
 
+        {/* PRE-PUBLISH CHECKLIST */}
+        {session.status === 'Published' && (
+          <section className="space-y-4">
+            <h3 className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+              <FileCheck className="w-4 h-4 text-emerald-500" /> Review Checklist
+            </h3>
+            <div className="bg-white rounded-2xl border border-slate-100 p-5 sm:p-6 shadow-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {['Stakeholder profile reviewed', 'Company context verified', 'Market insights assessed', 'Core opportunities confirmed', 'Efficiency gains noted', 'Expansion potential explored', 'Disruptive ideas captured'].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2.5 py-1.5">
+                    <div className="w-4 h-4 bg-emerald-500 rounded flex items-center justify-center shrink-0">
+                      <Check className="w-2.5 h-2.5 text-white" />
+                    </div>
+                    <span className="text-xs text-slate-600 font-medium">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* METADATA & AUDIO */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-start">
 
