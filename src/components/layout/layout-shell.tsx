@@ -12,12 +12,22 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   const isAdmin = pathname?.startsWith('/admin')
   const isLogin = pathname === '/login'
   const isPreview = pathname === '/preview'
+  // Only show guest preview layout if auth has fully resolved AND there's no user
+  // During page transitions, `user` might be briefly null — don't strip sidebar in that case
   const isGuestPreview = isPreview && !loading && !user
 
-  if (isLogin || isGuestPreview) {
-    // No sidebar on login OR preview (guest mode)
+  if (isLogin) {
     return (
       <main className="min-h-screen bg-slate-50 overflow-y-auto">
+        {children}
+      </main>
+    )
+  }
+
+  if (isGuestPreview) {
+    // No sidebar for actual guests on preview
+    return (
+      <main className="min-h-screen bg-[#F1F2FB] overflow-y-auto">
         {children}
       </main>
     )

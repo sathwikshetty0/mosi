@@ -75,6 +75,15 @@ function PreviewContent() {
   const isGuest = !authLoading && !user
   const isLoading = authLoading || dataLoading
 
+  // While auth is loading, show nothing (prevents flash of guest view)
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-[#786BF9] rounded-full animate-spin" />
+      </div>
+    )
+  }
+
   const [approved, setApproved] = React.useState(session?.status === 'Published')
   const [expandedId, setExpandedId] = React.useState<string | null>(null)
   const [isCopied, setIsCopied] = React.useState(false)
