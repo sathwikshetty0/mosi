@@ -2,12 +2,12 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { useMosiStore, DEFAULT_CEED_QUESTIONS, CEEDQuestion, CEEDTag } from '@/lib/store'
+import { useMosiStore, DEFAULT_CEED_QUESTIONS, DEFAULT_NORMAL_QUESTIONS, CEEDQuestion, CEEDTag, NormalQuestion, InterviewType } from '@/lib/store'
 import { 
   User, Building2, Globe, Mic, Video, Type,
   Calendar, MapPin, ChevronRight, CheckCircle,
   Sparkles, Activity, Zap, AlertCircle, ChevronLeft, Search, Users,
-  Plus, Trash2, Edit3, MessageSquarePlus, GripVertical
+  Plus, Trash2, Edit3, MessageSquarePlus, GripVertical, Layers, MessageSquare
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -22,7 +22,8 @@ export default function SetupPage() {
     globalCompanies, fetchGlobalCompanies
   } = useMosiStore()
 
-  const [step, setStep] = React.useState(1)
+  const [interviewType, setInterviewType] = React.useState<InterviewType>('ceed')
+  const [step, setStep] = React.useState(0) // 0 = type selection, 1-3 = existing steps
   const [touched, setTouched] = React.useState<Record<string, boolean>>({})
   const [showErrors, setShowErrors] = React.useState(false)
   const [searchTerm, setSearchTerm] = React.useState('')
@@ -44,6 +45,11 @@ export default function SetupPage() {
   const [activeQTab, setActiveQTab] = React.useState<CEEDTag>('Core')
   const [editingQuestionId, setEditingQuestionId] = React.useState<string | null>(null)
   const [newQuestionText, setNewQuestionText] = React.useState('')
+
+  // Normal Questions state
+  const [normalQuestions, setNormalQuestions] = React.useState<NormalQuestion[]>(
+    () => DEFAULT_NORMAL_QUESTIONS.map(q => ({ ...q }))
+  )
 
   const filteredQuestions = ceedQuestions.filter(q => q.quadrant === activeQTab)
 
@@ -246,13 +252,15 @@ export default function SetupPage() {
         employees: form.employees, revenue: form.revenue, address: form.address,
         yearsInBusiness: form.yearsInBusiness, geography: form.geography, pincode: form.pincode
       },
+      interviewType,
       settings: { audio: form.audio, video: form.video },
       opportunities: [],
       location: form.location,
       status: 'Recording',
-      ceedQuestions
+      ceedQuestions: interviewType === 'ceed' ? ceedQuestions : undefined,
+      normalQuestions: interviewType === 'normal' ? normalQuestions : undefined,
     })
-    router.push('/interview/live')
+    router.push(`/interview/live?type=${interviewType}`)
   }
 
   const completedSteps = [
@@ -291,16 +299,50 @@ export default function SetupPage() {
       
       {/* HEADER */}
       <div className="space-y-2 sm:space-y-3 text-center">
-        <div className="inline-flex items-center gap-2 text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-4 py-1.5 rounded-full">
+        <div className="inline-flex items-center gap-2 text-[10px] font-bold text-[#786BF9] uppercase tracking-widest bg-[#E4E1FE] px-4 py-1.5 rounded-full">
           <Sparkles className="w-3 h-3" /> Setup Wizard
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-800">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1C2A3B]">
           New Session Setup
         </h1>
-        <p className="text-xs sm:text-sm text-slate-400 font-medium px-2">
-          Sync stakeholder context and corporate DNA to begin discovery.
+        <p className="text-xs sm:text-sm text-[#8E959D] font-medium px-2">
+          {step === 0 ? 'Choose your interview type to get started.' : 'Fill in stakeholder and session details.'}
         </p>
       </div>
+
+      {/* STEP 0 — Interview Type Selection */}
+      {step === 0 && (
+        <div className="space-y-4 animate-in fade-in">
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={() => { setInterviewType('ceed'); setStep(1) }}
+              className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-[#E8EAEB] hover:border-[#786BF9] hover:bg-[#F2F0FE] transition-all active:scale-95 group"
+            >
+              <div className="w-12 h-12 bg-[#E4E1FE] rounded-xl flex items-center justify-center group-hover:bg-[#786BF9] transition-colors">
+                <Layers className="w-6 h-6 text-[#786BF9] group-hover:text-white transition-colors" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-[#1C2A3B]">CEED Interview</p>
+                <p className="text-[10px] text-[#8E959D] mt-1">Strategic discovery with<br/>Core · Efficiency · Expansion · Disrupt</p>
+              </div>
+            </button>
+            <button
+              onClick={() => { setInterviewType('normal'); setStep(1) }}
+              className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-[#E8EAEB] hover:border-[#2C64F9] hover:bg-[#EAF0FE] transition-all active:scale-95 group"
+            >
+              <div className="w-12 h-12 bg-[#EAF0FE] rounded-xl flex items-center justify-center group-hover:bg-[#2C64F9] transition-colors">
+                <MessageSquare className="w-6 h-6 text-[#2C64F9] group-hover:text-white transition-colors" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-[#1C2A3B]">Normal Interview</p>
+                <p className="text-[10px] text-[#8E959D] mt-1">General stakeholder<br/>questions & conversation</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step > 0 && (<>
 
       {/* STEP TABS — Progress Indicator */}
       <div className="flex items-center gap-0 p-1 sm:p-1.5 bg-slate-50/80 rounded-xl sm:rounded-2xl border border-slate-100">
@@ -917,6 +959,8 @@ export default function SetupPage() {
           </div>
         )}
       </div>
+
+      </>)}
     </div>
   )
 }

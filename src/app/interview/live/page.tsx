@@ -51,16 +51,16 @@ function LiveInterviewContent() {
 
   const interviewType = currentSession?.interviewType || quickType || 'ceed'
 
-  // If quick mode and no current session, set up based on type
+  // If quick mode, always set up the session matching the URL type
   React.useEffect(() => {
-    if (isQuickMode && !currentSession) {
-      if (quickType) {
-        startQuickSessionWithType(quickType)
-      } else {
-        startQuickSession()
+    if (isQuickMode) {
+      const targetType = quickType || 'ceed'
+      // Reinitialize if no session or if session type doesn't match URL type
+      if (!currentSession || currentSession.interviewType !== targetType) {
+        startQuickSessionWithType(targetType)
       }
     }
-  }, [isQuickMode, currentSession, startQuickSession, startQuickSessionWithType, quickType])
+  }, [isQuickMode, quickType])
 
   const [questionIndex, setQuestionIndex] = React.useState(0)
   const [answeredQuestions, setAnsweredQuestions] = React.useState<Set<string>>(new Set())

@@ -28,6 +28,7 @@ export default function InterviewsPage() {
   }, [fetchSessions])
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('All')
+  const [typeFilter, setTypeFilter] = React.useState<'All' | 'ceed' | 'normal'>('All')
   const [page, setPage] = React.useState(1)
 
   const filteredSessions = sessions.filter(s => {
@@ -36,7 +37,8 @@ export default function InterviewsPage() {
     const matchesSearch = stakeholderName.toLowerCase().includes(search.toLowerCase()) || 
                          stakeholderCompany.toLowerCase().includes(search.toLowerCase())
     const matchesStatus = statusFilter === 'All' || s.status === statusFilter
-    return matchesSearch && matchesStatus
+    const matchesType = typeFilter === 'All' || s.interviewType === typeFilter
+    return matchesSearch && matchesStatus && matchesType
   })
 
   if (isLoading) {
@@ -111,6 +113,24 @@ export default function InterviewsPage() {
               {status}
             </button>
           ))}
+          {/* Type filter */}
+          <div className="w-px h-8 bg-slate-100 shrink-0" />
+          {(['All', 'ceed', 'normal'] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => setTypeFilter(t)}
+              className={cn(
+                "whitespace-nowrap h-10 sm:h-12 px-3 sm:px-5 rounded-xl sm:rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all border shadow-sm shrink-0",
+                typeFilter === t
+                  ? t === 'ceed' ? 'bg-[#E4E1FE] text-[#786BF9] border-[#786BF9]/20'
+                  : t === 'normal' ? 'bg-[#EAF0FE] text-[#2C64F9] border-[#2C64F9]/20'
+                  : 'bg-slate-50 text-slate-800 border-slate-200'
+                  : 'bg-white text-slate-400 border-slate-100 hover:bg-slate-50 hover:text-slate-600'
+              )}
+            >
+              {t === 'All' ? 'All Types' : t}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -153,7 +173,7 @@ export default function InterviewsPage() {
             <p className="text-sm text-slate-400 font-medium max-w-xs mx-auto">Try adjusting your filters or search keywords.</p>
           </div>
           <button 
-           onClick={() => { setSearch(''); setStatusFilter('All') }}
+           onClick={() => { setSearch(''); setStatusFilter('All'); setTypeFilter('All') }}
            className="text-xs font-bold uppercase tracking-widest text-blue-600 hover:text-blue-500 hover:underline transition-all"
           >
              Reset Filters
