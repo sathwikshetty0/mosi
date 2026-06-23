@@ -7,11 +7,18 @@ const devLog = (...args: unknown[]) => {
 }
 
 export type CEEDTag = 'Core' | 'Efficiency' | 'Expansion' | 'Disrupt'
+export type InterviewType = 'ceed' | 'normal'
 
 export interface CEEDQuestion {
   id: string
   text: string
   quadrant: CEEDTag
+}
+
+export interface NormalQuestion {
+  id: string
+  text: string
+  category: string
 }
 
 export const DEFAULT_CEED_QUESTIONS: CEEDQuestion[] = [
@@ -37,6 +44,29 @@ export const DEFAULT_CEED_QUESTIONS: CEEDQuestion[] = [
   { id: 'd2', text: 'What technology do you think will disrupt your industry in 3–5 years?', quadrant: 'Disrupt' },
   { id: 'd3', text: 'What assumptions about your business model could turn out to be wrong?', quadrant: 'Disrupt' },
   { id: 'd4', text: 'What would a competitor with 10x your budget do to beat you?', quadrant: 'Disrupt' },
+]
+
+export const DEFAULT_NORMAL_QUESTIONS: NormalQuestion[] = [
+  // Rapport & Context
+  { id: 'n1', text: 'Tell me about your role and responsibilities.', category: 'Rapport & Context' },
+  { id: 'n2', text: 'How long have you been in this position?', category: 'Rapport & Context' },
+  { id: 'n3', text: 'What does a typical day look like for you?', category: 'Rapport & Context' },
+  // Pain Points & Challenges
+  { id: 'n4', text: "What's the biggest challenge you're facing right now?", category: 'Pain Points' },
+  { id: 'n5', text: "What takes up most of your time that you wish didn't?", category: 'Pain Points' },
+  { id: 'n6', text: 'Where do things break down in your current process?', category: 'Pain Points' },
+  // Goals & Priorities
+  { id: 'n7', text: 'What are your top 3 priorities this quarter?', category: 'Goals & Priorities' },
+  { id: 'n8', text: 'What does success look like for you in 6 months?', category: 'Goals & Priorities' },
+  { id: 'n9', text: 'What metrics matter most to your team?', category: 'Goals & Priorities' },
+  // Tools & Processes
+  { id: 'n10', text: 'What tools or software do you currently rely on?', category: 'Tools & Processes' },
+  { id: 'n11', text: "What's working well that you wouldn't want to change?", category: 'Tools & Processes' },
+  { id: 'n12', text: 'If you could fix one thing overnight, what would it be?', category: 'Tools & Processes' },
+  // Decision Making
+  { id: 'n13', text: 'Who else is involved in decisions like this?', category: 'Decision Making' },
+  { id: 'n14', text: 'What does your typical evaluation process look like?', category: 'Decision Making' },
+  { id: 'n15', text: 'What would make you say "yes" to something new?', category: 'Decision Making' },
 ]
 
 export interface TranscriptParagraph {
@@ -101,6 +131,7 @@ export interface StakeholderProfile {
 export interface InterviewSession {
   id: string
   stakeholder: StakeholderProfile
+  interviewType: InterviewType
   status: 'Scheduled' | 'Recording' | 'Review' | 'Published'
   date: string
   duration: number // seconds
@@ -120,6 +151,7 @@ export interface InterviewSession {
   reviewNotes?: { category: string; content: string }[]
   user_id?: string
   ceedQuestions?: CEEDQuestion[]
+  normalQuestions?: NormalQuestion[]
 }
 
 
@@ -138,6 +170,7 @@ interface MosiStore {
   // Actions  
   setCurrentSession: (session: Partial<InterviewSession>) => void
   startQuickSession: () => void
+  startQuickSessionWithType: (type: InterviewType) => void
   updateSessionStakeholder: (id: string, stakeholder: Partial<StakeholderProfile>) => void
   startRecording: () => void
   stopRecording: () => void
@@ -209,7 +242,26 @@ export const useMosiStore = create<MosiStore>()(
         settings: { audio: true, video: true },
         opportunities: [],
         status: 'Recording',
+        interviewType: 'ceed',
         ceedQuestions: DEFAULT_CEED_QUESTIONS
+      }
+    })
+  },
+
+  startQuickSessionWithType: (type: InterviewType) => {
+    set({
+      currentSession: {
+        stakeholder: {
+          name: '', role: '', phone: '', email: '', linkedin: '',
+          company: '', sector: '', products: '', employees: '', revenue: '',
+          yearsInBusiness: '', geography: ''
+        },
+        settings: { audio: true, video: true },
+        opportunities: [],
+        status: 'Recording',
+        interviewType: type,
+        ceedQuestions: type === 'ceed' ? DEFAULT_CEED_QUESTIONS : undefined,
+        normalQuestions: type === 'normal' ? DEFAULT_NORMAL_QUESTIONS : undefined,
       }
     })
   },
@@ -450,6 +502,7 @@ export const useMosiStore = create<MosiStore>()(
         const formattedSessions: InterviewSession[] = fallbackData.map((s: any) => ({
           id: s.id,
           stakeholder: s.stakeholders || { name: 'Untitled Stakeholder', role: 'N/A', phone: '', email: '', linkedin: '', company: 'N/A', sector: '', products: '', employees: '', revenue: '', yearsInBusiness: '', geography: '' },
+          interviewType: s.interview_type || 'ceed',
           status: s.status,
           date: s.date,
           duration: s.duration,
@@ -485,6 +538,7 @@ export const useMosiStore = create<MosiStore>()(
         return {
           id: s.id,
           stakeholder: s.stakeholders || fallbackStakeholder,
+          interviewType: s.interview_type || 'ceed',
           status: s.status,
           date: s.date,
           duration: s.duration,
@@ -539,6 +593,7 @@ export const useMosiStore = create<MosiStore>()(
       const formatted: InterviewSession = {
         id: sessionData.id,
         stakeholder: sessionData.stakeholders || fallbackStakeholder,
+        interviewType: sessionData.interview_type || 'ceed',
         status: sessionData.status,
         date: sessionData.date,
         duration: sessionData.duration,
@@ -575,6 +630,7 @@ export const useMosiStore = create<MosiStore>()(
     const session: InterviewSession = {
       id: newId,
       stakeholder,
+      interviewType: state.currentSession.interviewType || 'ceed',
       status: 'Review',
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       duration: state.recordingSeconds,
@@ -585,6 +641,7 @@ export const useMosiStore = create<MosiStore>()(
       transcript: [],
       summary: '',
       ceedQuestions: state.currentSession.ceedQuestions || DEFAULT_CEED_QUESTIONS,
+      normalQuestions: state.currentSession.normalQuestions,
       isPendingSync: true
     } as any
 
@@ -819,6 +876,7 @@ export const useMosiStore = create<MosiStore>()(
     const session: InterviewSession = {
       id: `sess_${Date.now()}`,
       stakeholder: s.currentSession.stakeholder!,
+      interviewType: s.currentSession.interviewType || 'ceed',
       status: 'Scheduled',
       date: s.currentSession.date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       duration: 0,

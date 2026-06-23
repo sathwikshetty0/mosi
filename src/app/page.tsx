@@ -7,13 +7,17 @@ import {
   ArrowRight, Layers, CheckCircle2, X, Trash2
 } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { DashboardSkeleton } from '@/components/ui/skeleton'
+import { InterviewTypePicker } from '@/components/ui/interview-type-picker'
 
 export default function Home() {
   const { sessions, fetchSessions, deleteSession } = useMosiStore()
   const [isLoading, setIsLoading] = React.useState(true)
   const [teamInfo, setTeamInfo] = React.useState<{ name: string; memberCount: number } | null>(null)
+  const [showTypePicker, setShowTypePicker] = React.useState(false)
+  const router = useRouter()
 
   React.useEffect(() => {
     let mounted = true
@@ -87,12 +91,13 @@ export default function Home() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link href="/interview/live?quick=1" className="flex-1 sm:flex-none">
-            <button className="h-10 sm:h-11 px-4 sm:px-6 bg-[#786BF9] text-white rounded-lg text-xs sm:text-sm font-semibold hover:bg-[#6056C7] transition-all active:scale-95 flex items-center gap-2 w-full justify-center shadow-sm">
-              <Mic className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              Quick Record
-            </button>
-          </Link>
+          <button 
+            onClick={() => setShowTypePicker(true)}
+            className="flex-1 sm:flex-none h-10 sm:h-11 px-4 sm:px-6 bg-[#786BF9] text-white rounded-lg text-xs sm:text-sm font-semibold hover:bg-[#6056C7] transition-all active:scale-95 flex items-center gap-2 justify-center shadow-sm"
+          >
+            <Mic className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            Quick Record
+          </button>
           <Link href="/setup" className="flex-1 sm:flex-none">
             <button className="h-10 sm:h-11 px-4 sm:px-6 bg-white text-[#1C2A3B] rounded-lg text-xs sm:text-sm font-semibold hover:bg-[#F1F2FB] transition-all active:scale-95 flex items-center gap-2 border border-[#E8EAEB] w-full justify-center">
               <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -167,6 +172,15 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      <InterviewTypePicker 
+        open={showTypePicker} 
+        onClose={() => setShowTypePicker(false)} 
+        onSelect={(type) => {
+          setShowTypePicker(false)
+          router.push(`/interview/live?quick=1&type=${type}`)
+        }}
+      />
     </div>
   )
 }

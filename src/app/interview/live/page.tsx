@@ -5,9 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Square, Play, Pause, Plus, Image as ImageIcon, Video, Link as LinkIcon,
   File as FileIcon, Sparkles, Activity, Layers, Globe, ArrowUp, X,
-  CheckCircle2, ArrowRight
+  CheckCircle2, ArrowRight, MessageSquare
 } from 'lucide-react'
-import { useMosiStore, CEEDTag, formatDuration, DEFAULT_CEED_QUESTIONS } from '@/lib/store'
+import { useMosiStore, CEEDTag, formatDuration, DEFAULT_CEED_QUESTIONS, DEFAULT_NORMAL_QUESTIONS } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import { WaveformVisualizer } from '@/components/WaveformVisualizer'
@@ -42,18 +42,25 @@ function LiveInterviewContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const isQuickMode = searchParams.get('quick') === '1'
+  const quickType = searchParams.get('type') as 'ceed' | 'normal' | null
   const {
     isRecording, recordingSeconds, activeQuadrant, currentSession,
     startRecording, stopRecording, setActiveQuadrant, addOpportunity,
-    addEvidence, finalizeSession, tick, startQuickSession
+    addEvidence, finalizeSession, tick, startQuickSession, startQuickSessionWithType
   } = useMosiStore()
 
-  // If quick mode and no current session, set up a blank one
+  const interviewType = currentSession?.interviewType || 'ceed'
+
+  // If quick mode and no current session, set up based on type
   React.useEffect(() => {
     if (isQuickMode && !currentSession) {
-      startQuickSession()
+      if (quickType) {
+        startQuickSessionWithType(quickType)
+      } else {
+        startQuickSession()
+      }
     }
-  }, [isQuickMode, currentSession, startQuickSession])
+  }, [isQuickMode, currentSession, startQuickSession, startQuickSessionWithType, quickType])
 
   const [questionIndex, setQuestionIndex] = React.useState(0)
   const [answeredQuestions, setAnsweredQuestions] = React.useState<Set<string>>(new Set())
@@ -138,13 +145,18 @@ function LiveInterviewContent() {
     return () => clearInterval(timer)
   }, [isRecording, isPaused, tick])
 
-  // Build questions from session or defaults
-  const sessionQuestions = currentSession?.ceedQuestions ?? DEFAULT_CEED_QUESTIONS
+  // Build questions based on interview type
+  const sessionCeedQuestions = currentSession?.ceedQuestions ?? DEFAULT_CEED_QUESTIONS
+  const sessionNormalQuestions = currentSession?.normalQuestions ?? DEFAULT_NORMAL_QUESTIONS
+  
   const questions = React.useMemo(() => {
-    return sessionQuestions
+    if (interviewType === 'normal') {
+      return sessionNormalQuestions.map(q => q.text)
+    }
+    return sessionCeedQuestions
       .filter(q => q.quadrant === activeQuadrant)
       .map(q => q.text)
-  }, [sessionQuestions, activeQuadrant])
+  }, [interviewType, sessionCeedQuestions, sessionNormalQuestions, activeQuadrant])
 
   const toggleQuestionDone = (q: string) => {
     const isNowAnswered = !answeredQuestions.has(q)
@@ -291,22 +303,31 @@ function LiveInterviewContent() {
           <span className="text-sm font-mono font-black text-slate-800 tracking-wider bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">{formatDuration(recordingSeconds)}</span>
         </div>
         
-        <div className="grid grid-cols-4 gap-1.5 sm:gap-3">
-          {QUADRANT_IDS.map(qId => (
-            <button 
-              key={qId}
-              onClick={() => { setActiveQuadrant(qId); setQuestionIndex(0) }}
-              className={cn(
-                "h-10 sm:h-14 rounded-lg sm:rounded-2xl text-[9px] sm:text-[11px] font-black uppercase tracking-wider sm:tracking-[0.2em] transition-all border-2 text-center flex items-center justify-center",
-                activeQuadrant === qId 
-                  ? 'bg-slate-800 text-white border-slate-800 shadow-lg' 
-                  : 'bg-white text-slate-400 border-slate-100 active:bg-slate-50'
-              )}
-            >
-              {qId}
-            </button>
-          ))}
-        </div>
+        {interviewType === 'ceed' ? (
+          <div className="grid grid-cols-4 gap-1.5 sm:gap-3">
+            {QUADRANT_IDS.map(qId => (
+              <button 
+                key={qId}
+                onClick={() => { setActiveQuadrant(qId); setQuestionIndex(0) }}
+                className={cn(
+                  "h-10 sm:h-14 rounded-lg sm:rounded-2xl text-[9px] sm:text-[11px] font-black uppercase tracking-wider sm:tracking-[0.2em] transition-all border-2 text-center flex items-center justify-center",
+                  activeQuadrant === qId 
+                    ? 'bg-[#786BF9] text-white border-[#786BF9] shadow-lg' 
+                    : 'bg-white text-[#8E959D] border-[#E8EAEB] active:bg-[#F1F2FB]'
+                )}
+              >
+                {qId}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 py-2">
+            <div className="h-8 px-3 bg-[#2C64F9] text-white rounded-lg text-[10px] font-semibold flex items-center gap-1.5">
+              <MessageSquare className="w-3 h-3" /> Normal Interview
+            </div>
+            <span className="text-[10px] text-[#8E959D]">{questions.length} questions</span>
+          </div>
+        )}
       </header>
 
       {/* MAIN QUESTION */}
