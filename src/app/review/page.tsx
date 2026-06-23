@@ -194,6 +194,7 @@ function ReviewContent() {
         }
         formData.append('opportunities', JSON.stringify(session.opportunities))
         formData.append('stakeholder', JSON.stringify(session.stakeholder))
+        formData.append('interviewType', session.interviewType || 'ceed')
         response = await fetch('/api/synthesize', { method: 'POST', body: formData })
       } else {
         response = await fetch('/api/synthesize', {
@@ -203,6 +204,7 @@ function ReviewContent() {
             recordingUrl: session.recordingUrl,
             opportunities: session.opportunities,
             stakeholder: session.stakeholder,
+            interviewType: session.interviewType || 'ceed',
           }),
         })
       }

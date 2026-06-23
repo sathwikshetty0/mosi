@@ -38,7 +38,8 @@ async function transcribeWithElevenLabs(audioBuffer: Buffer): Promise<string> {
 async function summarizeWithNvidia(
   transcript: string,
   stakeholder: any,
-  opportunities: any[]
+  opportunities: any[],
+  interviewType: string = 'ceed'
 ): Promise<string> {
   if (!process.env.NVIDIA_API_KEY) {
     console.log('No NVIDIA_API_KEY — skipping summary generation.');
@@ -55,10 +56,10 @@ async function summarizeWithNvidia(
     : 'Stakeholder details not yet provided.';
 
   const opportunitiesContext = opportunities.length > 0
-    ? `\n\nKey moments captured during interview:\n${opportunities.map((o, i) => `${i + 1}. [${o.tag}] ${o.title}${o.description ? ': ' + o.description : ''}`).join('\n')}`
+    ? `\n\nKey moments captured during interview:\n${opportunities.map((o, i) => `${i + 1}. ${o.title}${o.description ? ': ' + o.description : ''}`).join('\n')}`
     : '';
 
-  const systemPrompt = `You are an expert business analyst creating executive meeting summaries.
+  const ceedPrompt = `You are an expert business analyst creating executive meeting summaries.
 The transcript may be in any language (Kannada, Hindi, Tamil, English, etc.) — ALWAYS produce the summary in English.
 
 Structure the summary with these sections:
@@ -83,6 +84,36 @@ Concrete follow-ups and recommendations.
 2-3 impactful statements from the stakeholder (translated to English if needed).
 
 Keep it concise, professional, and actionable. Max 500 words.`;
+
+  const normalPrompt = `You are an expert business analyst creating meeting summaries from stakeholder interviews.
+The transcript may be in any language (Kannada, Hindi, Tamil, English, etc.) — ALWAYS produce the summary in English.
+
+Structure the summary with these sections:
+
+## Meeting Overview
+Who was interviewed, their role, company context. 1-2 sentences.
+
+## Key Discussion Points
+- Main topics covered as bullet points (5-8 points)
+
+## Challenges & Pain Points
+What problems or frustrations were mentioned.
+
+## Goals & Priorities
+What the stakeholder is trying to achieve.
+
+## Tools & Processes
+Current tools, what works, what doesn't.
+
+## Action Items & Next Steps
+Concrete follow-ups and recommendations.
+
+## Notable Quotes
+2-3 impactful statements (translated to English if needed).
+
+Keep it concise, professional, and actionable. Max 500 words.`;
+
+  const systemPrompt = interviewType === 'normal' ? normalPrompt : ceedPrompt;
 
   const userPrompt = `${stakeholderContext}${opportunitiesContext}
 
@@ -122,11 +153,14 @@ export async function POST(req: Request) {
     let opportunities: any[] = [];
     let stakeholder: any = {};
 
+    let interviewType = 'ceed';
+
     // Parse request based on content type
     if (contentType.includes('multipart/form-data')) {
       const formData = await req.formData();
       const rawOpp = formData.get('opportunities') as string;
       const rawStakeholder = formData.get('stakeholder') as string;
+      interviewType = (formData.get('interviewType') as string) || 'ceed';
 
       opportunities = rawOpp ? JSON.parse(rawOpp) : [];
       stakeholder = rawStakeholder ? JSON.parse(rawStakeholder) : {};
@@ -141,6 +175,7 @@ export async function POST(req: Request) {
       const body = await req.json();
       opportunities = body.opportunities || [];
       stakeholder = body.stakeholder || {};
+      interviewType = body.interviewType || 'ceed';
       const recordingUrl = body.recordingUrl;
 
       if (recordingUrl) {
@@ -175,7 +210,7 @@ export async function POST(req: Request) {
     }
 
     // Generate summary with NVIDIA (non-blocking — if it fails, we still return transcript)
-    const summary = await summarizeWithNvidia(transcriptText, stakeholder, opportunities);
+    const summary = await summarizeWithNvidia(transcriptText, stakeholder, opportunities, interviewType);
 
     return NextResponse.json({
       transcript: transcriptText,
