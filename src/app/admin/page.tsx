@@ -456,6 +456,7 @@ function AdminDashboardContent() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState<'all' | 'ceed' | 'normal'>('all')
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [expandedShId, setExpandedShId] = useState<string | null>(null)
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null)
@@ -584,9 +585,10 @@ function AdminDashboardContent() {
       const q = search.toLowerCase()
       const matchSearch = (s.stakeholders?.name || '').toLowerCase().includes(q) || (s.stakeholders?.company || '').toLowerCase().includes(q)
       const matchStatus = statusFilter === 'all' || s.status === statusFilter
-      return matchSearch && matchStatus
+      const matchType = typeFilter === 'all' || ((s as any).interview_type || 'ceed') === typeFilter
+      return matchSearch && matchStatus && matchType
     })
-  , [sessions, search, statusFilter])
+  , [sessions, search, statusFilter, typeFilter])
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])
@@ -636,13 +638,16 @@ function AdminDashboardContent() {
     return Object.values(companiesMap).sort((a, b) => (b as any).sessions.length - (a as any).sessions.length)
   }, [sessions])
 
+  const ceedCount = sessions.filter(s => (s as any).interview_type !== 'normal').length
+  const normalCount = sessions.filter(s => (s as any).interview_type === 'normal').length
+
   const kpis = [
     { label: 'Total Sessions', val: stats.total, icon: Video, color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100' },
-    { label: 'Total Insights', val: stats.insights, icon: Zap, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-    { label: 'Stakeholders', val: stats.stakeholders, icon: Globe, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+    { label: 'CEED', val: ceedCount, icon: Zap, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+    { label: 'Normal', val: normalCount, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
     { label: 'Published', val: stats.published, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
     { label: 'In Review', val: stats.inReview, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
-    { label: 'Users', val: profiles.length, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+    { label: 'Stakeholders', val: stats.stakeholders, icon: Globe, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
   ]
 
   return (
@@ -853,6 +858,13 @@ function AdminDashboardContent() {
                     {['all', 'Scheduled', 'Review', 'Published'].map(s => (
                       <button key={s} onClick={() => setStatusFilter(s)} className={cn('px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap', statusFilter === s ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-700')}>
                         {s}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto no-scrollbar">
+                    {(['all', 'ceed', 'normal'] as const).map(t => (
+                      <button key={t} onClick={() => setTypeFilter(t)} className={cn('px-4 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap', typeFilter === t ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-700')}>
+                        {t === 'all' ? 'All Types' : t}
                       </button>
                     ))}
                   </div>
