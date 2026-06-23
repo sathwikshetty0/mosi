@@ -19,12 +19,13 @@ import { cn } from '@/lib/utils'
 interface SessionData {
   id: string
   status: string
+  interview_type?: string
   date: string
   duration: number
   summary?: string
   user_id?: string
   recording_url?: string
-  recordingUrl?: string // Add both just in case
+  recordingUrl?: string
   stakeholders: { 
     id?: string; 
     name: string; 
@@ -585,7 +586,7 @@ function AdminDashboardContent() {
       const q = search.toLowerCase()
       const matchSearch = (s.stakeholders?.name || '').toLowerCase().includes(q) || (s.stakeholders?.company || '').toLowerCase().includes(q)
       const matchStatus = statusFilter === 'all' || s.status === statusFilter
-      const matchType = typeFilter === 'all' || ((s as any).interview_type || 'ceed') === typeFilter
+      const matchType = typeFilter === 'all' || (s.interview_type || 'ceed') === typeFilter
       return matchSearch && matchStatus && matchType
     })
   , [sessions, search, statusFilter, typeFilter])
@@ -638,8 +639,8 @@ function AdminDashboardContent() {
     return Object.values(companiesMap).sort((a, b) => (b as any).sessions.length - (a as any).sessions.length)
   }, [sessions])
 
-  const ceedCount = sessions.filter(s => (s as any).interview_type !== 'normal').length
-  const normalCount = sessions.filter(s => (s as any).interview_type === 'normal').length
+  const ceedCount = sessions.filter(s => s.interview_type !== 'normal').length
+  const normalCount = sessions.filter(s => s.interview_type === 'normal').length
 
   const kpis = [
     { label: 'Total Sessions', val: stats.total, icon: Video, color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100' },

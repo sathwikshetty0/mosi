@@ -120,7 +120,7 @@ function LiveInterviewContent() {
         const blob = new Blob(chunksRef.current, { type: actualMime })
         setBlobUrl(URL.createObjectURL(blob))
       }
-      recorder.start()
+      recorder.start(1000) // Collect chunks every second for faster stop
       mediaRecorderRef.current = recorder
     } else if (!isRecording && mediaRecorderRef.current) {
       mediaRecorderRef.current.stop()
