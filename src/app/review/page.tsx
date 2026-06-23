@@ -158,7 +158,12 @@ function ReviewContent() {
   }
 
   const handleNextClick = () => {
-    setShowChecklistPopup(true)
+    if (session?.interviewType === 'normal') {
+      // Skip checklist for normal interviews — go directly to preview
+      handleGoToPreview()
+    } else {
+      setShowChecklistPopup(true)
+    }
   }
 
   const handleGoToPreview = () => {
