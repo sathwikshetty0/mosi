@@ -154,7 +154,7 @@ export function Sidebar() {
              {(!isAdmin || pathname !== '/admin') && (
                 <>
                 <Link
-                  href="/interview/live?quick=1"
+                  href="/interview/live?quick=1&type=ceed"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={cn(
                     "group w-full h-14 bg-[#786BF9] border border-[#6056C7] text-white rounded-xl font-semibold text-xs transition-all shadow-sm flex items-center justify-center gap-2.5 overflow-hidden relative active:scale-95 hover:bg-[#6056C7]",

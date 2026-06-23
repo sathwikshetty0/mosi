@@ -75,6 +75,11 @@ function PreviewContent() {
   const isGuest = !authLoading && !user
   const isLoading = authLoading || dataLoading
 
+  const [approved, setApproved] = React.useState(session?.status === 'Published')
+  const [expandedId, setExpandedId] = React.useState<string | null>(null)
+  const [isCopied, setIsCopied] = React.useState(false)
+  const [selectedAsset, setSelectedAsset] = React.useState<any>(null)
+
   // While auth is loading, show nothing (prevents flash of guest view)
   if (authLoading) {
     return (
@@ -83,11 +88,6 @@ function PreviewContent() {
       </div>
     )
   }
-
-  const [approved, setApproved] = React.useState(session?.status === 'Published')
-  const [expandedId, setExpandedId] = React.useState<string | null>(null)
-  const [isCopied, setIsCopied] = React.useState(false)
-  const [selectedAsset, setSelectedAsset] = React.useState<any>(null)
 
   const handleShare = () => {
     const url = `${window.location.origin}/preview?id=${session?.id}`

@@ -135,6 +135,13 @@ function ReviewContent() {
         geography: session.stakeholder.geography || '',
       })
     }
+    // Sync text fields when session loads from DB
+    if (session) {
+      if (session.summary && !localSummary) setLocalSummary(session.summary)
+      if (session.transcriptText && !localTranscript) setLocalTranscript(session.transcriptText)
+      if (session.notes && !localNotes) setLocalNotes(session.notes)
+      if (session.reviewNotes && reviewNotes.length === 0) setReviewNotes(session.reviewNotes)
+    }
   }, [session?.id])
 
   const handleSaveStakeholder = () => {
@@ -158,8 +165,13 @@ function ReviewContent() {
   }
 
   const handleNextClick = () => {
+    // Save any pending edits before publishing
+    if (session) {
+      if (localSummary !== session.summary) updateSessionSummary(session.id, localSummary)
+      if (localTranscript !== session.transcriptText) updateSessionTranscript(session.id, localTranscript)
+      if (localNotes !== session.notes) updateSessionNotes(session.id, localNotes)
+    }
     if (session?.interviewType === 'normal') {
-      // Skip checklist for normal interviews — go directly to preview
       handleGoToPreview()
     } else {
       setShowChecklistPopup(true)

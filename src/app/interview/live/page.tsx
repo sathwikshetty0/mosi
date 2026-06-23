@@ -80,17 +80,20 @@ function LiveInterviewContent() {
   const [isUploading, setIsUploading] = React.useState(false)
   const [isCaptured, setIsCaptured] = React.useState(false)
 
+  const streamRef = React.useRef<MediaStream | null>(null)
+
   React.useEffect(() => {
     async function setupMedia() {
       try {
         const s = await navigator.mediaDevices.getUserMedia({ video: false, audio: true })
         setStream(s)
+        streamRef.current = s
       } catch (err) {
         console.error("Mic access error:", err)
       }
     }
     setupMedia()
-    return () => { stream?.getTracks().forEach(t => t.stop()) }
+    return () => { streamRef.current?.getTracks().forEach(t => t.stop()) }
   }, [])
 
   // Determine best recording MIME type for this browser
