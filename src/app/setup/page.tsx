@@ -749,7 +749,8 @@ export default function SetupPage() {
             </div>
           </div>
 
-          {/* ============ CEED QUESTION EDITOR ============ */}
+          {/* ============ QUESTION EDITOR (conditional on type) ============ */}
+          {interviewType === 'ceed' ? (
           <div className="space-y-5">
             <div className="flex items-center justify-between px-1">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
@@ -898,7 +899,85 @@ export default function SetupPage() {
               </span>
             </div>
           </div>
-          {/* ============ END CEED QUESTION EDITOR ============ */}
+          ) : (
+          <div className="space-y-5">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <MessageSquarePlus className="w-4 h-4" /> Interview Questions
+              </h3>
+              <button 
+                onClick={() => setNormalQuestions(DEFAULT_NORMAL_QUESTIONS.map(q => ({ ...q })))}
+                className="text-[10px] font-bold text-slate-400 hover:text-blue-600 uppercase tracking-widest transition-colors"
+              >
+                Reset to Defaults
+              </button>
+            </div>
+
+            <p className="text-[11px] text-slate-400 font-medium px-1 -mt-2">
+              Edit the questions that will guide your interview. You can add, remove, or modify them.
+            </p>
+
+            <div className="space-y-2">
+              {normalQuestions.map((q, idx) => (
+                <div key={q.id} className="group bg-white border border-slate-100 rounded-2xl p-4 hover:border-slate-200 transition-all">
+                  <div className="flex items-start gap-3">
+                    <span className="text-[10px] font-black text-slate-300 mt-0.5 min-w-[20px]">{idx + 1}.</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-700 leading-relaxed">{q.text}</p>
+                      <p className="text-[9px] text-slate-400 mt-1">{q.category}</p>
+                    </div>
+                    <button 
+                      onClick={() => setNormalQuestions(prev => prev.filter(nq => nq.id !== q.id))}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Add new question */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newQuestionText}
+                onChange={e => setNewQuestionText(e.target.value)}
+                onKeyDown={e => { 
+                  if (e.key === 'Enter' && newQuestionText.trim()) {
+                    setNormalQuestions(prev => [...prev, { id: `nq_${Date.now()}`, text: newQuestionText.trim(), category: 'Custom' }])
+                    setNewQuestionText('')
+                  }
+                }}
+                placeholder="Add a new question..."
+                className="flex-1 h-12 px-4 rounded-xl border-2 border-slate-200 outline-none transition-all text-sm font-medium text-slate-800 placeholder:text-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 bg-white hover:border-slate-300"
+              />
+              <button 
+                onClick={() => {
+                  if (newQuestionText.trim()) {
+                    setNormalQuestions(prev => [...prev, { id: `nq_${Date.now()}`, text: newQuestionText.trim(), category: 'Custom' }])
+                    setNewQuestionText('')
+                  }
+                }}
+                disabled={!newQuestionText.trim()}
+                className={cn(
+                  "h-12 px-5 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-all shrink-0",
+                  newQuestionText.trim()
+                    ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200"
+                    : "bg-slate-50 text-slate-300 border border-slate-100 cursor-not-allowed"
+                )}
+              >
+                <Plus className="w-4 h-4" /> Add
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-xl border border-slate-100">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Total: {normalQuestions.length} questions
+              </span>
+            </div>
+          </div>
+          )}
 
           <div className="space-y-5">
             <h3 className="text-xs font-bold text-slate-500 px-1 uppercase tracking-widest">Logistics <span className="text-slate-300 font-medium normal-case">(Optional)</span></h3>
