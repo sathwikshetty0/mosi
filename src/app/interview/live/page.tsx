@@ -49,7 +49,7 @@ function LiveInterviewContent() {
     addEvidence, finalizeSession, tick, startQuickSession, startQuickSessionWithType
   } = useMosiStore()
 
-  const interviewType = currentSession?.interviewType || 'ceed'
+  const interviewType = currentSession?.interviewType || quickType || 'ceed'
 
   // If quick mode and no current session, set up based on type
   React.useEffect(() => {
@@ -336,7 +336,9 @@ function LiveInterviewContent() {
         <>
         <div className="space-y-3 sm:space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-[10px] sm:text-xs font-bold text-blue-500 uppercase tracking-widest">{activeQuadrant} Focus</p>
+            <p className="text-[10px] sm:text-xs font-bold text-[#786BF9] uppercase tracking-widest">
+              {interviewType === 'ceed' ? `${activeQuadrant} Focus` : 'Interview Questions'}
+            </p>
             {answeredQuestions.has(questions[Math.min(questionIndex, questions.length - 1)]) && (
               <span className="bg-emerald-50 text-emerald-600 text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border border-emerald-100 flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3" /> Answered
