@@ -571,7 +571,7 @@ function ReviewContent() {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100">
-                   {['#', 'Highlight Detail', 'Quadrant', 'Type', 'Action'].map(h => (
+                   {(session.interviewType === 'normal' ? ['#', 'Highlight Detail', 'Type', 'Action'] : ['#', 'Highlight Detail', 'Quadrant', 'Type', 'Action']).map(h => (
                     <th key={h} className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
@@ -586,11 +586,13 @@ function ReviewContent() {
                         <Play className="w-3.5 h-3.5 fill-current" /> {formatDuration(opp.timestamp)}
                       </button>
                     </td>
+                    {session.interviewType !== 'normal' && (
                     <td className="px-6 py-4">
-                      <span className={cn('text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border', tagColors[opp.tag].text, tagColors[opp.tag].border, tagColors[opp.tag].bg)}>
+                      <span className={cn('text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border', tagColors[opp.tag]?.text, tagColors[opp.tag]?.border, tagColors[opp.tag]?.bg)}>
                         {opp.tag}
                       </span>
                     </td>
+                    )}
                     <td className="px-6 py-4">
                       <span className={cn("text-[10px] font-bold uppercase tracking-widest", opp.paid ? "text-emerald-500" : "text-slate-300")}>
                         {opp.paid ? 'Commercial' : 'Insight'}
@@ -618,9 +620,11 @@ function ReviewContent() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                       <span className="text-[10px] text-slate-300 font-bold">#{(i + 1).toString().padStart(2, '0')}</span>
-                      <span className={cn('text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border', tagColors[opp.tag].text, tagColors[opp.tag].border, tagColors[opp.tag].bg)}>
+                      {session.interviewType !== 'normal' && (
+                      <span className={cn('text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border', tagColors[opp.tag]?.text, tagColors[opp.tag]?.border, tagColors[opp.tag]?.bg)}>
                         {opp.tag}
                       </span>
+                      )}
                       <span className={cn("text-[9px] font-bold uppercase", opp.paid ? "text-emerald-500" : "text-slate-300")}>
                         {opp.paid ? 'Commercial' : 'Insight'}
                       </span>
@@ -729,7 +733,8 @@ function ReviewContent() {
           />
         </section>
 
-        {/* REVIEW COMPARTMENTS — Structured notes per checklist item */}
+        {/* REVIEW COMPARTMENTS — Only for CEED interviews */}
+        {session.interviewType !== 'normal' && (
         <section className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div>
@@ -793,6 +798,7 @@ function ReviewContent() {
             </div>
           )}
         </section>
+        )}
 
       </div>
 
