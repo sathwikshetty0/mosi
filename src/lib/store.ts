@@ -740,6 +740,7 @@ export const useMosiStore = create<MosiStore>()(
               id: newId,
               stakeholder_id: stakeholderId,
               status: 'Review',
+              interview_type: session.interviewType || 'ceed',
               date: session.date,
               duration: session.duration,
               audio_settings: session.settings,

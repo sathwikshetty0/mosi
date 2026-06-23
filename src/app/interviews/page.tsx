@@ -128,6 +128,7 @@ export default function InterviewsPage() {
               date={session.date}
               status={session.status}
               opportunityCount={session.opportunities.length}
+              interviewType={session.interviewType}
             />
           ))}
         </div>

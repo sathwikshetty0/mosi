@@ -145,6 +145,10 @@ export default function Home() {
                                 session.status === 'Published' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
                                 "bg-blue-50 text-blue-600 border-blue-100"
                             )}>{session.status}</span>
+                            <span className={cn(
+                              "text-[8px] sm:text-[9px] font-bold uppercase px-1.5 py-0.5 rounded",
+                              session.interviewType === 'normal' ? "bg-[#EAF0FE] text-[#2C64F9]" : "bg-[#E4E1FE] text-[#786BF9]"
+                            )}>{session.interviewType === 'normal' ? 'Normal' : 'CEED'}</span>
                             <span className="text-[10px] sm:text-xs text-slate-400 font-medium">{session.date}</span>
                         </div>
                         <h4 className="text-sm sm:text-base font-bold text-slate-700 truncate tracking-tight">{session.stakeholder?.name || 'Untitled'}</h4>

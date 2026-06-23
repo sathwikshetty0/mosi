@@ -25,6 +25,7 @@ interface InterviewCardProps {
   date: string
   status: 'Scheduled' | 'Recording' | 'Review' | 'Published'
   opportunityCount?: number
+  interviewType?: 'ceed' | 'normal'
 }
 
 const statusConfig = {
@@ -77,7 +78,8 @@ export function InterviewCard({
   sector, 
   date, 
   status,
-  opportunityCount = 0 
+  opportunityCount = 0,
+  interviewType = 'ceed'
 }: InterviewCardProps) {
   const config = statusConfig[status]
   const StatusIcon = config.icon
@@ -88,12 +90,18 @@ export function InterviewCard({
         
         <div className="relative z-10 flex flex-col h-full space-y-5 sm:space-y-8">
           <div className="flex items-center justify-between gap-2">
-            <div className={cn(
-              "flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[9px] sm:text-[10px] font-bold uppercase tracking-widest",
-              config.color
-            )}>
-              <StatusIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              {config.label}
+            <div className="flex items-center gap-1.5">
+              <div className={cn(
+                "flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[9px] sm:text-[10px] font-bold uppercase tracking-widest",
+                config.color
+              )}>
+                <StatusIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                {config.label}
+              </div>
+              <span className={cn(
+                "text-[8px] font-bold uppercase px-1.5 py-0.5 rounded",
+                interviewType === 'normal' ? "bg-[#EAF0FE] text-[#2C64F9]" : "bg-[#E4E1FE] text-[#786BF9]"
+              )}>{interviewType === 'normal' ? 'Normal' : 'CEED'}</span>
             </div>
             {opportunityCount > 0 && (
               <div className="flex items-center gap-1.5 bg-blue-50 px-2.5 sm:px-3 py-1 rounded-full border border-blue-100 shadow-sm">
